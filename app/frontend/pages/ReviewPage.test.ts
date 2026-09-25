@@ -140,10 +140,17 @@ describe('ReviewPage', () => {
     const page = mount(ReviewPage, { props: props(draft({ comments: [] })), attachTo: document.body })
     await flushPromises()
 
-    const onLine = page.findAll('[aria-label="Unresolved thread"]')
-    expect(onLine.some((t) => t.text().includes('Comment t1'))).toBe(true)
+    const onLine = () => page.findAll('table [aria-label="Unresolved thread"]')[0]
+    expect(onLine().text()).toContain('dana · 1 comment')
+    expect(onLine().text()).not.toContain('Comment t1')
+    await onLine().find('button[aria-expanded]').trigger('click')
+    expect(onLine().text()).toContain('Comment t1')
     expect(page.find('main details summary').text()).toContain('1 unresolved comment on older code')
     expect(page.find('main').text()).toContain('2 unresolved')
+
+    await page.find('button[aria-label="Show earlier comments"]').trigger('click')
+    expect(page.find('[aria-label="Unresolved thread"]').exists()).toBe(false)
+    await page.find('button[aria-label="Show earlier comments"]').trigger('click')
     threads = []
     page.unmount()
   })

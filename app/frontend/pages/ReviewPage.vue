@@ -12,8 +12,10 @@ import BasePill from '@/components/ui/BasePill.vue'
 import MarkdownBlock from '@/components/ui/MarkdownBlock.vue'
 import SideDrawer from '@/components/ui/SideDrawer.vue'
 import SkillPicker from '@/components/ui/SkillPicker.vue'
+import ToggleSwitch from '@/components/ui/ToggleSwitch.vue'
 import UserAvatar from '@/components/ui/UserAvatar.vue'
 import { useReview } from '@/composables/useReview'
+import { usePersistentFlag } from '@/composables/usePersistentFlag'
 import { useSplitWidth } from '@/composables/useSplitWidth'
 import { useToast } from '@/composables/useToast'
 import { timeAgo } from '@/lib/format'
@@ -60,7 +62,9 @@ const commentsFor = (path: string) => review.value.comments.filter((c) => c.path
 
 // Earlier reviews' unresolved threads, by anyone; loaded after the page so it opens fast.
 const threads = ref<ReviewThread[]>([])
-const threadsFor = (path: string) => threads.value.filter((t) => t.path === path)
+// Hide them all on a busy PR; remembered in this browser.
+const showThreads = usePersistentFlag('review.threads', true)
+const threadsFor = (path: string) => (showThreads.value ? threads.value.filter((t) => t.path === path) : [])
 onMounted(async () => {
   if (!props.pullRequest) return
   const repo = props.pullRequest.fullName ?? props.pullRequest.key.split('#')[0]
@@ -203,7 +207,11 @@ async function send(event: 'comment' | 'approve' | 'request_changes', body: stri
             <template v-else-if="review.aiStatus === 'done'">Commit the comments you want to keep; nothing is posted until you send the review.</template>
             <template v-else>Let Claude look for problems, or add your own comments with the + on any line. Nothing is posted until you send the review.</template>
           </span>
-          <SkillPicker action="ai_review" :repo="pr.fullName ?? pr.key.split('#')[0]" class="ml-auto" />
+          <label v-if="threads.length" class="ml-auto inline-flex items-center gap-2 text-[12.5px] text-muted">
+            <ToggleSwitch v-model="showThreads" label="Show earlier comments" />
+            Earlier comments ({{ threads.length }})
+          </label>
+          <SkillPicker action="ai_review" :repo="pr.fullName ?? pr.key.split('#')[0]" :class="!threads.length && 'ml-auto'" />
           <span v-if="headMoved" class="flex basis-full items-start gap-1.5 text-[12.5px] text-warn">
             <PhWarning :size="14" class="mt-0.5 shrink-0" /> New commits were pushed since this review started, so some comments may point at old lines.
           </span>

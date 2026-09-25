@@ -150,7 +150,7 @@ Open any PR's **Review** button, or go to `/reviews/<owner>/<repo>/<number>`. Yo
 - **Header:** the PR's title, CI state, author, size, and your review's status.
 - **File tree** on the left: folders, a filter, comment counts, and lines changed. Clicking a file jumps to it, and the file you're scrolled to is highlighted.
 - **Diff** on the right, GitHub style, with a + on each line to comment.
-- **Earlier comments:** unresolved review threads already on the PR, by anyone, show on their lines with every reply and a link to reply on GitHub. Resolved threads are left out. Threads on code that has since changed are listed above that file's diff as "on older code". Each file's header counts its unresolved threads.
+- **Earlier comments:** unresolved review threads already on the PR, by anyone, show on their lines with every reply and a link to reply on GitHub. Resolved threads are left out. Threads on code that has since changed are listed above that file's diff as "on older code". Each file's header counts its unresolved threads. Threads start folded to one line (who started it and how many comments); click one to read it. The **Earlier comments** switch above the diff hides or shows them all, and is remembered.
 - **Description:** a button opens it in a drawer from the left, with the PR's GitHub comments.
 - **Divider:** drag it to resize the panels, use the arrow keys, or double-click to reset. The width is remembered.
 
