@@ -3,7 +3,7 @@ import { onBeforeUnmount, onMounted, ref } from 'vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import MarkdownEditor from '@/components/ui/MarkdownEditor.vue'
 
-const props = defineProps<{ committed: number; staged: number; ownPr: boolean; initialBody?: string }>()
+defineProps<{ committed: number; staged: number; ownPr: boolean }>()
 const emit = defineEmits<{ send: [event: 'comment' | 'approve' | 'request_changes', body: string]; cancel: [] }>()
 
 type Event = 'comment' | 'approve' | 'request_changes'
@@ -13,8 +13,9 @@ const EVENTS: { value: Event; label: string; hint: string }[] = [
   { value: 'request_changes', label: 'Request changes', hint: 'Needs changes before it can merge' },
 ]
 
-const event = ref<Event>('comment')
-const body = ref(props.initialBody ?? '')
+// Held by the page, so closing the dropdown doesn't lose what you wrote.
+const event = defineModel<Event>('event', { default: 'comment' })
+const body = defineModel<string>('body', { default: '' })
 const sending = ref(false)
 
 const root = ref<HTMLElement>()

@@ -37,6 +37,7 @@ const verdict = computed(() => (review.value.aiStatus === 'done' ? (review.value
 const clean = computed(() => verdict.value?.added === 0)
 const showVerdict = ref(false)
 const summaryDraft = ref('')
+const decision = ref<'comment' | 'approve' | 'request_changes'>('comment')
 
 function useVerdictAsSummary() {
   summaryDraft.value = verdict.value?.summary ?? ''
@@ -161,9 +162,9 @@ async function send(event: 'comment' | 'approve' | 'request_changes', body: stri
                   ref="dialog"
                   :committed="count('committed')"
                   :staged="count('staged')"
-                  :key="summaryDraft"
                   :own-pr="pr.mine"
-                  :initial-body="summaryDraft"
+                  v-model:body="summaryDraft"
+                  v-model:event="decision"
                   @send="send"
                   @cancel="sending = false"
                 />

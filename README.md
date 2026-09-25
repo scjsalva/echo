@@ -4,7 +4,11 @@ A local console for everything that needs you while you work with Claude Code. O
 
 Echo runs on your Mac and nothing is hosted. It reads Claude Code's own files and talks to GitHub and Jira through the CLIs you're already logged in to, so it never asks for a token.
 
+**[See everything Echo does →](docs/FEATURES.md)**
+
 ## What it does
+
+The full list, page by page, is in [docs/FEATURES.md](docs/FEATURES.md).
 
 - **Agents**: every live Claude Code session, with its status, model, tokens, context use, loops and subagents. Brings a session's Terminal or iTerm2 tab to the front, renames it, summarises it, resumes ended sessions or ends one for you.
 - **Waiting on you**: blocked agents, review requests, mentions, changes requested on your PRs and Jira assignments, in one list that clears itself when the source does.

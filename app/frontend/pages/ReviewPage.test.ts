@@ -131,6 +131,19 @@ describe('ReviewPage', () => {
     page.unmount()
   })
 
+  it('keeps the review summary when Send review is closed and opened again', async () => {
+    const page = mount(ReviewPage, { props: props(), attachTo: document.body })
+
+    await button(page, 'Send review').trigger('click')
+    await page.find('textarea[aria-label="Review summary"]').setValue('Half written')
+    await button(page, 'Send review').trigger('click')
+    expect(page.find('textarea[aria-label="Review summary"]').exists()).toBe(false)
+    await button(page, 'Send review').trigger('click')
+
+    expect((page.find('textarea[aria-label="Review summary"]').element as HTMLTextAreaElement).value).toBe('Half written')
+    page.unmount()
+  })
+
   it('sends the review with the chosen decision only when asked', async () => {
     const page = mount(ReviewPage, { props: props(draft({ comments: [comment({ state: 'committed' })] })), attachTo: document.body })
 
