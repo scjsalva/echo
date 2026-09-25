@@ -1,0 +1,2 @@
+class JiraTicket < ApplicationRecord
+end

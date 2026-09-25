@@ -1,0 +1,89 @@
+#!/usr/bin/env bash
+# Runs Echo in the background with launchd: it starts when you log in, restarts
+# if it crashes, and keeps syncing with no terminal or browser open.
+#
+#   bin/service install    build and start Echo at http://localhost:4747
+#   bin/service uninstall  stop it and remove it from login items
+#   bin/service restart    pick up new code (rebuilds first)
+#   bin/service status | logs
+set -euo pipefail
+
+LABEL="com.echo.console"
+PORT="${ECHO_PORT:-4747}"
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
+LOG="$ROOT/log/service.log"
+DOMAIN="gui/$(id -u)"
+
+# launchd doesn't read your shell profile, so pass on where ruby, claude and acli live.
+SERVICE_PATH="$(dirname "$(command -v ruby)"):$(dirname "$(command -v claude)"):$(dirname "$(command -v acli 2>/dev/null || echo /opt/homebrew/bin/acli)"):/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+
+build() {
+  cd "$ROOT"
+  bundle install --quiet
+  npm install --silent
+  RAILS_ENV=production bin/rails db:prepare
+  RAILS_ENV=production bin/vite build --clear
+}
+
+write_plist() {
+  mkdir -p "$(dirname "$PLIST")" "$ROOT/log"
+  cat > "$PLIST" <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>$LABEL</string>
+  <key>WorkingDirectory</key><string>$ROOT</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>$ROOT/bin/rails</string><string>server</string>
+    <string>--port</string><string>$PORT</string><string>--binding</string><string>127.0.0.1</string>
+    <string>--pid</string><string>$ROOT/tmp/pids/service.pid</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>RAILS_ENV</key><string>production</string>
+    <key>PATH</key><string>$SERVICE_PATH</string>
+${CLAUDE_CONFIG_DIR:+    <key>CLAUDE_CONFIG_DIR</key><string>$CLAUDE_CONFIG_DIR</string>}
+  </dict>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>StandardOutPath</key><string>$LOG</string>
+  <key>StandardErrorPath</key><string>$LOG</string>
+</dict>
+</plist>
+PLIST
+}
+
+stop() { launchctl bootout "$DOMAIN/$LABEL" 2>/dev/null || true; }
+
+case "${1:-}" in
+  install)
+    build
+    write_plist
+    stop
+    launchctl bootstrap "$DOMAIN" "$PLIST"
+    echo "Echo is running at http://localhost:$PORT and will start when you log in."
+    ;;
+  uninstall)
+    stop
+    rm -f "$PLIST"
+    echo "Echo's background service is removed."
+    ;;
+  restart)
+    build
+    launchctl kickstart -k "$DOMAIN/$LABEL"
+    echo "Restarted Echo at http://localhost:$PORT"
+    ;;
+  status)
+    launchctl print "$DOMAIN/$LABEL" 2>/dev/null | grep -E '^\s*(state|pid|last exit code)' || echo "Not installed. Run bin/service install."
+    ;;
+  logs)
+    tail -n 50 -f "$LOG"
+    ;;
+  *)
+    sed -n '2,8p' "$0" | sed 's/^# \{0,1\}//'
+    exit 1
+    ;;
+esac

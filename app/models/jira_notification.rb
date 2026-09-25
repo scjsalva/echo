@@ -1,0 +1,2 @@
+class JiraNotification < ApplicationRecord
+end

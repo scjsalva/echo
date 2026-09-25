@@ -1,0 +1,1370 @@
+{
+  "shell": {
+    "waitingCount": 12,
+    "unreadCount": 7,
+    "missingConnections": [
+      "GitHub",
+      "Jira"
+    ],
+    "live": true,
+    "updatedAt": "2026-09-25T11:22:54.278Z"
+  },
+  "stats": {
+    "agents": {
+      "agents": 6,
+      "busy": 1,
+      "tokensUsed": 1513100
+    },
+    "github": {
+      "team": 6,
+      "mine": 4,
+      "watching": 8
+    },
+    "jira": {
+      "open": 5,
+      "done": 3
+    }
+  },
+  "waiting": {
+    "items": [
+      {
+        "deliveryKey": "agent-e0-0",
+        "key": "agent-e0-0",
+        "source": "agent",
+        "kind": "agent_blocked",
+        "label": "Agent",
+        "title": "Confirm posting the approval on #26979",
+        "actor": "projects-e0",
+        "detail": null,
+        "at": "2026-09-25T11:18:54.276Z",
+        "clears": "Clears when the agent is no longer blocked.",
+        "ref": {
+          "agentId": "e0"
+        },
+        "status": "open",
+        "resolution": null
+      },
+      {
+        "deliveryKey": "jira-j1",
+        "key": "jira-j1",
+        "source": "jira",
+        "kind": "mention",
+        "label": "Mention",
+        "title": "APP-41155 · Resumed CSV export downloads itself on page load",
+        "actor": "Ravi Iyer",
+        "detail": "Can you confirm this is fixed on staging?",
+        "at": "2026-09-25T11:16:54.276Z",
+        "clears": "Clears when you comment on the ticket.",
+        "ref": {
+          "ticketKey": "APP-41155",
+          "notificationId": "j1"
+        },
+        "status": "open",
+        "resolution": null
+      },
+      {
+        "deliveryKey": "github-g1",
+        "key": "github-g1",
+        "source": "github",
+        "kind": "review_requested",
+        "label": "Review request",
+        "title": "Show the event menu fallback when nothing renders",
+        "actor": "dnovak",
+        "detail": null,
+        "at": "2026-09-25T11:13:54.276Z",
+        "clears": "Clears when you submit a review.",
+        "ref": {
+          "prKey": "acme/web#26974",
+          "notificationId": "g1"
+        },
+        "status": "open",
+        "resolution": null
+      },
+      {
+        "deliveryKey": "agent-7a-0",
+        "key": "agent-7a-0",
+        "source": "agent",
+        "kind": "agent_blocked",
+        "label": "Agent",
+        "title": "Allow Bash(git push origin video-upload)",
+        "actor": "editor-7a",
+        "detail": null,
+        "at": "2026-09-25T11:11:54.276Z",
+        "clears": "Clears when the agent is no longer blocked.",
+        "ref": {
+          "agentId": "7a"
+        },
+        "status": "open",
+        "resolution": null
+      },
+      {
+        "deliveryKey": "github-g3",
+        "key": "github-g3",
+        "source": "github",
+        "kind": "mention",
+        "label": "Mention",
+        "title": "Stream tool results into the side panel",
+        "actor": "riyer",
+        "detail": "@johnsalva does this clash with your cursor fix?",
+        "at": "2026-09-25T10:30:54.276Z",
+        "clears": "Clears when you comment on or review the PR.",
+        "ref": {
+          "prKey": "acme/assistant#612",
+          "notificationId": "g3"
+        },
+        "status": "open",
+        "resolution": null
+      },
+      {
+        "deliveryKey": "github-g7",
+        "key": "github-g7",
+        "source": "github",
+        "kind": "review_requested",
+        "label": "Review request",
+        "title": "Fix timezone drift in scheduled reminders",
+        "actor": "kbauer",
+        "detail": null,
+        "at": "2026-09-25T08:22:54.276Z",
+        "clears": "Clears when you submit a review.",
+        "ref": {
+          "prKey": "acme/web#26993",
+          "notificationId": "g7"
+        },
+        "status": "open",
+        "resolution": null
+      },
+      {
+        "deliveryKey": "github-g8",
+        "key": "github-g8",
+        "source": "github",
+        "kind": "review_requested",
+        "label": "Review request",
+        "title": "Paginate the user activity export",
+        "actor": "mchen",
+        "detail": null,
+        "at": "2026-09-25T07:22:54.276Z",
+        "clears": "Clears when you submit a review.",
+        "ref": {
+          "prKey": "acme/web#26988",
+          "notificationId": "g8"
+        },
+        "status": "open",
+        "resolution": null
+      },
+      {
+        "deliveryKey": "jira-j7",
+        "key": "jira-j7",
+        "source": "jira",
+        "kind": "assigned",
+        "label": "Assigned",
+        "title": "APP-41301 · Retry failed video uploads",
+        "actor": "Dana Novak",
+        "detail": null,
+        "at": "2026-09-25T07:22:54.276Z",
+        "clears": "Clears when you move it out of To Do.",
+        "ref": {
+          "ticketKey": "APP-41301",
+          "notificationId": "j7"
+        },
+        "status": "open",
+        "resolution": null
+      },
+      {
+        "deliveryKey": "github-g12",
+        "key": "github-g12",
+        "source": "github",
+        "kind": "changes_requested",
+        "label": "Changes requested",
+        "title": "Remove the unused yamljs dependency",
+        "actor": "dnovak",
+        "detail": "The lockfile still pulls yamljs in through swagger-ui.",
+        "at": "2026-09-25T06:22:54.276Z",
+        "clears": "Clears when you push new commits or re-request review.",
+        "ref": {
+          "prKey": "acme/web#26982",
+          "notificationId": "g12"
+        },
+        "status": "open",
+        "resolution": null
+      },
+      {
+        "deliveryKey": "jira-j6",
+        "key": "jira-j6",
+        "source": "jira",
+        "kind": "mention",
+        "label": "Mention",
+        "title": "APP-41188 · Product cards overflow in RTL layouts",
+        "actor": "Ellie Park",
+        "detail": "Can you check if the fix also covers Hebrew?",
+        "at": "2026-09-25T03:22:54.276Z",
+        "clears": "Clears when you comment on the ticket.",
+        "ref": {
+          "ticketKey": "APP-41188",
+          "notificationId": "j6"
+        },
+        "status": "open",
+        "resolution": null
+      }
+    ],
+    "total": 12
+  },
+  "reviewQueue": {
+    "items": [
+      {
+        "key": "acme/web#26974",
+        "fullName": "acme/web",
+        "url": "https://github.com/acme/web/pull/26974",
+        "mine": false,
+        "repo": "web",
+        "number": 26974,
+        "jiraKey": "APP-41217",
+        "author": "dnovak",
+        "ci": "passing",
+        "reviewState": "review_required",
+        "requestedFromMe": true,
+        "opened": "2026-09-24T09:22:54.276Z",
+        "updated": "2026-09-25T11:13:54.276Z",
+        "additions": 84,
+        "deletions": 12,
+        "changedFiles": 4,
+        "commits": 3,
+        "title": "Show the event menu fallback when nothing renders",
+        "summary": "When an event has no menu items",
+        "the menu now shows a “No actions available” fallback instead of an empty popover.": null,
+        "reviews": [
+          {
+            "login": "mchen",
+            "state": "pending"
+          }
+        ],
+        "draft": false
+      },
+      {
+        "key": "acme/assistant#612",
+        "fullName": "acme/assistant",
+        "url": "https://github.com/acme/assistant/pull/612",
+        "mine": false,
+        "repo": "assistant",
+        "number": 612,
+        "jiraKey": "APP-41199",
+        "author": "riyer",
+        "ci": "running",
+        "reviewState": "review_required",
+        "requestedFromMe": true,
+        "opened": "2026-09-23T09:22:54.276Z",
+        "updated": "2026-09-25T10:30:54.276Z",
+        "additions": 522,
+        "deletions": 140,
+        "changedFiles": 14,
+        "commits": 9,
+        "title": "Stream tool results into the side panel",
+        "summary": "Tool results stream into the side panel as they arrive rather than all at the end. Touches the cursor code you changed last week.",
+        "reviews": [
+          {
+            "login": "epark",
+            "state": "commented"
+          }
+        ],
+        "draft": false
+      },
+      {
+        "key": "acme/web#26993",
+        "fullName": "acme/web",
+        "url": "https://github.com/acme/web/pull/26993",
+        "mine": false,
+        "repo": "web",
+        "number": 26993,
+        "jiraKey": "APP-41277",
+        "author": "kbauer",
+        "ci": "passing",
+        "reviewState": "review_required",
+        "opened": "2026-09-25T08:22:54.276Z",
+        "updated": "2026-09-25T08:22:54.276Z",
+        "additions": 58,
+        "deletions": 21,
+        "changedFiles": 3,
+        "commits": 1,
+        "title": "Fix timezone drift in scheduled reminders",
+        "summary": "Scheduled reminders now use the recipient’s timezone. Before this",
+        "they drifted by the server offset.": null,
+        "draft": false,
+        "requestedFromMe": false,
+        "reviews": []
+      },
+      {
+        "key": "acme/web#26988",
+        "fullName": "acme/web",
+        "url": "https://github.com/acme/web/pull/26988",
+        "mine": false,
+        "repo": "web",
+        "number": 26988,
+        "jiraKey": "APP-41260",
+        "author": "mchen",
+        "ci": "passing",
+        "reviewState": "review_required",
+        "opened": "2026-09-25T07:22:54.276Z",
+        "updated": "2026-09-25T07:22:54.276Z",
+        "additions": 310,
+        "deletions": 95,
+        "changedFiles": 8,
+        "commits": 2,
+        "title": "Paginate the user activity export",
+        "summary": "Splits the user activity export into pages of 5",
+        "000 rows so large tenants stop timing out.": null,
+        "draft": false,
+        "requestedFromMe": false,
+        "reviews": []
+      },
+      {
+        "key": "acme/editor#1409",
+        "fullName": "acme/editor",
+        "url": "https://github.com/acme/editor/pull/1409",
+        "mine": false,
+        "repo": "editor",
+        "number": 1409,
+        "jiraKey": "APP-41177",
+        "author": "epark",
+        "ci": "passing",
+        "reviewState": "review_required",
+        "opened": "2026-09-25T02:22:54.276Z",
+        "updated": "2026-09-25T02:22:54.276Z",
+        "additions": 133,
+        "deletions": 41,
+        "changedFiles": 4,
+        "commits": 1,
+        "title": "Keep table column widths on paste",
+        "summary": "Pasting a table keeps its column widths instead of resetting every column to equal width.",
+        "draft": false,
+        "requestedFromMe": false,
+        "reviews": []
+      },
+      {
+        "key": "acme/web#26961",
+        "fullName": "acme/web",
+        "url": "https://github.com/acme/web/pull/26961",
+        "mine": false,
+        "repo": "web",
+        "number": 26961,
+        "jiraKey": "APP-41190",
+        "author": "agomez",
+        "ci": "passing",
+        "reviewState": "approved",
+        "opened": "2026-09-23T11:22:54.276Z",
+        "updated": "2026-09-24T05:22:54.276Z",
+        "additions": 12,
+        "deletions": 0,
+        "changedFiles": 2,
+        "commits": 1,
+        "title": "Add an index on activity_records.completed_at",
+        "summary": "Adds a concurrent index on activity_records.completed_at to speed up the completions report.",
+        "reviews": [
+          {
+            "login": "johnsalva",
+            "state": "approved"
+          }
+        ],
+        "draft": false,
+        "requestedFromMe": false
+      },
+      {
+        "key": "acme/web#26952",
+        "fullName": "acme/web",
+        "url": "https://github.com/acme/web/pull/26952",
+        "mine": false,
+        "repo": "web",
+        "number": 26952,
+        "jiraKey": "APP-41155",
+        "author": "tsilva",
+        "ci": "passing",
+        "reviewState": "review_required",
+        "opened": "2026-09-22T11:22:54.276Z",
+        "updated": "2026-09-25T09:22:54.276Z",
+        "additions": 31,
+        "deletions": 9,
+        "changedFiles": 2,
+        "commits": 3,
+        "title": "Stop a resumed CSV export downloading itself on page load",
+        "summary": "A resumed CSV export no longer triggers a download when the page loads. The download only starts from the notification link.",
+        "reviews": [
+          {
+            "login": "johnsalva",
+            "state": "commented"
+          },
+          {
+            "login": "dnovak",
+            "state": "approved"
+          }
+        ],
+        "draft": false,
+        "requestedFromMe": false
+      },
+      {
+        "key": "acme/web#26941",
+        "fullName": "acme/web",
+        "url": "https://github.com/acme/web/pull/26941",
+        "mine": false,
+        "repo": "web",
+        "number": 26941,
+        "jiraKey": "APP-41120",
+        "author": "tsilva",
+        "ci": "failing",
+        "reviewState": "review_required",
+        "opened": "2026-09-21T11:22:54.276Z",
+        "updated": "2026-09-24T15:22:54.276Z",
+        "additions": 46,
+        "deletions": 8,
+        "changedFiles": 3,
+        "commits": 2,
+        "title": "Cache group membership lookups per request",
+        "summary": "Memoises group membership lookups for the length of a request. Cuts about 40 queries from the dashboard.",
+        "draft": false,
+        "requestedFromMe": false,
+        "reviews": []
+      }
+    ],
+    "total": 8
+  },
+  "agents": [
+    {
+      "id": "e0",
+      "name": "projects-e0",
+      "cwd": "~/Projects",
+      "kind": "yours",
+      "status": "blocked",
+      "model": "opus-5.5",
+      "started": "2026-09-24T15:22:54.276Z",
+      "active": "2026-09-25T11:18:54.276Z",
+      "tokensToday": 412300,
+      "tokensTotal": 1904000,
+      "contextPercent": 62,
+      "turns": 88,
+      "hourlyTokens": [
+        4,
+        9,
+        6,
+        14,
+        22,
+        8,
+        3,
+        0,
+        0,
+        2,
+        18,
+        31
+      ],
+      "lastPrompt": "review 26979 and draft the approval, dont post",
+      "lastReply": "Drafted the approval for #26979. Waiting for you to confirm before posting.",
+      "needs": "Confirm posting the approval on #26979",
+      "subagents": [
+        {
+          "type": "Explore",
+          "status": "done",
+          "result": "Found 3 call sites of the uvicorn worker config"
+        }
+      ],
+      "jobs": [
+        {
+          "state": "blocked",
+          "detail": "PR approval drafted; awaiting confirmation to post"
+        }
+      ],
+      "loops": []
+    },
+    {
+      "id": "f2",
+      "name": "web-f2",
+      "cwd": "~/Projects/web-APP-41029",
+      "kind": "yours",
+      "status": "busy",
+      "model": "sonnet-5",
+      "started": "2026-09-25T08:22:54.276Z",
+      "active": "2026-09-25T11:21:54.276Z",
+      "tokensToday": 688100,
+      "tokensTotal": 688100,
+      "contextPercent": 41,
+      "turns": 57,
+      "hourlyTokens": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        12,
+        26,
+        30,
+        24,
+        35
+      ],
+      "lastPrompt": "fix the flaky item_edit spec",
+      "lastReply": "Running item_edit_spec.rb, pass 3 of 5.",
+      "loops": [
+        {
+          "id": "w1",
+          "kind": "wakeup",
+          "description": "/monitor-pr 26984",
+          "every": 300,
+          "startedAt": "2026-09-25T08:22:54.276Z",
+          "lastEventAt": "2026-09-25T11:20:54.276Z",
+          "nextRunAt": "2026-09-25T11:25:54.276Z",
+          "events": 31
+        }
+      ],
+      "subagents": [
+        {
+          "type": "general-purpose",
+          "status": "running",
+          "result": "Tracing the autosave race in item_form.vue"
+        },
+        {
+          "type": "Explore",
+          "status": "done",
+          "result": "Autosave debounce is in item_form.vue:212"
+        }
+      ],
+      "jobs": []
+    },
+    {
+      "id": "7a",
+      "name": "editor-7a",
+      "cwd": "~/Projects/editor",
+      "kind": "yours",
+      "status": "blocked",
+      "model": "sonnet-5",
+      "started": "2026-09-25T08:22:54.276Z",
+      "active": "2026-09-25T11:11:54.276Z",
+      "tokensToday": 201400,
+      "tokensTotal": 201400,
+      "contextPercent": 28,
+      "turns": 23,
+      "hourlyTokens": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        8,
+        14,
+        9,
+        6,
+        2
+      ],
+      "lastPrompt": "push the video upload branch and open a draft PR",
+      "lastReply": "Committed 3 files. Waiting on permission to push.",
+      "needs": "Allow Bash(git push origin video-upload)",
+      "loops": [],
+      "subagents": [],
+      "jobs": []
+    },
+    {
+      "id": "12",
+      "name": "projects-12",
+      "cwd": "~/Projects",
+      "kind": "yours",
+      "status": "idle",
+      "model": "opus-5.5",
+      "started": "2026-09-24T17:22:54.276Z",
+      "active": "2026-09-25T10:35:54.276Z",
+      "tokensToday": 96700,
+      "tokensTotal": 1210000,
+      "contextPercent": 74,
+      "turns": 132,
+      "hourlyTokens": [
+        10,
+        20,
+        14,
+        6,
+        2,
+        0,
+        0,
+        0,
+        3,
+        4,
+        2,
+        1
+      ],
+      "lastPrompt": "/bugbot-loop 26974",
+      "lastReply": "Bugbot pass 4 is clean. Checking again in 10 minutes.",
+      "loops": [
+        {
+          "id": "m1",
+          "kind": "monitor",
+          "description": "CI checks on PR 26974",
+          "startedAt": "2026-09-25T11:02:54.276Z",
+          "expiresAt": "2026-09-25T11:32:54.276Z",
+          "events": 4,
+          "lastEventAt": "2026-09-25T11:15:54.276Z"
+        }
+      ],
+      "subagents": [],
+      "jobs": []
+    },
+    {
+      "id": "gh",
+      "name": "GitHub watcher",
+      "cwd": "echo",
+      "kind": "managed",
+      "status": "running",
+      "model": "none",
+      "started": "2026-09-24T09:22:54.276Z",
+      "active": "2026-09-25T11:21:54.276Z",
+      "tokensToday": 18200,
+      "tokensTotal": 142000,
+      "hourlyTokens": [
+        1,
+        1,
+        2,
+        1,
+        1,
+        0,
+        0,
+        1,
+        3,
+        2,
+        2,
+        4
+      ],
+      "lastPrompt": "Checks GitHub through gh every 60s. Calls Claude only for PR summaries.",
+      "lastReply": "3 new notifications in the last hour.",
+      "loops": [
+        {
+          "id": "c1",
+          "kind": "cron",
+          "description": "check GitHub notifications",
+          "cron": "* * * * *",
+          "startedAt": "2026-09-24T09:22:54.276Z",
+          "nextRunAt": "2026-09-25T11:23:34.276Z",
+          "events": 1542
+        }
+      ],
+      "subagents": [],
+      "jobs": []
+    },
+    {
+      "id": "jr",
+      "name": "Jira watcher",
+      "cwd": "echo",
+      "kind": "managed",
+      "status": "running",
+      "model": "haiku-4.5",
+      "started": "2026-09-24T09:22:54.276Z",
+      "active": "2026-09-25T11:20:54.276Z",
+      "tokensToday": 96400,
+      "tokensTotal": 588000,
+      "hourlyTokens": [
+        3,
+        3,
+        4,
+        3,
+        3,
+        3,
+        3,
+        4,
+        5,
+        4,
+        4,
+        5
+      ],
+      "lastPrompt": "Runs /jira-watch through the Atlassian MCP every 5 minutes.",
+      "lastReply": "2 new events, a mention on APP-41155 and a status move on APP-41029.",
+      "loops": [
+        {
+          "id": "c2",
+          "kind": "cron",
+          "description": "/jira-watch",
+          "cron": "*/5 * * * *",
+          "startedAt": "2026-09-24T09:22:54.276Z",
+          "nextRunAt": "2026-09-25T11:25:54.276Z",
+          "events": 309
+        }
+      ],
+      "subagents": [],
+      "jobs": []
+    }
+  ],
+  "pullRequests": [
+    {
+      "key": "acme/web#26984",
+      "fullName": "acme/web",
+      "url": "https://github.com/acme/web/pull/26984",
+      "mine": true,
+      "repo": "web",
+      "number": 26984,
+      "jiraKey": "APP-41029",
+      "author": "johnsalva",
+      "ci": "passing",
+      "reviewState": "review_required",
+      "approvals": 1,
+      "approvalsRequired": 2,
+      "opened": "2026-09-23T11:22:54.276Z",
+      "updated": "2026-09-25T11:09:54.276Z",
+      "additions": 64,
+      "deletions": 18,
+      "changedFiles": 5,
+      "commits": 4,
+      "title": "Label the default-language title and description on item edit",
+      "summary": "Adds visible labels to the default-language title and description fields on the item edit form",
+      "so screen readers and translators know which language they are editing.": null,
+      "reviews": [
+        {
+          "login": "mchen",
+          "state": "commented"
+        },
+        {
+          "login": "tsilva",
+          "state": "approved"
+        }
+      ],
+      "draft": false,
+      "requestedFromMe": false
+    },
+    {
+      "key": "acme/web#26979",
+      "fullName": "acme/web",
+      "url": "https://github.com/acme/web/pull/26979",
+      "mine": true,
+      "repo": "web",
+      "number": 26979,
+      "jiraKey": "APP-41207",
+      "author": "johnsalva",
+      "ci": "failing",
+      "reviewState": "approved",
+      "approvals": 1,
+      "approvalsRequired": 1,
+      "opened": "2026-09-24T11:22:54.276Z",
+      "updated": "2026-09-25T06:22:54.276Z",
+      "additions": 6,
+      "deletions": 2,
+      "changedFiles": 2,
+      "commits": 1,
+      "title": "Pin the internal MCP server to a single uvicorn worker",
+      "summary": "Runs the internal MCP server with one uvicorn worker so sessions stay on the process that created them. CI fails on an unrelated flaky spec.",
+      "reviews": [
+        {
+          "login": "riyer",
+          "state": "approved"
+        }
+      ],
+      "draft": false,
+      "requestedFromMe": false
+    },
+    {
+      "key": "acme/editor#1418",
+      "fullName": "acme/editor",
+      "url": "https://github.com/acme/editor/pull/1418",
+      "mine": true,
+      "repo": "editor",
+      "number": 1418,
+      "jiraKey": "APP-41246",
+      "author": "johnsalva",
+      "draft": true,
+      "ci": "running",
+      "reviewState": "draft",
+      "opened": "2026-09-25T08:22:54.276Z",
+      "updated": "2026-09-25T10:47:54.276Z",
+      "additions": 412,
+      "deletions": 37,
+      "changedFiles": 11,
+      "commits": 6,
+      "title": "Upload videos straight from the slash menu",
+      "summary": "Adds a Video item to the slash menu that uploads straight to storage and inserts a player block when the upload finishes.",
+      "requestedFromMe": false,
+      "reviews": []
+    },
+    {
+      "key": "acme/web#26982",
+      "fullName": "acme/web",
+      "url": "https://github.com/acme/web/pull/26982",
+      "mine": true,
+      "repo": "web",
+      "number": 26982,
+      "jiraKey": "APP-41238",
+      "author": "johnsalva",
+      "ci": "passing",
+      "reviewState": "changes_requested",
+      "opened": "2026-09-24T09:22:54.276Z",
+      "updated": "2026-09-25T05:22:54.276Z",
+      "additions": 2,
+      "deletions": 44,
+      "changedFiles": 3,
+      "commits": 1,
+      "title": "Remove the unused yamljs dependency",
+      "summary": "Removes yamljs from package.json and the one dead import that referenced it.",
+      "reviews": [
+        {
+          "login": "dnovak",
+          "state": "changes_requested"
+        }
+      ],
+      "draft": false,
+      "requestedFromMe": false
+    },
+    {
+      "key": "acme/web#26974",
+      "fullName": "acme/web",
+      "url": "https://github.com/acme/web/pull/26974",
+      "mine": false,
+      "repo": "web",
+      "number": 26974,
+      "jiraKey": "APP-41217",
+      "author": "dnovak",
+      "ci": "passing",
+      "reviewState": "review_required",
+      "requestedFromMe": true,
+      "opened": "2026-09-24T09:22:54.276Z",
+      "updated": "2026-09-25T11:13:54.276Z",
+      "additions": 84,
+      "deletions": 12,
+      "changedFiles": 4,
+      "commits": 3,
+      "title": "Show the event menu fallback when nothing renders",
+      "summary": "When an event has no menu items",
+      "the menu now shows a “No actions available” fallback instead of an empty popover.": null,
+      "reviews": [
+        {
+          "login": "mchen",
+          "state": "pending"
+        }
+      ],
+      "draft": false
+    },
+    {
+      "key": "acme/assistant#612",
+      "fullName": "acme/assistant",
+      "url": "https://github.com/acme/assistant/pull/612",
+      "mine": false,
+      "repo": "assistant",
+      "number": 612,
+      "jiraKey": "APP-41199",
+      "author": "riyer",
+      "ci": "running",
+      "reviewState": "review_required",
+      "requestedFromMe": true,
+      "opened": "2026-09-23T09:22:54.276Z",
+      "updated": "2026-09-25T10:30:54.276Z",
+      "additions": 522,
+      "deletions": 140,
+      "changedFiles": 14,
+      "commits": 9,
+      "title": "Stream tool results into the side panel",
+      "summary": "Tool results stream into the side panel as they arrive rather than all at the end. Touches the cursor code you changed last week.",
+      "reviews": [
+        {
+          "login": "epark",
+          "state": "commented"
+        }
+      ],
+      "draft": false
+    },
+    {
+      "key": "acme/web#26952",
+      "fullName": "acme/web",
+      "url": "https://github.com/acme/web/pull/26952",
+      "mine": false,
+      "repo": "web",
+      "number": 26952,
+      "jiraKey": "APP-41155",
+      "author": "tsilva",
+      "ci": "passing",
+      "reviewState": "review_required",
+      "opened": "2026-09-22T11:22:54.276Z",
+      "updated": "2026-09-25T09:22:54.276Z",
+      "additions": 31,
+      "deletions": 9,
+      "changedFiles": 2,
+      "commits": 3,
+      "title": "Stop a resumed CSV export downloading itself on page load",
+      "summary": "A resumed CSV export no longer triggers a download when the page loads. The download only starts from the notification link.",
+      "reviews": [
+        {
+          "login": "johnsalva",
+          "state": "commented"
+        },
+        {
+          "login": "dnovak",
+          "state": "approved"
+        }
+      ],
+      "draft": false,
+      "requestedFromMe": false
+    },
+    {
+      "key": "acme/web#26988",
+      "fullName": "acme/web",
+      "url": "https://github.com/acme/web/pull/26988",
+      "mine": false,
+      "repo": "web",
+      "number": 26988,
+      "jiraKey": "APP-41260",
+      "author": "mchen",
+      "ci": "passing",
+      "reviewState": "review_required",
+      "opened": "2026-09-25T07:22:54.276Z",
+      "updated": "2026-09-25T07:22:54.276Z",
+      "additions": 310,
+      "deletions": 95,
+      "changedFiles": 8,
+      "commits": 2,
+      "title": "Paginate the user activity export",
+      "summary": "Splits the user activity export into pages of 5",
+      "000 rows so large tenants stop timing out.": null,
+      "draft": false,
+      "requestedFromMe": false,
+      "reviews": []
+    },
+    {
+      "key": "acme/web#26941",
+      "fullName": "acme/web",
+      "url": "https://github.com/acme/web/pull/26941",
+      "mine": false,
+      "repo": "web",
+      "number": 26941,
+      "jiraKey": "APP-41120",
+      "author": "tsilva",
+      "ci": "failing",
+      "reviewState": "review_required",
+      "opened": "2026-09-21T11:22:54.276Z",
+      "updated": "2026-09-24T15:22:54.276Z",
+      "additions": 46,
+      "deletions": 8,
+      "changedFiles": 3,
+      "commits": 2,
+      "title": "Cache group membership lookups per request",
+      "summary": "Memoises group membership lookups for the length of a request. Cuts about 40 queries from the dashboard.",
+      "draft": false,
+      "requestedFromMe": false,
+      "reviews": []
+    },
+    {
+      "key": "acme/editor#1409",
+      "fullName": "acme/editor",
+      "url": "https://github.com/acme/editor/pull/1409",
+      "mine": false,
+      "repo": "editor",
+      "number": 1409,
+      "jiraKey": "APP-41177",
+      "author": "epark",
+      "ci": "passing",
+      "reviewState": "review_required",
+      "opened": "2026-09-25T02:22:54.276Z",
+      "updated": "2026-09-25T02:22:54.276Z",
+      "additions": 133,
+      "deletions": 41,
+      "changedFiles": 4,
+      "commits": 1,
+      "title": "Keep table column widths on paste",
+      "summary": "Pasting a table keeps its column widths instead of resetting every column to equal width.",
+      "draft": false,
+      "requestedFromMe": false,
+      "reviews": []
+    },
+    {
+      "key": "acme/web#26993",
+      "fullName": "acme/web",
+      "url": "https://github.com/acme/web/pull/26993",
+      "mine": false,
+      "repo": "web",
+      "number": 26993,
+      "jiraKey": "APP-41277",
+      "author": "kbauer",
+      "ci": "passing",
+      "reviewState": "review_required",
+      "opened": "2026-09-25T08:22:54.276Z",
+      "updated": "2026-09-25T08:22:54.276Z",
+      "additions": 58,
+      "deletions": 21,
+      "changedFiles": 3,
+      "commits": 1,
+      "title": "Fix timezone drift in scheduled reminders",
+      "summary": "Scheduled reminders now use the recipient’s timezone. Before this",
+      "they drifted by the server offset.": null,
+      "draft": false,
+      "requestedFromMe": false,
+      "reviews": []
+    },
+    {
+      "key": "acme/web#26961",
+      "fullName": "acme/web",
+      "url": "https://github.com/acme/web/pull/26961",
+      "mine": false,
+      "repo": "web",
+      "number": 26961,
+      "jiraKey": "APP-41190",
+      "author": "agomez",
+      "ci": "passing",
+      "reviewState": "approved",
+      "opened": "2026-09-23T11:22:54.276Z",
+      "updated": "2026-09-24T05:22:54.276Z",
+      "additions": 12,
+      "deletions": 0,
+      "changedFiles": 2,
+      "commits": 1,
+      "title": "Add an index on activity_records.completed_at",
+      "summary": "Adds a concurrent index on activity_records.completed_at to speed up the completions report.",
+      "reviews": [
+        {
+          "login": "johnsalva",
+          "state": "approved"
+        }
+      ],
+      "draft": false,
+      "requestedFromMe": false
+    }
+  ],
+  "githubNotifications": [
+    {
+      "prKey": "acme/web#26974",
+      "id": "g1",
+      "reason": "review_requested",
+      "repo": "web",
+      "number": 26974,
+      "actor": "dnovak",
+      "at": "2026-09-25T11:13:54.276Z",
+      "unread": true
+    },
+    {
+      "prKey": "acme/web#26984",
+      "id": "g2",
+      "reason": "comment",
+      "repo": "web",
+      "number": 26984,
+      "actor": "mchen",
+      "body": "Can we keep the label visually hidden on mobile?",
+      "at": "2026-09-25T11:09:54.276Z",
+      "unread": true
+    },
+    {
+      "prKey": "acme/assistant#612",
+      "id": "g3",
+      "reason": "mention",
+      "repo": "assistant",
+      "number": 612,
+      "actor": "riyer",
+      "body": "@johnsalva does this clash with your cursor fix?",
+      "at": "2026-09-25T10:30:54.276Z",
+      "unread": true
+    },
+    {
+      "prKey": "acme/web#26952",
+      "id": "g4",
+      "reason": "follow_up",
+      "repo": "web",
+      "number": 26952,
+      "actor": "tsilva",
+      "body": "Pushed 2 commits after your review",
+      "at": "2026-09-25T09:22:54.276Z",
+      "unread": false
+    },
+    {
+      "prKey": "acme/web#26993",
+      "id": "g7",
+      "reason": "review_requested",
+      "repo": "web",
+      "number": 26993,
+      "actor": "kbauer",
+      "at": "2026-09-25T08:22:54.276Z",
+      "unread": true
+    },
+    {
+      "prKey": "acme/web#26988",
+      "id": "g8",
+      "reason": "review_requested",
+      "repo": "web",
+      "number": 26988,
+      "actor": "mchen",
+      "at": "2026-09-25T07:22:54.276Z",
+      "unread": false
+    },
+    {
+      "prKey": "acme/web#26982",
+      "id": "g12",
+      "reason": "changes_requested",
+      "repo": "web",
+      "number": 26982,
+      "actor": "dnovak",
+      "body": "The lockfile still pulls yamljs in through swagger-ui.",
+      "at": "2026-09-25T06:22:54.276Z",
+      "unread": true
+    },
+    {
+      "prKey": "acme/web#26979",
+      "id": "g6",
+      "reason": "ci_activity",
+      "repo": "web",
+      "number": 26979,
+      "actor": "github-actions",
+      "body": "CI failed: spec/models/session_spec.rb",
+      "at": "2026-09-25T06:22:54.276Z",
+      "unread": false
+    },
+    {
+      "prKey": "acme/web#26982",
+      "id": "g5",
+      "reason": "comment",
+      "repo": "web",
+      "number": 26982,
+      "actor": "dnovak",
+      "body": "The lockfile still pulls yamljs in through swagger-ui.",
+      "at": "2026-09-25T05:22:54.276Z",
+      "unread": false
+    },
+    {
+      "prKey": "acme/editor#1409",
+      "id": "g9",
+      "reason": "review_requested",
+      "repo": "editor",
+      "number": 1409,
+      "actor": "epark",
+      "at": "2026-09-25T02:22:54.276Z",
+      "unread": false
+    },
+    {
+      "prKey": "acme/web#26941",
+      "id": "g10",
+      "reason": "mention",
+      "repo": "web",
+      "number": 26941,
+      "actor": "tsilva",
+      "body": "@johnsalva is per-request caching enough here or do we need Redis?",
+      "at": "2026-09-24T15:22:54.276Z",
+      "unread": false
+    },
+    {
+      "prKey": "acme/web#26961",
+      "id": "g11",
+      "reason": "review_requested",
+      "repo": "web",
+      "number": 26961,
+      "actor": "agomez",
+      "at": "2026-09-24T05:22:54.276Z",
+      "resolution": "You approved it on GitHub",
+      "unread": false
+    }
+  ],
+  "jiraTickets": [
+    {
+      "url": "https://acme.atlassian.net/browse/APP-41029",
+      "assignedToMe": true,
+      "key": "APP-41029",
+      "type": "Story",
+      "status": "Code Review",
+      "category": "code_review",
+      "priority": "Medium",
+      "assignee": "John Salva",
+      "reporter": "Maya Chen",
+      "sprint": "Squad Nova · Sprint 42",
+      "pr": "web#26984",
+      "updated": "2026-09-25T11:02:54.276Z",
+      "title": "Label the default-language title and description on item edit",
+      "description": "Screen reader users can’t tell which language the title and description fields are in. Add a visible label with the default language name."
+    },
+    {
+      "url": "https://acme.atlassian.net/browse/APP-41246",
+      "assignedToMe": true,
+      "key": "APP-41246",
+      "type": "Story",
+      "status": "In Progress",
+      "category": "in_progress",
+      "priority": "High",
+      "assignee": "John Salva",
+      "reporter": "Ellie Park",
+      "sprint": "Squad Nova · Sprint 42",
+      "pr": "editor#1418",
+      "updated": "2026-09-25T10:47:54.276Z",
+      "title": "Upload videos straight from the slash menu",
+      "description": "Let authors upload a video from the slash menu and insert a player block when it finishes."
+    },
+    {
+      "url": "https://acme.atlassian.net/browse/APP-41155",
+      "assignedToMe": true,
+      "key": "APP-41155",
+      "type": "Bug",
+      "status": "Ready to Release",
+      "category": "post_development",
+      "priority": "High",
+      "assignee": "John Salva",
+      "reporter": "Ravi Iyer",
+      "sprint": "Squad Nova · Sprint 42",
+      "pr": "web#26952",
+      "updated": "2026-09-25T09:22:54.276Z",
+      "title": "Resumed CSV export downloads itself on page load",
+      "description": "Opening the reports page after a CSV export was resumed starts the download again. It should only download from the notification link."
+    },
+    {
+      "url": "https://acme.atlassian.net/browse/APP-41301",
+      "assignedToMe": true,
+      "key": "APP-41301",
+      "type": "Task",
+      "status": "To Do",
+      "category": "todo",
+      "priority": "Low",
+      "assignee": "John Salva",
+      "reporter": "Dana Novak",
+      "sprint": "Backlog",
+      "updated": "2026-09-25T07:22:54.276Z",
+      "title": "Retry failed video uploads",
+      "description": "Retry video uploads that fail with a 5xx from storage",
+      "up to three times with backoff.": null
+    },
+    {
+      "url": "https://acme.atlassian.net/browse/APP-41207",
+      "assignedToMe": true,
+      "key": "APP-41207",
+      "type": "Bug",
+      "status": "Code Review",
+      "category": "code_review",
+      "priority": "Highest",
+      "assignee": "John Salva",
+      "reporter": "Tomás Silva",
+      "sprint": "Squad Nova · Sprint 42",
+      "pr": "web#26979",
+      "updated": "2026-09-25T06:22:54.276Z",
+      "title": "Internal MCP server drops sessions under load",
+      "description": "The internal MCP server loses sessions when a request lands on a different uvicorn worker than the one that created the session."
+    },
+    {
+      "url": "https://acme.atlassian.net/browse/APP-41188",
+      "assignedToMe": false,
+      "key": "APP-41188",
+      "type": "Bug",
+      "status": "In Progress",
+      "category": "in_progress",
+      "priority": "Medium",
+      "assignee": "Ellie Park",
+      "reporter": "Ellie Park",
+      "sprint": "Squad Nova · Sprint 42",
+      "updated": "2026-09-25T08:22:54.276Z",
+      "title": "Product cards overflow in RTL layouts",
+      "description": "Product card titles overflow their container on right-to-left tenants."
+    },
+    {
+      "url": "https://acme.atlassian.net/browse/APP-41102",
+      "assignedToMe": true,
+      "key": "APP-41102",
+      "type": "Bug",
+      "status": "Done",
+      "category": "done",
+      "priority": "Medium",
+      "assignee": "John Salva",
+      "reporter": "Maya Chen",
+      "sprint": "Squad Nova · Sprint 42",
+      "updated": "2026-09-23T11:22:54.276Z",
+      "title": "Duplicate toast when saving a draft playlist",
+      "description": "Saving a draft playlist showed the success toast twice."
+    },
+    {
+      "url": "https://acme.atlassian.net/browse/APP-41088",
+      "assignedToMe": true,
+      "key": "APP-41088",
+      "type": "Story",
+      "status": "Done",
+      "category": "done",
+      "priority": "High",
+      "assignee": "John Salva",
+      "reporter": "Ellie Park",
+      "sprint": "Squad Nova · Sprint 42",
+      "updated": "2026-09-22T11:22:54.276Z",
+      "title": "Show upload progress for large video files",
+      "description": "Show a progress bar while a video file over 50 MB uploads."
+    },
+    {
+      "url": "https://acme.atlassian.net/browse/APP-41061",
+      "assignedToMe": true,
+      "key": "APP-41061",
+      "type": "Task",
+      "status": "Done",
+      "category": "done",
+      "priority": "Low",
+      "assignee": "John Salva",
+      "reporter": "Dana Novak",
+      "sprint": "Squad Nova · Sprint 42",
+      "updated": "2026-09-21T11:22:54.276Z",
+      "title": "Remove the legacy reports feature flag",
+      "description": "The legacy reports flag has been on for every tenant for three months."
+    }
+  ],
+  "jiraNotifications": [
+    {
+      "id": "j1",
+      "kind": "mention",
+      "key": "APP-41155",
+      "actor": "Ravi Iyer",
+      "body": "Can you confirm this is fixed on staging?",
+      "at": "2026-09-25T11:16:54.276Z",
+      "unread": true
+    },
+    {
+      "id": "j2",
+      "kind": "transition",
+      "key": "APP-41029",
+      "actor": "Maya Chen",
+      "body": "In Progress → In Review",
+      "at": "2026-09-25T11:02:54.276Z",
+      "unread": true
+    },
+    {
+      "id": "j3",
+      "kind": "comment",
+      "key": "APP-41188",
+      "actor": "Ellie Park",
+      "body": "Attached a screenshot from the Arabic tenant.",
+      "at": "2026-09-25T08:22:54.276Z",
+      "unread": false
+    },
+    {
+      "id": "j7",
+      "kind": "assigned",
+      "key": "APP-41301",
+      "actor": "Dana Novak",
+      "at": "2026-09-25T07:22:54.276Z",
+      "unread": false
+    },
+    {
+      "id": "j4",
+      "kind": "transition",
+      "key": "APP-41207",
+      "actor": "Tomás Silva",
+      "body": "To Do → In Review",
+      "at": "2026-09-25T06:22:54.276Z",
+      "unread": false
+    },
+    {
+      "id": "j6",
+      "kind": "mention",
+      "key": "APP-41188",
+      "actor": "Ellie Park",
+      "body": "Can you check if the fix also covers Hebrew?",
+      "at": "2026-09-25T03:22:54.276Z",
+      "unread": false
+    }
+  ],
+  "connections": [
+    {
+      "key": "github",
+      "name": "GitHub",
+      "connected": false,
+      "setup": true,
+      "logout": false,
+      "detail": "Reads your PRs, review requests and notifications through the GitHub CLI (gh)."
+    },
+    {
+      "key": "jira",
+      "name": "Jira",
+      "connected": false,
+      "setup": true,
+      "detail": "Reads your tickets and mentions through the Atlassian CLI (acli)."
+    },
+    {
+      "key": "claude_hooks",
+      "name": "Claude Code hooks",
+      "connected": true,
+      "optional": true,
+      "setup": true,
+      "instant": true,
+      "detail": "Sending session events to http://localhost:4848"
+    }
+  ]
+}

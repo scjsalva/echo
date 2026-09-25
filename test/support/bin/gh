@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Stand-in for the GitHub CLI in tests. Logged out unless FAKE_GH_LOGGED_IN is set.
+if [ -z "$FAKE_GH_LOGGED_IN" ]; then
+  echo "You are not logged into any GitHub hosts. To log in, run: gh auth login" >&2
+  exit 1
+fi
+case "$1 $2" in
+  "auth status") printf 'github.com\n  ✓ Logged in to github.com account octo (keyring)\n' ;;
+  *) echo "{}" ;;
+esac

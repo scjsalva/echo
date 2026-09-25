@@ -1,0 +1,2 @@
+class GithubNotification < ApplicationRecord
+end

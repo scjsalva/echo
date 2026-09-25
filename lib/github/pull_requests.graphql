@@ -1,0 +1,17 @@
+# Everything the dashboard shows about pull requests, in one round trip.
+query($mine: String!, $requested: String!, $queue: String!, $withQueue: Boolean!) {
+  viewer { login }
+  mine: search(query: $mine, type: ISSUE, first: 100) { nodes { ...pr } }
+  requested: search(query: $requested, type: ISSUE, first: 100) { nodes { ...pr } }
+  queue: search(query: $queue, type: ISSUE, first: 100) @include(if: $withQueue) { nodes { ...pr } }
+}
+fragment pr on PullRequest {
+  number title url isDraft createdAt updatedAt additions deletions changedFiles
+  body
+  author { login }
+  repository { nameWithOwner }
+  commits(last: 1) { totalCount nodes { commit { committedDate statusCheckRollup { state } } } }
+  reviewDecision
+  reviewRequests(first: 10) { nodes { requestedReviewer { ... on User { login } ... on Team { slug } } } }
+  latestReviews(first: 10) { nodes { author { login } state submittedAt body } }
+}

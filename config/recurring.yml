@@ -1,0 +1,20 @@
+# Background work, run inside the Echo server by Solid Queue.
+shared: &shared
+  jira_sync:
+    class: JiraSyncJob
+    schedule: every minute
+  github_sync:
+    class: GithubSyncJob
+    schedule: every minute
+  notify:
+    class: NotifyJob
+    schedule: every 30 seconds
+
+development:
+  <<: *shared
+
+production:
+  <<: *shared
+  clear_solid_queue_finished_jobs:
+    command: "SolidQueue::Job.clear_finished_in_batches(sleep_between_batches: 0.3)"
+    schedule: every hour at minute 12

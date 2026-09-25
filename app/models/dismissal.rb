@@ -1,0 +1,2 @@
+class Dismissal < ApplicationRecord
+end

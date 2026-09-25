@@ -1,0 +1,148 @@
+@import "tailwindcss";
+@import "@fontsource/ibm-plex-sans/400.css";
+@import "@fontsource/ibm-plex-sans/500.css";
+@import "@fontsource/ibm-plex-sans/600.css";
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
+
+@theme {
+  --font-sans: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --color-canvas: #f3f4f7;
+  --color-surface: #ffffff;
+  --color-subtle: #eceef3;
+  --color-line: #dce0e7;
+  --color-line-soft: #e8ebf0;
+  --color-ink: #151922;
+  --color-muted: #596272;
+  --color-faint: #8a92a0;
+  --color-accent: #4f52c9;
+  --color-accent-soft: #e7e8fa;
+  --color-on-accent: #ffffff;
+  --color-ok: #1e8a4c;
+  --color-ok-soft: #e1f3e8;
+  --color-warn: #a86511;
+  --color-warn-soft: #fbefd9;
+  --color-bad: #c63d3d;
+  --color-bad-soft: #fbe3e3;
+  --color-jira: #1f6fe5;
+  --color-idle: #9aa1ad;
+  --color-ai-from: #4f52c9;
+  --color-ai-to: #b24fd1;
+}
+
+/* The theme script in the layout always resolves "system" to light or dark. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-canvas: #0e1015;
+  --color-surface: #161920;
+  --color-subtle: #1d212a;
+  --color-line: #2a2f3a;
+  --color-line-soft: #222631;
+  --color-ink: #e5e8ee;
+  --color-muted: #a0a8b6;
+  --color-faint: #6f7786;
+  --color-accent: #9497f5;
+  --color-accent-soft: #262852;
+  --color-on-accent: #101125;
+  --color-ok: #4cc17e;
+  --color-ok-soft: #17301f;
+  --color-warn: #e6a547;
+  --color-warn-soft: #352711;
+  --color-bad: #ef7272;
+  --color-bad-soft: #3a1b1b;
+  --color-jira: #5c9dff;
+  --color-idle: #5f6674;
+  --color-ai-from: #9497f5;
+  --color-ai-to: #d58af7;
+}
+
+@layer base {
+  body {
+    @apply bg-canvas font-sans text-sm text-ink antialiased;
+  }
+
+  button {
+    @apply cursor-pointer;
+  }
+
+  :focus-visible {
+    @apply rounded outline-2 outline-offset-2 outline-accent;
+  }
+}
+
+/* Rendered Markdown, e.g. PR descriptions. */
+@layer components {
+  .markdown {
+    @apply grid gap-2.5 text-[13.5px] leading-relaxed;
+  }
+  .markdown :is(h1, h2, h3, h4) {
+    @apply mt-2 text-[13.5px] font-semibold;
+  }
+  .markdown :is(ul, ol) {
+    @apply grid gap-1 pl-5;
+  }
+  .markdown ul {
+    @apply list-disc;
+  }
+  .markdown ol {
+    @apply list-decimal;
+  }
+  .markdown li:has(> input[type="checkbox"]) {
+    @apply -ml-5 list-none;
+  }
+  .markdown a {
+    @apply text-accent hover:opacity-80;
+  }
+  .markdown {
+    @apply min-w-0;
+  }
+  /* Long identifiers and paths wrap rather than widening the page. */
+  .markdown code {
+    @apply rounded bg-subtle px-1 py-px font-mono text-[12px] [overflow-wrap:anywhere];
+  }
+  .markdown pre {
+    @apply max-w-full overflow-x-auto rounded-md bg-subtle p-3 font-mono text-[12px];
+  }
+  .markdown pre code {
+    @apply bg-transparent p-0 [overflow-wrap:normal];
+  }
+  .markdown blockquote {
+    @apply border-l-2 border-line pl-3 text-muted;
+  }
+  .markdown table {
+    @apply block max-w-full overflow-x-auto text-[12.5px];
+  }
+  .markdown img {
+    @apply max-w-full;
+  }
+  .markdown :is(th, td) {
+    @apply border border-line px-2 py-1;
+  }
+}
+
+/* Marks what Claude does or wrote. Unlayered so it wins over a component's own
+   border and background utilities. */
+.ai-border {
+  border-color: transparent;
+  background:
+    linear-gradient(var(--color-surface), var(--color-surface)) padding-box,
+    linear-gradient(120deg, var(--color-ai-from), var(--color-ai-to)) border-box;
+}
+.ai-border:hover:not(:disabled) {
+  background:
+    linear-gradient(var(--color-subtle), var(--color-subtle)) padding-box,
+    linear-gradient(120deg, var(--color-ai-from), var(--color-ai-to)) border-box;
+}
+.ai-soft {
+  background: linear-gradient(120deg, color-mix(in oklab, var(--color-ai-from) 14%, transparent), color-mix(in oklab, var(--color-ai-to) 14%, transparent));
+}
+.ai-text {
+  background: linear-gradient(120deg, var(--color-ai-from), var(--color-ai-to));
+  background-clip: text;
+  color: transparent;
+}
+.ai-icon {
+  color: var(--color-ai-to);
+}
