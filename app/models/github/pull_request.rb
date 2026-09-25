@@ -19,6 +19,8 @@ module Github::PullRequest
       review_state: node["isDraft"] ? "draft" : REVIEW.fetch(node["reviewDecision"], "review_required"),
       approvals: reviews.count { it[:state] == "approved" }, approvals_required: nil,
       requested_from_me: requested, opened: node["createdAt"], updated: node["updatedAt"],
+      # When it became reviewable: marked ready, or opened that way.
+      ready_at: node.dig("readyEvents", "nodes", 0, "createdAt") || node["createdAt"],
       additions: node["additions"], deletions: node["deletions"], changed_files: node["changedFiles"],
       commits: node.dig("commits", "totalCount"), last_commit_at: last_commit["committedDate"], reviews:,
       requested_reviewers: Array(node.dig("reviewRequests", "nodes")).filter_map { it.dig("requestedReviewer", "login") || it.dig("requestedReviewer", "slug") }

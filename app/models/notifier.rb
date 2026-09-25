@@ -12,6 +12,7 @@ module Notifier
     { id: "github.mention", group: "GitHub", label: "You or your team are mentioned", waiting: true },
     { id: "github.changes_requested", group: "GitHub", label: "Changes requested on your PR", waiting: true },
     { id: "github.follow_up", group: "GitHub", label: "New commits after your review" },
+    { id: "github.ready_for_review", group: "GitHub", label: "A teammate's PR is ready for review" },
     { id: "github.approved", group: "GitHub", label: "Someone approves a PR" },
     { id: "github.reviewed", group: "GitHub", label: "Someone reviews a PR, or a review is dismissed" },
     { id: "github.comment", group: "GitHub", label: "Comments" },
@@ -27,11 +28,15 @@ module Notifier
   GITHUB_TYPES = { "team_mention" => "mention", "review_dismissed" => "reviewed", "ci_activity" => "ci",
     "author" => "other", "assign" => "other", "state_change" => "other", "subscribed" => "other", "manual" => "other" }.freeze
   BURST = 3
+  # How often the review reminder says how many PRs are waiting for review, in minutes; 0 is off.
+  REMINDER_OPTIONS = [ 0, 15, 30, 60, 120, 240 ].freeze
+  REMINDER_DEFAULT = 30
   SEEDED = "notifier_seeded".freeze
 
   def self.preferences
     {
       desktop: setting("notify_desktop") == "on", scope:, types: TYPES, enabled_types:,
+      reminder_minutes:, reminder_options: REMINDER_OPTIONS,
       sound: Setting["notify_sound"] || DesktopNotification.default_sound,
       sounds: DesktopNotification.sounds, available: DesktopNotification.available?, settings_hint: DesktopNotification.settings_hint
     }
@@ -40,10 +45,13 @@ module Notifier
   # "everything" is what Custom was called before it could be narrowed down.
   def self.scope = setting("notify_scope") == "everything" ? "custom" : setting("notify_scope")
 
-  # What Custom sends: everything until you untick something.
-  def self.enabled_types = Setting["notify_types"] ? JSON.parse(Setting["notify_types"]) : TYPES.pluck(:id)
+  # What Custom sends: everything but what you untick, so kinds added later start on.
+  def self.enabled_types = TYPES.pluck(:id) - JSON.parse(Setting["notify_types_off"] || "[]")
 
-  def self.update(desktop: nil, scope: nil, sound: nil, types: nil)
+  def self.reminder_minutes = (Setting["review_reminder_minutes"] || REMINDER_DEFAULT).to_i
+
+  def self.update(desktop: nil, scope: nil, sound: nil, types: nil, reminder_minutes: nil)
+    raise ArgumentError, "Unknown reminder interval" if reminder_minutes && !REMINDER_OPTIONS.include?(reminder_minutes.to_i)
     raise ArgumentError, "Unknown scope" if scope && !SCOPES.include?(scope)
     raise ArgumentError, "Unknown notification type" if types && (types - TYPES.pluck(:id)).any?
     raise ArgumentError, "Unknown sound" if sound && sound != "none" && !DesktopNotification.sounds.include?(sound)
@@ -51,7 +59,8 @@ module Notifier
     Setting["notify_desktop"] = desktop ? "on" : "off" unless desktop.nil?
     Setting["notify_scope"] = scope if scope
     Setting["notify_sound"] = sound if sound
-    Setting["notify_types"] = types.uniq.to_json if types
+    Setting["notify_types_off"] = (TYPES.pluck(:id) - types).to_json if types
+    Setting["review_reminder_minutes"] = reminder_minutes.to_i.to_s if reminder_minutes
   end
 
   def self.type_of(source, kind)
@@ -103,6 +112,7 @@ module Notifier
         notification: { title: "Waiting on you", subtitle: item[:label], message: [ item[:title], item[:actor] ].compact.join(" · "),
           url: link(item[:ref]) } }
     end
+    waiting += review_reminder(dashboard)
     return waiting unless custom
 
     waiting_keys = dashboard.waiting_items.map { it[:delivery_key] }.to_set
@@ -125,6 +135,20 @@ module Notifier
     end
   end
 
+  # One reminder per interval, e.g. every 30 minutes, while PRs are waiting for review.
+  # Its key names the interval it's for, so each one is sent once.
+  def self.review_reminder(dashboard)
+    minutes = reminder_minutes
+    return [] if minutes.zero?
+
+    count = dashboard.unapproved_reviews.size
+    return [] if count.zero?
+
+    [ { key: "github-review-reminder-#{minutes}-#{Time.current.to_i / (minutes * 60)}",
+      notification: { title: "Review queue", subtitle: "GitHub",
+        message: "#{count} PR#{'s' unless count == 1} waiting for review", url: "#{DesktopNotification.base_url}/github" } } ]
+  end
+
   # Clicking a notification opens the item itself: the agent, the ticket or the PR.
   def self.link(ref)
     base = DesktopNotification.base_url
@@ -137,5 +161,5 @@ module Notifier
 
   def self.setting(key) = Setting[key] || DEFAULTS.fetch(key)
 
-  private_class_method :candidates, :link, :setting
+  private_class_method :candidates, :review_reminder, :link, :setting
 end

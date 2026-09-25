@@ -17,6 +17,8 @@ const desktop = ref(props.settings.desktop)
 const scope = ref(props.settings.scope)
 const enabled = ref(new Set(props.settings.enabledTypes))
 const sound = ref(props.settings.sound)
+const reminder = ref(props.settings.reminderMinutes)
+const every = (minutes: number) => (minutes === 0 ? 'Off' : minutes < 60 ? `Every ${minutes} minutes` : minutes === 60 ? 'Every hour' : `Every ${minutes / 60} hours`)
 
 const scopes = [
   { value: 'waiting', label: 'Waiting on you' },
@@ -75,6 +77,19 @@ async function sendTest() {
       </label>
     </fieldset>
   </div>
+
+  <SettingRow>
+    <template #title>Review reminder</template>
+    <template #description>Says how many PRs in your review queue are waiting for review, leaving out approved ones. Only sent while there are some.</template>
+    <select
+      v-model.number="reminder"
+      aria-label="Review reminder"
+      class="rounded-md border border-line bg-surface px-2.5 py-1.5 text-[13px]"
+      @change="save({ review_reminder_minutes: reminder })"
+    >
+      <option v-for="minutes in settings.reminderOptions" :key="minutes" :value="minutes">{{ every(minutes) }}</option>
+    </select>
+  </SettingRow>
 
   <SettingRow>
     <template #title>

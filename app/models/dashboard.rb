@@ -137,6 +137,9 @@ class Dashboard
     @jira_notifications ||= @data[:jira_notifications].map { it.merge(unread: it[:unread] || false) }
   end
 
+  # The review queue minus what's already approved, for the review reminder.
+  def unapproved_reviews = review_queue.reject { it[:review_state] == "approved" }
+
   def waiting_items
     @waiting_items ||= WaitingItems.new(
       agents:, pull_requests:, github_notifications:, jira_tickets:, jira_notifications:, dismissed_keys: @dismissed_keys

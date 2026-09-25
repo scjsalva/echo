@@ -9,7 +9,10 @@ class ReviewComment < ApplicationRecord
   validates :state, inclusion: { in: STATES }
   validates :side, inclusion: { in: SIDES }
   validates :author, inclusion: { in: %w[ai you] }
-  validates :path, :body, presence: true
+  validates :path, presence: true
+  # Yours can start empty when you ask Claude about a line first; only a comment
+  # with something in it can be committed and sent.
+  validates :body, presence: true, if: -> { author == "ai" || state.in?(%w[committed sent]) }
   validates :line, numericality: { only_integer: true, greater_than: 0 }
 
   def to_props = slice(:id, :path, :line, :side, :start_line, :body, :state, :author, :severity, :evidence, :notes, :asking)

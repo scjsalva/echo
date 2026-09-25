@@ -13,6 +13,7 @@ module Github::NotificationText
     when "merged" then actor ? "#{actor} merged it" : "It was merged"
     when "closed" then "It was closed"
     when "follow_up" then "#{who} pushed new commits after your review"
+    when "ready_for_review" then "#{who}'s PR is ready for review"
     else
       return actor ? %(#{actor}: "#{body}") : %("#{body}") if body.present?
 

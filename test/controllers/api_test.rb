@@ -228,4 +228,20 @@ class ApiTest < ActionDispatch::IntegrationTest
     patch "/api/skill", params: { skill_action: "summary", repo: "acme/app", skill: "echo:echo-summary" }, as: :json
     assert_response :unprocessable_content
   end
+
+  test "your comment can start empty to ask Claude about a line, but can't be committed empty" do
+    review = Review.for("acme/app#11")
+
+    post "/api/reviews/#{review.id}/comments", params: { path: "a.rb", line: 3, side: "RIGHT", body: "" }, as: :json
+    assert_response :created
+    comment = review.comments.sole
+
+    patch "/api/review_comments/#{comment.id}", params: { state: "committed" }, as: :json
+    assert_response :unprocessable_content
+    assert_equal "staged", comment.reload.state
+
+    patch "/api/review_comments/#{comment.id}", params: { state: "removed" }, as: :json
+    assert_response :success
+    assert_equal "removed", comment.reload.state
+  end
 end

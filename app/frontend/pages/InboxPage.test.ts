@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import InboxPage from './InboxPage.vue'
 import fixture from '@/test/overview.fixture.json'
 import type { OverviewProps } from '@/types/dashboard'
@@ -18,10 +18,15 @@ const clickChip = async (page: ReturnType<typeof mount>, label: string) =>
   page.findAll('[role="radio"]').find((b) => b.text().startsWith(label))!.trigger('click')
 
 describe('InboxPage', () => {
-  it('opens on what is waiting on you', () => {
+  it('opens on All, and on Waiting on you when linked there', async () => {
     const page = mount(InboxPage, { props })
+    expect(page.find('[role="radio"][aria-checked="true"]').text()).toContain('All')
+    page.unmount()
 
-    expect(page.text()).toContain(base.waiting.items[0].title)
+    history.replaceState(null, '', '/inbox?tab=waiting')
+    const waiting = mount(InboxPage, { props })
+    await flushPromises()
+    expect(waiting.text()).toContain(base.waiting.items[0].title)
   })
 
   it('marks a notification read when it is opened', async () => {

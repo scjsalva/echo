@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { PhArrowSquareOut, PhChecks } from '@phosphor-icons/vue'
+import { PhArrowSquareOut, PhGitDiff } from '@phosphor-icons/vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BasePill from '@/components/ui/BasePill.vue'
 import DetailSection from '@/components/ui/DetailSection.vue'
@@ -44,7 +44,7 @@ const reviewTone = (state: string) => (state === 'approved' ? 'ok' : state === '
     <template #actions>
       <BaseButton variant="primary" :href="pr.url">Open on GitHub <PhArrowSquareOut :size="14" /></BaseButton>
       <BaseButton :href="`/reviews/${pr.fullName ?? pr.key.split('#')[0]}/${pr.number}`" tooltip="Opens the diff to review it here, yourself or with Claude">
-        <PhChecks :size="14" /> Review
+        <PhGitDiff :size="14" /> Review
       </BaseButton>
       <BaseButton v-if="ticket" @click="open({ type: 'ticket', key: ticket.key })">{{ ticket.key }}</BaseButton>
     </template>

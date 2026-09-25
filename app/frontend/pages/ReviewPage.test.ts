@@ -117,6 +117,20 @@ describe('ReviewPage', () => {
     page.unmount()
   })
 
+  it('asks Claude about a line straight from a new comment', async () => {
+    const page = mount(ReviewPage, { props: props(draft({ comments: [] })), attachTo: document.body })
+
+    await page.find('button[aria-label="Comment on line 1"]').trigger('click')
+    await button(page, 'Ask AI').trigger('click')
+    await page.find('input[aria-label="Question for Claude about this line"]').setValue('Can this be nil?')
+    await page.findAll('button').find((b) => b.text() === 'Ask')!.trigger('click')
+    await flushPromises()
+
+    expect(fetchMock).toHaveBeenCalledWith('/api/reviews/5/comments', expect.objectContaining({ body: JSON.stringify({ path: 'app/menu.rb', side: 'RIGHT', line: 1, body: '' }) }))
+    expect(fetchMock).toHaveBeenCalledWith('/api/review_comments/2/question', expect.objectContaining({ body: JSON.stringify({ question: 'Can this be nil?' }) }))
+    page.unmount()
+  })
+
   it('sends the review with the chosen decision only when asked', async () => {
     const page = mount(ReviewPage, { props: props(draft({ comments: [comment({ state: 'committed' })] })), attachTo: document.body })
 

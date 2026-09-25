@@ -106,7 +106,7 @@ module AiReviewer
     nearby = file[:hunks].flat_map { it[:lines] }.select { (it[number].to_i - comment.line).abs <= 12 }
       .map { "#{it[number] || ' '} #{{ 'add' => '+', 'del' => '-', 'context' => ' ' }[it[:kind]]} #{it[:text]}" }
     history = comment.notes.map { "#{it['role']}: #{it['text']}" }.join("\n")
-    input = "File #{comment.path}, line #{comment.line}:\n#{nearby.join("\n")}\n\nDraft review comment:\n#{comment.body}\n\n" \
+    input = "File #{comment.path}, line #{comment.line}:\n#{nearby.join("\n")}\n\nDraft review comment:\n#{comment.body.presence || "(none yet: the reviewer is asking about the line first)"}\n\n" \
             "#{history.presence && "Earlier discussion:\n#{history}\n\n"}Question: #{question}"
 
     checkout = Github::Checkout.for_pull_request(comment.review.repo, comment.review.number)

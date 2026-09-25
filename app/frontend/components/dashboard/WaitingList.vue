@@ -19,7 +19,7 @@ const now = useNow(30_000)
       <span class="size-2 rounded-full bg-warn ring-3 ring-warn/20" aria-hidden="true" />
       <h2 id="waiting-heading" class="text-base font-semibold tracking-tight">Waiting on you</h2>
       <span class="font-mono text-xs opacity-80">{{ total }}</span>
-      <a href="/inbox" class="ml-auto text-[12.5px] font-medium hover:opacity-80">See all →</a>
+      <a href="/inbox?tab=waiting" class="ml-auto text-[12.5px] font-medium hover:opacity-80">See all →</a>
     </header>
 
     <p v-if="!items.length" class="px-4 py-5 text-[13px] text-faint">Nothing is waiting on you.</p>

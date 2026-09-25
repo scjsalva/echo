@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
+import MarkdownEditor from '@/components/ui/MarkdownEditor.vue'
 
 const props = defineProps<{ committed: number; staged: number; ownPr: boolean; initialBody?: string }>()
 const emit = defineEmits<{ send: [event: 'comment' | 'approve' | 'request_changes', body: string]; cancel: [] }>()
@@ -17,7 +18,7 @@ const body = ref(props.initialBody ?? '')
 const sending = ref(false)
 
 const root = ref<HTMLElement>()
-const box = ref<HTMLTextAreaElement>()
+const box = ref<InstanceType<typeof MarkdownEditor>>()
 const onKey = (e: KeyboardEvent) => e.key === 'Escape' && emit('cancel')
 // Clicks on the button that opened it are left to that button, so it can toggle.
 const onPointer = (e: PointerEvent) => !root.value?.parentElement?.contains(e.target as Node) && emit('cancel')
@@ -54,7 +55,7 @@ defineExpose({ done: () => (sending.value = false) })
       </p>
     </header>
 
-    <textarea ref="box" v-model="body" rows="4" aria-label="Review summary" placeholder="Leave a summary (optional)" class="w-full rounded-md border border-line bg-surface px-2.5 py-2 text-[13px]" />
+    <MarkdownEditor ref="box" v-model="body" :rows="10" aria-label="Review summary" placeholder="Leave a summary (optional, Markdown)" />
 
     <fieldset class="grid gap-2.5">
       <legend class="sr-only">Decision</legend>

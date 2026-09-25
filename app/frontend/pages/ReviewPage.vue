@@ -23,7 +23,7 @@ import type { ReviewComment, ReviewDraft, ReviewPageProps } from '@/types/dashbo
 const props = defineProps<ReviewPageProps>()
 
 const toast = useToast()
-const { review, starting, startAi, addComment, updateComment, ask, submit } = useReview(props.review ?? ({ comments: [] } as unknown as ReviewDraft))
+const { review, starting, startAi, addComment, addAndAsk, updateComment, ask, submit } = useReview(props.review ?? ({ comments: [] } as unknown as ReviewDraft))
 const pr = computed(() => props.pullRequest!)
 // Ask Claude on each comment shows which skill it uses for this repo.
 provide('reviewRepo', computed(() => pr.value && (pr.value.fullName ?? pr.value.key.split('#')[0])))
@@ -232,6 +232,7 @@ async function send(event: 'comment' | 'approve' | 'request_changes', body: stri
             @add="(fields) => run(() => addComment(fields), 'Couldn\'t add the comment')"
             @update="(id, fields) => run(() => updateComment(id, fields), 'Couldn\'t update the comment')"
             @ask="(id, q) => run(() => ask(id, q), 'Couldn\'t ask Claude')"
+            @add-and-ask="(fields, q) => run(() => addAndAsk(fields, q), 'Couldn\'t ask Claude')"
           />
         </main>
       </div>

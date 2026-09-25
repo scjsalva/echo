@@ -14,4 +14,5 @@ fragment pr on PullRequest {
   reviewDecision
   reviewRequests(first: 10) { nodes { requestedReviewer { ... on User { login } ... on Team { slug } } } }
   latestReviews(first: 10) { nodes { author { login } state submittedAt body } }
+  readyEvents: timelineItems(itemTypes: [READY_FOR_REVIEW_EVENT], last: 1) { nodes { ... on ReadyForReviewEvent { createdAt } } }
 }

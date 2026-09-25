@@ -80,6 +80,37 @@ class NotifierTest < ActiveSupport::TestCase
     assert_equal Notifier::TYPES.pluck(:id), Notifier.preferences[:enabled_types]
   end
 
+  test "kinds of notification added later start on under Custom" do
+    Notifier.update(scope: "custom", types: Notifier::TYPES.pluck(:id) - %w[github.merged])
+
+    # Only what you unticked is stored, so anything not in it is on.
+    assert_equal [ "github.merged" ], JSON.parse(Setting["notify_types_off"])
+    assert_equal Notifier::TYPES.pluck(:id) - %w[github.merged], Notifier.enabled_types
+  end
+
+  test "reminds how many unapproved PRs wait for review, once per interval" do
+    Setting[Notifier::SEEDED] = "1"
+    queue = [ { review_state: "review_required" }, { review_state: "approved" }, { review_state: "changes_requested" } ]
+    board = dashboard
+    board.define_singleton_method(:unapproved_reviews) { queue.reject { it[:review_state] == "approved" } }
+
+    travel_to Time.zone.parse("2026-09-25 10:05") do
+      2.times { Notifier.deliver_new(board) }
+    end
+    assert_equal [ [ "Review queue", "GitHub", "2 PRs waiting for review" ] ], @sent.map { it.first(3) }
+
+    travel_to(Time.zone.parse("2026-09-25 10:31")) { Notifier.deliver_new(board) }
+    assert_equal 2, @sent.size
+
+    Notifier.update(reminder_minutes: 0)
+    travel_to(Time.zone.parse("2026-09-25 11:31")) { Notifier.deliver_new(board) }
+    assert_equal 2, @sent.size
+  end
+
+  test "rejects unknown reminder intervals" do
+    assert_raises(ArgumentError) { Notifier.update(reminder_minutes: 7) }
+  end
+
   test "rejects unknown notification types" do
     assert_raises(ArgumentError) { Notifier.update(types: %w[github.everything]) }
   end

@@ -29,6 +29,8 @@ function describe(n: Pick<GithubNotification, 'reason' | 'actor' | 'body'>): str
       return 'It was closed'
     case 'follow_up':
       return `${who} pushed new commits after your review`
+    case 'ready_for_review':
+      return `${who}'s PR is ready for review`
     default:
       if (n.body) return n.actor ? `${n.actor}: “${n.body}”` : `“${n.body}”`
       return 'New activity on this PR'

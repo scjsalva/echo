@@ -82,8 +82,8 @@ agents:
     context_percent: 74
     turns: 132
     hourly_tokens: [10, 20, 14, 6, 2, 0, 0, 0, 3, 4, 2, 1]
-    last_prompt: /bugbot-loop 26974
-    last_reply: Bugbot pass 4 is clean. Checking again in 10 minutes.
+    last_prompt: /ci-watch 26974
+    last_reply: CI pass 4 is clean. Checking again in 10 minutes.
     loops:
       - { id: m1, kind: monitor, description: CI checks on PR 26974, started_at: 20m, expires_at: in 10m, events: 4, last_event_at: 7m }
   - id: gh

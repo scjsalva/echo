@@ -45,7 +45,8 @@ function ask() {
     </header>
 
     <CommentComposer v-if="editing" :initial="comment.body" :rows="10" submit-label="Save" @submit="(body) => (emit('update', { body }), (editing = false))" @cancel="editing = false" />
-    <MarkdownBlock v-else :source="comment.body" />
+    <MarkdownBlock v-else-if="comment.body" :source="comment.body" />
+    <p v-else class="text-[13px] text-faint">No comment yet. Use Claude's answer, or edit to write your own.</p>
     <details v-if="comment.evidence && !editing" class="group rounded-md bg-subtle px-2.5 py-1.5 text-[12.5px]">
       <summary class="cursor-pointer text-muted select-none group-open:mb-1">How Claude checked this</summary>
       <MarkdownBlock :source="comment.evidence" />
@@ -83,7 +84,14 @@ function ask() {
     </div>
 
     <footer v-if="!locked && !editing" class="flex flex-wrap gap-1.5">
-      <BaseButton v-if="comment.state === 'staged'" size="sm" variant="primary" tooltip="Include it when you send the review" @click="emit('update', { state: 'committed' })">
+      <BaseButton
+        v-if="comment.state === 'staged'"
+        size="sm"
+        variant="primary"
+        :disabled="!comment.body"
+        :tooltip="comment.body ? 'Include it when you send the review' : 'Write the comment first'"
+        @click="emit('update', { state: 'committed' })"
+      >
         <PhCheck :size="13" /> Commit
       </BaseButton>
       <BaseButton v-else size="sm" tooltip="Keep it out of the review for now" @click="emit('update', { state: 'staged' })">

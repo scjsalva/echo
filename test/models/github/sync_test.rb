@@ -90,6 +90,20 @@ class Github::SyncTest < ActiveSupport::TestCase
 
   private
 
+  test "a teammate's PR marked ready since the last sync is news, but ones already open aren't" do
+    Github::Preferences.update(team: %w[dana])
+    @queue.push(pr(2, author: "dana"), pr(3, author: "ravi"))
+    sync # First sync seeds.
+    Setting[Github::Sync::SYNCED_AT] = 5.minutes.ago.iso8601
+
+    @queue.push(pr(4, author: "dana", ready_at: 1.minute.ago), pr(5, author: "ravi", ready_at: 1.minute.ago))
+    sync
+
+    assert_equal [ [ "acme/app#4", "dana" ] ], GithubNotification.where(reason: "ready_for_review").pluck(:pr_key, :actor)
+    sync
+    assert_equal 1, GithubNotification.where(reason: "ready_for_review").count
+  end
+
   def sync
     cli = lambda do |*args, json: false|
       path = Github::Cli.api_path(args)
@@ -111,12 +125,13 @@ class Github::SyncTest < ActiveSupport::TestCase
     Github::Connection.stub(:login, ME) { Github::Cli.stub(:run, cli) { Github::Sync.new.run } }
   end
 
-  def pr(number, author:, decision: nil, reviews: [], last_commit: 1.hour.ago)
+  def pr(number, author:, decision: nil, reviews: [], last_commit: 1.hour.ago, ready_at: nil)
     { "number" => number, "title" => "PR #{number}", "url" => "https://github.com/acme/app/pull/#{number}", "isDraft" => false,
       "createdAt" => 1.day.ago.iso8601, "updatedAt" => 1.hour.ago.iso8601, "additions" => 1, "deletions" => 1, "changedFiles" => 1,
       "body" => "", "author" => { "login" => author }, "repository" => { "nameWithOwner" => "acme/app" }, "reviewDecision" => decision,
       "commits" => { "totalCount" => 1, "nodes" => [ { "commit" => { "committedDate" => last_commit.iso8601, "statusCheckRollup" => { "state" => "SUCCESS" } } } ] },
-      "reviewRequests" => { "nodes" => [] }, "latestReviews" => { "nodes" => reviews } }
+      "reviewRequests" => { "nodes" => [] }, "latestReviews" => { "nodes" => reviews },
+      "readyEvents" => { "nodes" => ready_at ? [ { "createdAt" => ready_at.iso8601 } ] : [] } }
   end
 
   def review(login, state, at, body: "") = { "author" => { "login" => login }, "state" => state, "submittedAt" => at.iso8601, "body" => body }

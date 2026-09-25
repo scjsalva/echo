@@ -25,10 +25,10 @@ const { open } = provideDrawer()
 const now = useNow(30_000)
 
 type Tab = 'waiting' | 'all' | 'jira' | 'github'
-const tab = ref<Tab>('waiting')
+const tab = ref<Tab>('all')
 useDeepLink((params) => {
   const linked = params.get('tab')
-  if (linked === 'all' || linked === 'jira' || linked === 'github') tab.value = linked
+  if (linked === 'waiting' || linked === 'jira' || linked === 'github') tab.value = linked
 })
 const status = ref<WaitingItem['status']>('open')
 const unreadOnly = ref(false)

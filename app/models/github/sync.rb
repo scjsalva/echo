@@ -11,7 +11,8 @@ class Github::Sync
   def self.synced_at = Setting[SYNCED_AT]&.then { Time.zone.parse(it) }
 
   def run
-    @first_sync = self.class.synced_at.nil?
+    @previous_sync = self.class.synced_at
+    @first_sync = @previous_sync.nil?
     started_at = Time.current
 
     sync_pull_requests
@@ -19,6 +20,7 @@ class Github::Sync
     track_review_requests
     track_changes_requested
     track_new_commits
+    track_team_ready
     resolve_waiting
 
     Setting[SYNCED_AT] = started_at.iso8601
@@ -132,6 +134,22 @@ class Github::Sync
       GithubNotification.create_with(reason: "changes_requested", pr_key: pr[:key], title: pr[:title], actor: review[:login],
         body: review[:body].to_s.squish.truncate(2_000).presence, occurred_at: at, read_at: (Time.current if @first_sync))
         .find_or_create_by!(thread_id: "changes-#{pr[:key]}-#{at.to_i}")
+    end
+  end
+
+  # A teammate's PR became ready for review since the last sync, by being marked
+  # ready or opened that way. Only since then, so adding a repo or teammate
+  # doesn't announce every PR they already have open.
+  def track_team_ready
+    return if @first_sync
+
+    team = Github::Preferences.team
+    @pull_requests.each_value.select { !it[:mine] && !it[:draft] && team.include?(it[:author]) && it[:ready_at] }.each do |pr|
+      at = Time.zone.parse(pr[:ready_at])
+      next unless at > @previous_sync
+
+      GithubNotification.create_with(reason: "ready_for_review", pr_key: pr[:key], title: pr[:title], actor: pr[:author], occurred_at: at)
+        .find_or_create_by!(thread_id: "ready-#{pr[:key]}-#{at.to_i}")
     end
   end
 

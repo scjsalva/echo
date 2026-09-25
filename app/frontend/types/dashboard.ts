@@ -92,7 +92,7 @@ export interface PullRequest {
 export type GithubReason =
   | 'review_requested' | 'comment' | 'mention' | 'team_mention' | 'follow_up' | 'changes_requested'
   | 'ci_activity' | 'author' | 'assign' | 'state_change' | 'subscribed' | 'manual'
-  | 'approved' | 'reviewed' | 'review_dismissed' | 'merged' | 'closed'
+  | 'approved' | 'reviewed' | 'review_dismissed' | 'merged' | 'closed' | 'ready_for_review'
 
 export interface GithubNotification {
   id: string
@@ -258,6 +258,9 @@ export interface NotificationSettings {
   types: { id: string; group: string; label: string; waiting?: boolean }[]
   /** The kinds Custom sends. */
   enabledTypes: string[]
+  /** How often to say how many PRs wait for review, in minutes; 0 is off. */
+  reminderMinutes: number
+  reminderOptions: number[]
   sound: string
   sounds: string[]
 }

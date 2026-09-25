@@ -586,8 +586,8 @@
         2,
         1
       ],
-      "lastPrompt": "/bugbot-loop 26974",
-      "lastReply": "Bugbot pass 4 is clean. Checking again in 10 minutes.",
+      "lastPrompt": "/ci-watch 26974",
+      "lastReply": "CI pass 4 is clean. Checking again in 10 minutes.",
       "loops": [
         {
           "id": "m1",

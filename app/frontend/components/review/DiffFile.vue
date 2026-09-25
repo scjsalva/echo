@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, inject, ref, type ComputedRef } from 'vue'
 import { PhCaretRight, PhPlus } from '@phosphor-icons/vue'
 import CommentComposer from './CommentComposer.vue'
 import ReviewCommentCard from './ReviewCommentCard.vue'
@@ -10,7 +10,9 @@ const emit = defineEmits<{
   add: [fields: { path: string; line: number; side: 'LEFT' | 'RIGHT'; body: string }]
   update: [id: number, fields: Partial<Pick<ReviewComment, 'body' | 'state'>>]
   ask: [id: number, question: string]
+  addAndAsk: [fields: { path: string; line: number; side: 'LEFT' | 'RIGHT'; body: string }, question: string]
 }>()
+const repo = inject<ComputedRef<string | undefined>>('reviewRepo', computed(() => undefined))
 
 const open = ref(true)
 const composing = ref<string | null>(null)
@@ -70,7 +72,7 @@ const SIGN: Record<DiffLine['kind'], string> = { add: '+', del: '−', context: 
                 <td class="pr-4 whitespace-pre"><span class="text-faint select-none">{{ SIGN[line.kind] }} </span>{{ line.text }}</td>
               </tr>
               <tr v-if="commentsAt(line).length || composing === keyOf(line)">
-                <td colspan="4" class="bg-canvas px-3 py-2">
+                <td colspan="4" class="bg-canvas p-4">
                   <div class="grid max-w-3xl gap-2">
                     <ReviewCommentCard
                       v-for="comment in commentsAt(line)"
@@ -82,7 +84,10 @@ const SIGN: Record<DiffLine['kind'], string> = { add: '+', del: '−', context: 
                     />
                     <CommentComposer
                       v-if="composing === keyOf(line)"
+                      :repo="repo"
+                      askable
                       @submit="(body) => (emit('add', { path: file.path, ...anchor(line), body }), (composing = null))"
+                      @ask="(body, q) => (emit('addAndAsk', { path: file.path, ...anchor(line), body }, q), (composing = null))"
                       @cancel="composing = null"
                     />
                   </div>

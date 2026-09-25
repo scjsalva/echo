@@ -36,6 +36,12 @@ export function useReview(initial: ReviewDraft) {
     },
     addComment: async (fields: Pick<ReviewComment, 'path' | 'line' | 'side' | 'body'>) =>
       replace(await request<ReviewComment>('POST', `/api/reviews/${review.value.id}/comments`, fields)),
+    // A new comment on a line, asked about straight away; it can start empty and take Claude's answer.
+    addAndAsk: async (fields: Pick<ReviewComment, 'path' | 'line' | 'side' | 'body'>, question: string) => {
+      const comment = await request<ReviewComment>('POST', `/api/reviews/${review.value.id}/comments`, fields)
+      replace(comment)
+      replace(await request<ReviewComment>('POST', `/api/review_comments/${comment.id}/question`, { question }))
+    },
     updateComment: async (id: number, fields: Partial<Pick<ReviewComment, 'body' | 'state'>>) =>
       replace(await request<ReviewComment>('PATCH', `/api/review_comments/${id}`, fields)),
     ask: async (id: number, question: string) =>

@@ -50,12 +50,26 @@ const groups = computed<{ title: string; href: string; stats: Stat[] }[]>(() => 
     },
   ]
 })
+
+// Each group gets room for its stats plus its own padding and gaps, so every
+// stat is the same width whichever group it's in. Matches px-5, gap-4 and the
+// 1px divider between groups.
+const PADDING = 40
+const GAP = 16
+const columns = computed(() => {
+  const sizes = groups.value.map((g) => g.stats.length)
+  const total = sizes.reduce((a, b) => a + b, 0)
+  const extra = sizes.map((n, i) => PADDING + (n - 1) * GAP + (i ? 1 : 0))
+  const fixed = extra.reduce((a, b) => a + b, 0)
+  return sizes.map((n, i) => `calc((100% - ${fixed}px) * ${n / total} + ${extra[i]}px)`).join(' ')
+})
 </script>
 
 <template>
   <section
     aria-label="Summary"
-    class="grid overflow-hidden rounded-xl border border-line bg-surface md:grid-cols-[4fr_2fr_3fr]"
+    class="grid overflow-hidden rounded-xl border border-line bg-surface md:grid-cols-(--stat-columns)"
+    :style="{ '--stat-columns': columns }"
   >
     <div
       v-for="group in groups"
