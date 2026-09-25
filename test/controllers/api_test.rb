@@ -244,4 +244,14 @@ class ApiTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_equal "removed", comment.reload.state
   end
+
+  test "marking a notification read tells open pages to refresh" do
+    JiraNotification.create!(external_id: "c9", kind: "comment", ticket_key: "APP-1", occurred_at: Time.current)
+
+    bumped = false
+    Changes.stub(:bump, -> { bumped = true }) { patch "/api/notifications/c9/read" }
+
+    assert_response :no_content
+    assert bumped
+  end
 end

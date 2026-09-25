@@ -61,7 +61,7 @@ One list of everything blocked on you. Each item clears itself when its source s
 
 ### The bell
 
-The bell in the top right shows the count waiting on you and the unread count. Clicking it opens the 10 latest notifications, with a link to the inbox at the bottom.
+The bell in the top right shows the count waiting on you and the unread count. Clicking it opens the 10 latest notifications, with a link to the inbox at the bottom. Opening one marks it read, unless it's still waiting on you to act (a review request, a mention you haven't replied to, changes requested on your PR, or a Jira assignment still in To Do). The same goes for OS notifications and in-app alerts, and every open Echo page updates its count straight away.
 
 ### OS notifications and in-app alerts
 
@@ -150,6 +150,7 @@ Open any PR's **Review** button, or go to `/reviews/<owner>/<repo>/<number>`. Yo
 - **Header:** the PR's title, CI state, author, size, and your review's status.
 - **File tree** on the left: folders, a filter, comment counts, and lines changed. Clicking a file jumps to it, and the file you're scrolled to is highlighted.
 - **Diff** on the right, GitHub style, with a + on each line to comment.
+- **Earlier comments:** unresolved review threads already on the PR, by anyone, show on their lines with every reply and a link to reply on GitHub. Resolved threads are left out. Threads on code that has since changed are listed above that file's diff as "on older code". Each file's header counts its unresolved threads.
 - **Description:** a button opens it in a drawer from the left, with the PR's GitHub comments.
 - **Divider:** drag it to resize the panels, use the arrow keys, or double-click to reset. The width is remembered.
 

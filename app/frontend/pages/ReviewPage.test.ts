@@ -22,11 +22,13 @@ const draft = (fields: Partial<ReviewDraft> = {}): ReviewDraft => ({
 })
 const props = (review = draft()): ReviewPageProps => ({ shell: fixture.shell as ReviewPageProps['shell'], agents: [], pullRequest: pr, headSha: 'abc', files: [file], review })
 
+let threads: unknown[] = []
 let fetchMock: ReturnType<typeof vi.fn>
 beforeEach(() => {
   fetchMock = vi.fn(async (url: string, init: RequestInit) => {
     if (url === '/api/alerts') return new Response(JSON.stringify({ alerts: [], show: false, sound: null }), { status: 200 })
     const body = JSON.parse((init?.body as string) ?? '{}')
+    if (url.endsWith('/threads')) return new Response(JSON.stringify({ threads }), { status: 200 })
     if (url.startsWith('/api/review_comments/')) return new Response(JSON.stringify(comment({ ...body })), { status: 200 })
     if (url.endsWith('/submission')) return new Response(JSON.stringify(draft({ status: 'sent', githubUrl: 'https://github.com/x' })), { status: 200 })
     return new Response(JSON.stringify(comment({ id: 2, author: 'you', ...body })), { status: 201 })
@@ -128,6 +130,21 @@ describe('ReviewPage', () => {
 
     expect(fetchMock).toHaveBeenCalledWith('/api/reviews/5/comments', expect.objectContaining({ body: JSON.stringify({ path: 'app/menu.rb', side: 'RIGHT', line: 1, body: '' }) }))
     expect(fetchMock).toHaveBeenCalledWith('/api/review_comments/2/question', expect.objectContaining({ body: JSON.stringify({ question: 'Can this be nil?' }) }))
+    page.unmount()
+  })
+
+  it("shows earlier unresolved comments on their lines, and older ones above the diff", async () => {
+    const note = (id: string, fields: object) => ({ id, path: 'app/menu.rb', side: 'RIGHT', startLine: null, originalLine: null, outdated: false,
+      comments: [{ id: `${id}-c`, author: 'dana', body: `Comment ${id}`, at: new Date().toISOString(), url: null }], ...fields })
+    threads = [note('t1', { line: 2 }), note('t2', { line: null, outdated: true, originalLine: 9 })]
+    const page = mount(ReviewPage, { props: props(draft({ comments: [] })), attachTo: document.body })
+    await flushPromises()
+
+    const onLine = page.findAll('[aria-label="Unresolved thread"]')
+    expect(onLine.some((t) => t.text().includes('Comment t1'))).toBe(true)
+    expect(page.find('main details summary').text()).toContain('1 unresolved comment on older code')
+    expect(page.find('main').text()).toContain('2 unresolved')
+    threads = []
     page.unmount()
   })
 

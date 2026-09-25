@@ -3,6 +3,7 @@ import { onMounted, watch } from 'vue'
 import DrawerHost from '@/components/drawers/DrawerHost.vue'
 import { provideDashboard } from '@/composables/useDashboard'
 import { provideDrawer, type DrawerTarget } from '@/composables/useDrawer'
+import { needsAction } from '@/lib/notificationState'
 import type { OverviewProps } from '@/types/dashboard'
 
 const props = defineProps<{ initial: OverviewProps; target: DrawerTarget; fallback: string }>()
@@ -17,7 +18,10 @@ onMounted(() => {
   // Not synced any more: its own page knows where else to send you.
   if (!found) return location.assign(props.fallback)
 
-  if ('notificationId' in t && t.notificationId) dashboard.markRead(t.notificationId)
+  if ('notificationId' in t && t.notificationId) {
+    const n = dashboard.githubNotification(t.notificationId) ?? dashboard.jiraNotification(t.notificationId)
+    if (n && !needsAction(n)) dashboard.markRead(t.notificationId)
+  }
   drawer.open(t)
 })
 watch(drawer.target, (now, before) => before && !now && emit('closed'))

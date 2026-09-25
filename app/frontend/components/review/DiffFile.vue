@@ -3,9 +3,10 @@ import { computed, inject, ref, type ComputedRef } from 'vue'
 import { PhCaretRight, PhPlus } from '@phosphor-icons/vue'
 import CommentComposer from './CommentComposer.vue'
 import ReviewCommentCard from './ReviewCommentCard.vue'
-import type { DiffFile, DiffLine, ReviewComment } from '@/types/dashboard'
+import ReviewThreadCard from './ReviewThreadCard.vue'
+import type { DiffFile, DiffLine, ReviewComment, ReviewThread } from '@/types/dashboard'
 
-const props = defineProps<{ file: DiffFile; comments: ReviewComment[]; locked: boolean }>()
+const props = withDefaults(defineProps<{ file: DiffFile; comments: ReviewComment[]; locked: boolean; threads?: ReviewThread[] }>(), { threads: () => [] })
 const emit = defineEmits<{
   add: [fields: { path: string; line: number; side: 'LEFT' | 'RIGHT'; body: string }]
   update: [id: number, fields: Partial<Pick<ReviewComment, 'body' | 'state'>>]
@@ -25,6 +26,12 @@ const commentsAt = (line: DiffLine) => {
   return props.comments.filter((c) => c.side === side && c.line === number)
 }
 const commentCount = computed(() => props.comments.length)
+// Earlier unresolved threads sit on their line; ones whose code has since changed go above the diff.
+const threadsAt = (line: DiffLine) => {
+  const { side, line: number } = anchor(line)
+  return props.threads.filter((t) => !t.outdated && t.side === side && t.line === number)
+}
+const olderThreads = computed(() => props.threads.filter((t) => t.outdated))
 
 defineExpose({ expand: () => (open.value = true) })
 
@@ -39,12 +46,21 @@ const SIGN: Record<DiffLine['kind'], string> = { add: '+', del: '−', context: 
       <span class="min-w-0 font-mono text-[12.5px] font-medium break-all">{{ file.path }}</span>
       <span v-if="file.previousPath" class="font-mono text-[11px] text-faint">from {{ file.previousPath }}</span>
       <span class="ml-auto flex shrink-0 items-center gap-2 font-mono text-[12px]">
+        <span v-if="threads.length" class="text-warn">{{ threads.length }} unresolved</span>
         <span v-if="commentCount" class="text-accent">{{ commentCount }} comment{{ commentCount > 1 ? 's' : '' }}</span>
         <span class="text-ok">+{{ file.additions }}</span><span class="text-bad">−{{ file.deletions }}</span>
       </span>
     </button>
 
     <template v-if="open">
+      <details v-if="olderThreads.length" class="border-b border-line-soft bg-canvas px-4 py-2.5 text-[12.5px]">
+        <summary class="cursor-pointer text-warn select-none">
+          {{ olderThreads.length }} unresolved comment{{ olderThreads.length === 1 ? '' : 's' }} on older code
+        </summary>
+        <div class="mt-2 grid max-w-3xl gap-2">
+          <ReviewThreadCard v-for="thread in olderThreads" :key="thread.id" :thread="thread" />
+        </div>
+      </details>
       <p v-if="file.tooLarge || !file.hunks.length" class="px-4 py-4 text-[13px] text-faint">
         {{ file.tooLarge ? "This diff is too large for GitHub to show here. Open the PR on GitHub to see it." : 'No changes to show (e.g. a binary file or a rename).' }}
       </p>
@@ -71,9 +87,10 @@ const SIGN: Record<DiffLine['kind'], string> = { add: '+', del: '−', context: 
                 </td>
                 <td class="pr-4 whitespace-pre"><span class="text-faint select-none">{{ SIGN[line.kind] }} </span>{{ line.text }}</td>
               </tr>
-              <tr v-if="commentsAt(line).length || composing === keyOf(line)">
+              <tr v-if="commentsAt(line).length || threadsAt(line).length || composing === keyOf(line)">
                 <td colspan="4" class="bg-canvas p-4">
                   <div class="grid max-w-3xl gap-2">
+                    <ReviewThreadCard v-for="thread in threadsAt(line)" :key="thread.id" :thread="thread" />
                     <ReviewCommentCard
                       v-for="comment in commentsAt(line)"
                       :key="comment.id"

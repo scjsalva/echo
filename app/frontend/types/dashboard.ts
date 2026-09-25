@@ -448,3 +448,16 @@ export interface ClaudeSettings {
     extras: ContextExtra[]
   }
 }
+
+/** An earlier, still unresolved review thread on a PR, from any author. */
+export interface ReviewThread {
+  id: string
+  path: string
+  side: 'LEFT' | 'RIGHT'
+  line: number | null
+  startLine: number | null
+  /** The code it was left on has changed, so it has no line in the current diff. */
+  outdated: boolean
+  originalLine: number | null
+  comments: { id: string; author: string | null; body: string; at: string; url: string | null }[]
+}

@@ -11,12 +11,15 @@ class Api::NotificationsController < ApplicationController
     else
       JiraNotification.where(external_id: params[:id], read_at: nil).update_all(read_at: Time.current)
     end
+    # Every open page updates its unread count straight away.
+    Changes.bump
     head :no_content
   end
 
   def read_all
     JiraNotification.where(read_at: nil).update_all(read_at: Time.current)
     mark_github_read(GithubNotification.where(read_at: nil))
+    Changes.bump
     head :no_content
   end
 

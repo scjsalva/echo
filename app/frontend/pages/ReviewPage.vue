@@ -18,7 +18,8 @@ import { useSplitWidth } from '@/composables/useSplitWidth'
 import { useToast } from '@/composables/useToast'
 import { timeAgo } from '@/lib/format'
 import { ci } from '@/lib/labels'
-import type { ReviewComment, ReviewDraft, ReviewPageProps } from '@/types/dashboard'
+import { request } from '@/lib/api'
+import type { ReviewComment, ReviewDraft, ReviewPageProps, ReviewThread } from '@/types/dashboard'
 
 const props = defineProps<ReviewPageProps>()
 
@@ -56,6 +57,15 @@ const { width, startDrag, nudge, reset } = useSplitWidth('review.split', split)
 
 const count = (state: ReviewComment['state']) => review.value.comments.filter((c) => c.state === state).length
 const commentsFor = (path: string) => review.value.comments.filter((c) => c.path === path)
+
+// Earlier reviews' unresolved threads, by anyone; loaded after the page so it opens fast.
+const threads = ref<ReviewThread[]>([])
+const threadsFor = (path: string) => threads.value.filter((t) => t.path === path)
+onMounted(async () => {
+  if (!props.pullRequest) return
+  const repo = props.pullRequest.fullName ?? props.pullRequest.key.split('#')[0]
+  threads.value = (await request<{ threads: ReviewThread[] }>('GET', `/api/github/pull_requests/${repo}/${props.pullRequest.number}/threads`).catch(() => ({ threads: [] }))).threads
+})
 const headMoved = computed(() => Boolean(review.value.headSha && props.headSha && review.value.headSha !== props.headSha))
 const commentCounts = computed(() => Object.fromEntries((props.files ?? []).map((f) => [f.path, commentsFor(f.path).length])))
 
@@ -230,6 +240,7 @@ async function send(event: 'comment' | 'approve' | 'request_changes', body: stri
             class="scroll-mt-4"
             :file="file"
             :comments="commentsFor(file.path)"
+            :threads="threadsFor(file.path)"
             :locked="locked"
             @add="(fields) => run(() => addComment(fields), 'Couldn\'t add the comment')"
             @update="(id, fields) => run(() => updateComment(id, fields), 'Couldn\'t update the comment')"

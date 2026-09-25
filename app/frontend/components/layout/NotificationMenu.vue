@@ -8,6 +8,7 @@ import { request } from '@/lib/api'
 import { timeAgo } from '@/lib/format'
 import { githubNotificationText } from '@/lib/githubNotifications'
 import { jiraNotificationText } from '@/lib/jiraNotifications'
+import { needsAction } from '@/lib/notificationState'
 import type { OverviewProps, ShellProps } from '@/types/dashboard'
 
 const props = defineProps<{ shell: ShellProps; linkClass: string }>()
@@ -23,6 +24,7 @@ const { openLink } = useNotificationLink()
 
 interface Row {
   id: string
+  needsAction: boolean
   source: 'github' | 'jira'
   title: string
   text: string
@@ -35,13 +37,13 @@ const rows = computed<Row[]>(() => {
   if (!data.value) return []
   const { githubNotifications = [], jiraNotifications = [], pullRequests = [], jiraTickets = [] } = data.value
   const github = githubNotifications.map((n) => ({
-    id: n.id, source: 'github' as const, at: n.at, unread: n.unread,
+    id: n.id, source: 'github' as const, at: n.at, unread: n.unread, needsAction: needsAction(n),
     title: pullRequests.find((pr) => pr.key === n.prKey)?.title ?? n.title ?? n.prKey,
     text: githubNotificationText(n),
     link: `/github?${new URLSearchParams({ pr: n.prKey, notification: n.id })}`,
   }))
   const jira = jiraNotifications.map((n) => ({
-    id: n.id, source: 'jira' as const, at: n.at, unread: n.unread,
+    id: n.id, source: 'jira' as const, at: n.at, unread: n.unread, needsAction: needsAction(n),
     title: [n.key, jiraTickets.find((t) => t.key === n.key)?.title].filter(Boolean).join(' · '),
     text: jiraNotificationText(n),
     link: `/jira?${new URLSearchParams({ ticket: n.key, notification: n.id })}`,
@@ -58,8 +60,10 @@ async function load() {
   }
 }
 
+// Looking at a notification marks it read, unless it's still waiting on you to act.
 function choose(row: Row) {
   open.value = false
+  if (row.unread && !row.needsAction) request('PATCH', `/api/notifications/${encodeURIComponent(row.id)}/read`).catch(() => null)
   openLink(row.link)
 }
 
