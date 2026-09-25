@@ -69,24 +69,25 @@ The bell in the top right shows the count waiting on you and the unread count. C
 - **In-app alerts:** shown on any open Echo page when OS notifications are off.
 - **Clicking either:** it opens the item (PR, ticket or agent) in a drawer over the page you're on, without leaving it. If no Echo tab is open, a new one opens straight to the item.
 - **Sound:** optional, with a Send test button in Settings.
+- **Layout:** every notification, OS or in-app, is two lines: what it's about, then the message, e.g. "GitHub · web · dana approved your PR".
 
 ### What gets sent
 
-- **Waiting on you:** only the items above.
+- **Simple:** only what's waiting on you (the items above), plus the review reminder if it's on.
 - **Custom:** pick from everything Echo can send:
   - An agent is waiting on you
+  - For System: the review reminder, and a teammate's PR becoming ready for review
   - Review requested from you
   - You or your team are mentioned
   - Changes requested on your PR
   - New commits after your review
-  - A teammate's PR is ready for review
   - Someone approves a PR
   - Someone reviews a PR, or a review is dismissed
   - Comments
   - A PR is merged
   - A PR is closed
   - CI activity
-  - Other activity on PRs you watch
+  - Other activity on PRs you watch (including anything GitHub adds later)
   - For Jira: you're mentioned, a ticket is assigned to you, comments, and status changes
 - **Unticked kinds** still appear in the inbox, but as read. They don't notify you and don't add to the unread count.
 - **Kinds added later** start ticked.
@@ -94,7 +95,7 @@ The bell in the top right shows the count waiting on you and the unread count. C
 
 ### Review reminder
 
-Every 15 or 30 minutes, or every 1, 2 or 4 hours (the default is 30 minutes), Echo can say how many PRs in your review queue are waiting for review, leaving out approved ones. It's only sent while there are some, and it can be turned off.
+Every 15 or 30 minutes, or every 1, 2 or 4 hours (the default is 30 minutes), Echo can say how many PRs in your review queue are waiting for review, leaving out approved ones. It's only sent while there are some, and it can be turned off. Under Custom, unticking "Review reminder" turns it off too, and greys out its interval setting.
 
 ## Agents
 
@@ -212,21 +213,27 @@ Every Claude run Echo starts includes, the same way Claude Code would load them:
 
 Repo instructions come from your clone, or the default branch of Echo's copy, and never from the PR being reviewed. **Settings → Claude** lists every file that's sent and its size.
 
+**Extra context:** in the same place you can add your own files or skills, for every run or for one repo:
+- A path starting with `~` or `/` is used as it is. For a repo, any other path is inside your clone, e.g. `docs/architecture.md`.
+- A skill added this way is reference only; it doesn't change the skill an action uses.
+- A file or skill that has moved or been deleted is skipped and marked missing, instead of failing the run.
+
 ## Settings
+
+Settings is split into sections, listed on the left: Connections, GitHub, Claude, Notifications and General. The address follows the section, e.g. `/settings#claude`, so it can be linked to. A dot next to Connections means something isn't connected.
 
 - **Connections:** GitHub, Jira and Claude Code hooks. Echo never asks for tokens: logging in opens Terminal with the CLI's own login command.
 - **GitHub:**
   - the repos the review queue watches
   - your team (with suggestions from your organisation)
   - **Code for AI reviews:** point each repo at a clone you already have, or Echo keeps its own copy, downloaded on the first review. Once you use your own clone, you can remove Echo's copy.
-- **Claude:** the skills for each action and repo, and what Echo's Claude runs can see.
+- **Claude:** the skills for each action and repo, and what Echo's Claude runs can see, including extra context.
 - **Notifications:**
-  - Waiting on you or Custom (with the checklist)
+  - Simple or Custom (with the checklist)
   - the review reminder
   - OS notifications on or off
   - sound, with Send test
-- **Time:** your time zone, automatic or chosen.
-- **Appearance:** system, light or dark.
+- **General:** your time zone (automatic or chosen), and appearance (system, light or dark).
 
 ## Privacy and safety
 

@@ -8,11 +8,12 @@ module Notifier
   # Every kind of notification Echo sends. The waiting ones are what "Waiting on you" covers.
   TYPES = [
     { id: "agent.blocked", group: "Agents", label: "An agent is waiting on you", waiting: true },
+    { id: "system.review_reminder", group: "System", label: "Review reminder" },
+    { id: "github.ready_for_review", group: "System", label: "A teammate's PR is ready for review" },
     { id: "github.review_requested", group: "GitHub", label: "Review requested from you", waiting: true },
     { id: "github.mention", group: "GitHub", label: "You or your team are mentioned", waiting: true },
     { id: "github.changes_requested", group: "GitHub", label: "Changes requested on your PR", waiting: true },
     { id: "github.follow_up", group: "GitHub", label: "New commits after your review" },
-    { id: "github.ready_for_review", group: "GitHub", label: "A teammate's PR is ready for review" },
     { id: "github.approved", group: "GitHub", label: "Someone approves a PR" },
     { id: "github.reviewed", group: "GitHub", label: "Someone reviews a PR, or a review is dismissed" },
     { id: "github.comment", group: "GitHub", label: "Comments" },
@@ -25,7 +26,7 @@ module Notifier
     { id: "jira.comment", group: "Jira", label: "Comments" },
     { id: "jira.transition", group: "Jira", label: "Status changes" }
   ].freeze
-  GITHUB_TYPES = { "team_mention" => "mention", "review_dismissed" => "reviewed", "ci_activity" => "ci",
+  GITHUB_TYPES = { "team_mention" => "mention", "review_dismissed" => "reviewed", "changes_requested_other" => "reviewed", "ci_activity" => "ci",
     "author" => "other", "assign" => "other", "state_change" => "other", "subscribed" => "other", "manual" => "other" }.freeze
   BURST = 3
   # How often the review reminder says how many PRs are waiting for review, in minutes; 0 is off.
@@ -66,7 +67,8 @@ module Notifier
   def self.type_of(source, kind)
     case source
     when "agent" then "agent.blocked"
-    when "github" then "github.#{GITHUB_TYPES.fetch(kind, kind)}"
+    # A reason GitHub adds later counts as other activity rather than matching no checkbox.
+    when "github" then "github.#{GITHUB_TYPES.fetch(kind, kind)}".then { |id| TYPES.any? { it[:id] == id } ? id : "github.other" }
     else "#{source}.#{kind}"
     end
   end
@@ -85,7 +87,7 @@ module Notifier
 
     fresh.first(BURST).each { DesktopNotification.show(**it[:notification], sound: preferences[:sound]) }
     if fresh.size > BURST
-      DesktopNotification.show(title: "Echo", message: "…and #{fresh.size - BURST} more. Open Echo to see them all.", sound: nil)
+      DesktopNotification.show(**two_lines(title: "#{fresh.size - BURST} more", message: "Open Echo to see them all."), sound: nil)
     end
   end
 
@@ -101,7 +103,7 @@ module Notifier
     preferences[:sound] unless preferences[:sound] == "none"
   end
 
-  def self.test = DesktopNotification.show(title: "Echo", subtitle: "Test notification", message: "This is how Echo will get your attention.",
+  def self.test = DesktopNotification.show(**two_lines(title: "Test notification", message: "This is how Echo will get your attention."),
     sound: preferences[:sound])
 
   def self.candidates(dashboard)
@@ -109,8 +111,8 @@ module Notifier
     wanted = custom ? enabled_types.to_set : TYPES.select { it[:waiting] }.pluck(:id).to_set
     waiting = dashboard.waiting_items.select { it[:status] == "open" && wanted.include?(type_of(it[:source], it[:kind])) }.map do |item|
       { key: item[:delivery_key],
-        notification: { title: "Waiting on you", subtitle: item[:label], message: [ item[:title], item[:actor] ].compact.join(" · "),
-          url: link(item[:ref]) } }
+        notification: two_lines(title: "Waiting on you", subtitle: item[:label], message: [ item[:title], item[:actor] ].compact.join(" · "),
+          url: link(item[:ref])) }
     end
     waiting += review_reminder(dashboard)
     return waiting unless custom
@@ -120,9 +122,9 @@ module Notifier
       it[:unread] && !waiting_keys.include?("github-#{it[:id]}") && wanted.include?(type_of("github", it[:reason]))
     end.map do |n|
       { key: "github-notification-#{n[:id]}-#{n[:at].to_i}",
-        notification: { title: n[:title] || n[:pr_key], subtitle: "GitHub · #{n[:pr_key].split('/').last}",
-          message: Github::NotificationText.for(reason: n[:reason], actor: n[:actor], body: n[:body]),
-          url: link(pr_key: n[:pr_key], notification_id: n[:id]) } }
+        notification: two_lines(title: n[:title] || n[:pr_key], subtitle: "GitHub · #{n[:pr_key].split('/').last}",
+          message: Github::NotificationText.for(reason: n[:reason], actor: n[:actor], body: n[:body], mine: n[:mine]),
+          url: link(pr_key: n[:pr_key], notification_id: n[:id])) }
     end
 
     jira = dashboard.jira_notifications.select do
@@ -130,8 +132,8 @@ module Notifier
     end
     waiting + github + jira.map do |n|
       { key: "jira-notification-#{n[:id]}",
-        notification: { title: "Jira · #{n[:key]}", subtitle: n[:kind].humanize, message: [ n[:actor], n[:body] ].compact.join(": "),
-          url: link(ticket_key: n[:key], notification_id: n[:id]) } }
+        notification: two_lines(title: "Jira · #{n[:key]}", message: Jira::NotificationText.for(kind: n[:kind], actor: n[:actor], body: n[:body]),
+          url: link(ticket_key: n[:key], notification_id: n[:id])) }
     end
   end
 
@@ -139,14 +141,20 @@ module Notifier
   # Its key names the interval it's for, so each one is sent once.
   def self.review_reminder(dashboard)
     minutes = reminder_minutes
-    return [] if minutes.zero?
+    return [] if minutes.zero? || (scope == "custom" && !enabled_types.include?("system.review_reminder"))
 
     count = dashboard.unapproved_reviews.size
     return [] if count.zero?
 
     [ { key: "github-review-reminder-#{minutes}-#{Time.current.to_i / (minutes * 60)}",
-      notification: { title: "Review queue", subtitle: "GitHub",
-        message: "#{count} PR#{'s' unless count == 1} waiting for review", url: "#{DesktopNotification.base_url}/github" } } ]
+      notification: two_lines(title: "Review queue", subtitle: "GitHub",
+        message: "#{count} PR#{'s' unless count == 1} waiting for review", url: "#{DesktopNotification.base_url}/github") } ]
+  end
+
+  # Every notification, OS or in-app, reads as two lines: the title, then the
+  # message led by what would have been a third line (e.g. "GitHub · web").
+  def self.two_lines(title:, message:, subtitle: nil, url: nil)
+    { title:, subtitle: "", message: [ subtitle.presence, message.to_s.squish.presence ].compact.join(" · "), url: }.compact
   end
 
   # Clicking a notification opens the item itself: the agent, the ticket or the PR.
@@ -161,5 +169,5 @@ module Notifier
 
   def self.setting(key) = Setting[key] || DEFAULTS.fetch(key)
 
-  private_class_method :candidates, :review_reminder, :link, :setting
+  private_class_method :candidates, :review_reminder, :two_lines, :link, :setting
 end

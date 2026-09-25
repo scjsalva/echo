@@ -9,6 +9,7 @@ export const githubReason: Record<GithubReason, { label: string; tone: Tone }> =
   follow_up: { label: 'New commits', tone: 'accent' },
   ready_for_review: { label: 'Ready for review', tone: 'accent' },
   changes_requested: { label: 'Changes requested', tone: 'bad' },
+  changes_requested_other: { label: 'Changes requested', tone: 'neutral' },
   ci_activity: { label: 'CI', tone: 'neutral' },
   team_mention: { label: 'Team mention', tone: 'warn' },
   author: { label: 'Activity', tone: 'neutral' },

@@ -107,8 +107,12 @@ class Github::Sync
     review = Array(Github::Cli.run("api", "repos/#{repo}/pulls/#{number}/reviews?per_page=100", json: true))
       .reject { it.dig("user", "login") == me }.max_by { it["submitted_at"].to_s }
     if review && Time.zone.parse(review["submitted_at"].to_s)&.after?(ACTIVITY_WINDOW.ago)
-      # Changes requested already waits on you (track_changes_requested); no need to say it twice.
-      return [ nil, nil, :covered ] if review["state"] == "CHANGES_REQUESTED"
+      if review["state"] == "CHANGES_REQUESTED"
+        # On your PR it already waits on you (track_changes_requested); on anyone else's it's just news.
+        return [ nil, nil, :covered ] if @pull_requests["#{repo}##{number}"]&.dig(:mine)
+
+        return [ review.dig("user", "login"), review["body"].to_s.squish.truncate(2_000).presence, "changes_requested_other" ]
+      end
 
       state = { "APPROVED" => "approved", "COMMENTED" => "reviewed", "DISMISSED" => "review_dismissed" }.fetch(review["state"], "reviewed")
       return [ review.dig("user", "login"), review["body"].to_s.squish.truncate(2_000).presence, state ]

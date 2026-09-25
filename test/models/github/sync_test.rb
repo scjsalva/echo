@@ -50,6 +50,16 @@ class Github::SyncTest < ActiveSupport::TestCase
     assert GithubNotification.find_by(thread_id: "11").read_at
   end
 
+  test "changes requested on someone else's PR is news, not swallowed" do
+    @queue << pr(2, author: "ravi")
+    sync
+    @threads << thread(31, "subscribed", 1.minute.ago, comment: nil)
+    @reviews = [ { "user" => { "login" => "dana" }, "state" => "CHANGES_REQUESTED", "submitted_at" => 1.minute.ago.iso8601, "body" => "Needs a test" } ]
+    sync
+
+    assert_equal [ "changes_requested_other", "dana", nil ], GithubNotification.find_by(thread_id: "31").slice(:reason, :actor, :read_at).values
+  end
+
   test "says what happened when the activity wasn't a comment" do
     sync
     @threads << thread(30, "author", 1.minute.ago, comment: nil)

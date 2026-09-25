@@ -92,7 +92,7 @@ export interface PullRequest {
 export type GithubReason =
   | 'review_requested' | 'comment' | 'mention' | 'team_mention' | 'follow_up' | 'changes_requested'
   | 'ci_activity' | 'author' | 'assign' | 'state_change' | 'subscribed' | 'manual'
-  | 'approved' | 'reviewed' | 'review_dismissed' | 'merged' | 'closed' | 'ready_for_review'
+  | 'approved' | 'reviewed' | 'review_dismissed' | 'merged' | 'closed' | 'ready_for_review' | 'changes_requested_other'
 
 export interface GithubNotification {
   id: string
@@ -106,6 +106,8 @@ export interface GithubNotification {
   unread: boolean
   resolution?: string | null
   url?: string
+  /** Whether the PR is yours, for "approved your PR" versus "approved the PR". */
+  mine?: boolean
 }
 
 export type JiraCategory = 'todo' | 'in_progress' | 'code_review' | 'post_development' | 'done'
@@ -421,6 +423,13 @@ export interface SkillAction {
   repos: SkillChoice[]
 }
 
+export interface ContextExtra {
+  kind: 'file' | 'skill'
+  value: string
+  repo: string | null
+  found?: boolean
+}
+
 export interface ContextFile {
   label: string
   path: string
@@ -429,5 +438,10 @@ export interface ContextFile {
 
 export interface ClaudeSettings {
   skills: SkillAction[]
-  context: { global: ContextFile[]; repos: { repo: string; files: ContextFile[] }[] }
+  context: {
+    global: ContextFile[]
+    repos: { repo: string; files: ContextFile[] }[]
+    /** Files and skills you added; repo null means every run. */
+    extras: ContextExtra[]
+  }
 }

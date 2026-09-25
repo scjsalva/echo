@@ -41,7 +41,7 @@ class NotifierTest < ActiveSupport::TestCase
 
     2.times { Notifier.deliver_new(dashboard(agents: [ blocked_agent(at) ])) }
 
-    assert_equal [ [ "Waiting on you", "Agent", "Allow Bash(ls) · app-a1", "Ping.aiff", "#{DesktopNotification.base_url}/agents?agent=a1" ] ], @sent
+    assert_equal [ [ "Waiting on you", "", "Agent · Allow Bash(ls) · app-a1", "Ping.aiff", "#{DesktopNotification.base_url}/agents?agent=a1" ] ], @sent
   end
 
   test "a new permission request on the same agent is a new notification" do
@@ -61,7 +61,7 @@ class NotifierTest < ActiveSupport::TestCase
 
     Notifier.deliver_new(dashboard(jira_notifications: [ moved, comment ]))
 
-    assert_equal [ "Comment" ], @sent.map(&:second)
+    assert_equal [ 'Dana commented: "Looks good"' ], @sent.map(&:third)
   end
 
   test "unticked kinds still show in the inbox but don't count as unread" do
@@ -108,7 +108,7 @@ class NotifierTest < ActiveSupport::TestCase
     travel_to Time.zone.parse("2026-09-25 10:05") do
       2.times { Notifier.deliver_new(board) }
     end
-    assert_equal [ [ "Review queue", "GitHub", "2 PRs waiting for review" ] ], @sent.map { it.first(3) }
+    assert_equal [ [ "Review queue", "", "GitHub · 2 PRs waiting for review" ] ], @sent.map { it.first(3) }
 
     travel_to(Time.zone.parse("2026-09-25 10:31")) { Notifier.deliver_new(board) }
     assert_equal 2, @sent.size
@@ -118,8 +118,25 @@ class NotifierTest < ActiveSupport::TestCase
     assert_equal 2, @sent.size
   end
 
+  test "unticking the review reminder under Custom turns it off" do
+    Setting[Notifier::SEEDED] = "1"
+    board = dashboard
+    board.define_singleton_method(:unapproved_reviews) { [ { review_state: "review_required" } ] }
+    Notifier.update(scope: "custom", types: Notifier::TYPES.pluck(:id) - %w[system.review_reminder])
+
+    Notifier.deliver_new(board)
+
+    assert_empty @sent
+  end
+
   test "rejects unknown reminder intervals" do
     assert_raises(ArgumentError) { Notifier.update(reminder_minutes: 7) }
+  end
+
+  test "GitHub reasons it doesn't list count as other activity" do
+    assert_equal "github.other", Notifier.type_of("github", "approval_requested")
+    assert_equal "github.merged", Notifier.type_of("github", "merged")
+    assert_equal "github.mention", Notifier.type_of("github", "team_mention")
   end
 
   test "rejects unknown notification types" do
@@ -135,7 +152,7 @@ class NotifierTest < ActiveSupport::TestCase
 
     Notifier.update(scope: "custom")
     Notifier.deliver_new(dashboard(jira_notifications: [ comment.merge(id: "c2") ]))
-    assert_equal [ "Jira · APP-1", "Comment", "Dana: Looks good" ], @sent.sole.first(3)
+    assert_equal [ "Jira · APP-1", "", 'Dana commented: "Looks good"' ], @sent.sole.first(3)
 
     Notifier.update(desktop: false)
     Notifier.deliver_new(dashboard(jira_notifications: [ comment.merge(id: "c3") ]))

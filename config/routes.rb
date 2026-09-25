@@ -35,6 +35,7 @@ Rails.application.routes.draw do
     resources :github_pull_requests, only: :index, path: "github/pull_requests"
     resource :github_echo_copy, only: :destroy, path: "github/echo_copy"
     resource :skill, only: %i[show update]
+    resource :claude_context, only: :update
     get "github/pull_requests/:owner/:repo/:number/comments", to: "github_pull_request_comments#index", constraints: { owner: /[\w.-]+/, repo: /[\w.-]+/, number: /\d+/ }
     resources :reviews, only: :show do
       resource :ai_review, only: :create

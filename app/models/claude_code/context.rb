@@ -5,17 +5,37 @@ require "open3"
 # @path) and, for a repo, its CLAUDE.md and CLAUDE.local.md. Repo files come
 # from your clone, or the default branch of Echo's copy, never from the PR being
 # reviewed, so a PR can't rewrite the instructions it's reviewed with.
+# On top of those, you can add your own files and skills, for every run or one repo.
 module ClaudeCode::Context
   MAX_CHARS = 60_000
   IMPORT_DEPTH = 3
   IMPORT = /(?<=\A|\s)@([~\w.\/-]+\.md)\b/
   REPO_FILES = %w[CLAUDE.md CLAUDE.local.md].freeze
+  EXTRAS = "claude_context_extra".freeze
+  KINDS = %w[file skill].freeze
+
+  # Extra files and skills you added: [{ "kind", "value", "repo" }], repo nil for every run.
+  def self.extras = JSON.parse(Setting[EXTRAS] || "[]")
+
+  def self.extras=(list)
+    list = Array(list).map { it.to_h.stringify_keys.slice("kind", "value", "repo").transform_values { it.to_s.strip.presence } }
+    list.each do |entry|
+      raise ArgumentError, "Add a file or a skill" unless KINDS.include?(entry["kind"]) && entry["value"]
+      raise ArgumentError, "Repos look like owner/name" if entry["repo"] && !entry["repo"].match?(Github::Preferences::NAME)
+      raise ArgumentError, "Couldn't find #{entry['value']}" unless extra_source(entry)
+    end
+    Setting[EXTRAS] = list.uniq.to_json
+  end
 
   # Each file that goes in, for Settings to show.
   def self.files(repo: nil) = sources(repo:).map { it.except(:text).merge(chars: it[:text].size) }
 
   def self.settings_props(repos)
-    { global: files, repos: repos.map { |repo| { repo:, files: repo_sources(repo).map { it.except(:text).merge(chars: it[:text].size) } } } }
+    listed = ->(sources) { sources.map { it.except(:text).merge(chars: it[:text].size) } }
+    {
+      global: listed.(sources), repos: repos.map { |repo| { repo:, files: listed.(repo_sources(repo) + extra_sources(repo)) } },
+      extras: extras.map { it.merge("found" => extra_source(it).present?) }
+    }
   end
 
   def self.prompt(repo: nil)
@@ -28,8 +48,31 @@ module ClaudeCode::Context
 
   def self.sources(repo: nil)
     global = ClaudeCode.root.join("CLAUDE.md")
-    list = global.file? ? with_imports(global, "Your global instructions") : []
-    list + (repo ? repo_sources(repo) : [])
+    list = (global.file? ? with_imports(global, "Your global instructions") : []) + extra_sources(nil)
+    list + (repo ? repo_sources(repo) + extra_sources(repo) : [])
+  end
+
+  # A moved or deleted file, or a removed skill, is skipped rather than failing the run.
+  def self.extra_sources(repo) = extras.select { it["repo"] == repo }.filter_map { extra_source(it) }
+
+  def self.extra_source(entry)
+    repo = entry["repo"]
+    if entry["kind"] == "skill"
+      skill = Skills.find(entry["value"], repo:) or return
+      { label: "Extra context", path: "skill #{skill.name}", text: skill.instructions }
+    else
+      path = extra_path(entry["value"], repo) or return
+      { label: "Extra context", path: ClaudeCode.abbreviate(path), text: File.read(path) } if path.file?
+    end
+  rescue Errno::EACCES, Errno::ENOENT
+    nil
+  end
+
+  # ~/… and /… as they are; anything else is relative to the repo's clone.
+  def self.extra_path(value, repo)
+    return Pathname(File.expand_path(value)) if value.start_with?("~", "/")
+
+    repo && Github::LocalRepos.path_for(repo)&.join(value)
   end
 
   def self.repo_sources(repo)
@@ -55,5 +98,5 @@ module ClaudeCode::Context
     []
   end
 
-  private_class_method :sources, :repo_sources, :with_imports
+  private_class_method :sources, :repo_sources, :extra_sources, :extra_source, :extra_path, :with_imports
 end

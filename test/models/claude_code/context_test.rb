@@ -32,4 +32,30 @@ class ClaudeCode::ContextTest < ActiveSupport::TestCase
     assert_equal 2, props[:global].size
     assert_equal [ "CLAUDE.md" ], props[:repos].sole[:files].map { File.basename(it[:path]) }
   end
+
+  test "adds your extra files and skills, for every run or one repo, skipping ones that are gone" do
+    File.write(@home.join("team.md"), "Prefer small PRs.")
+    File.write(@clone.join("ARCH.md"), "Services own their tables.")
+    FileUtils.mkdir_p(@home.join("skills/strict-review"))
+    File.write(@home.join("skills/strict-review/SKILL.md"), "---\nname: strict-review\n---\n\nBe picky.")
+    ClaudeCode::Context.extras = [
+      { kind: "file", value: @home.join("team.md").to_s, repo: nil },
+      { kind: "skill", value: "user:strict-review", repo: nil },
+      { kind: "file", value: "ARCH.md", repo: "acme/app" }
+    ]
+
+    assert_includes ClaudeCode::Context.prompt, "Prefer small PRs."
+    assert_includes ClaudeCode::Context.prompt, "Be picky."
+    assert_not_includes ClaudeCode::Context.prompt, "Services own their tables."
+    assert_includes ClaudeCode::Context.prompt(repo: "acme/app"), "Services own their tables."
+
+    File.delete(@home.join("team.md"))
+    assert_not_includes ClaudeCode::Context.prompt, "Prefer small PRs."
+    assert_equal [ false, true, true ], ClaudeCode::Context.settings_props([ "acme/app" ])[:extras].pluck("found")
+  end
+
+  test "refuses an extra that can't be found" do
+    assert_raises(ArgumentError) { ClaudeCode::Context.extras = [ { kind: "file", value: "~/nope-#{SecureRandom.hex}.md" } ] }
+    assert_raises(ArgumentError) { ClaudeCode::Context.extras = [ { kind: "skill", value: "user:missing" } ] }
+  end
 end

@@ -9,13 +9,14 @@ export function waitingSummary(item: WaitingItem): string {
     case 'review_requested':
       return item.actor ? `${item.actor} asked you to review` : 'Your review is requested'
     case 'changes_requested':
-      return `${item.actor} requested changes: ${quoted}`
+      return `${item.actor ?? 'Someone'} requested changes${quoted ? `: ${quoted}` : ''}`
     case 'assigned':
       return item.actor ? `${item.actor} assigned it to you` : 'Assigned to you'
     case 'agent_blocked':
       return item.actor ?? ''
-    default:
-      if (!item.actor) return quoted || 'Mentioned you'
-      return quoted ? `${item.actor}: ${quoted}` : `${item.actor} mentioned you`
+    default: {
+      const who = item.kind === 'team_mention' ? 'mentioned your team' : 'mentioned you'
+      return `${item.actor ?? 'Someone'} ${who}${quoted ? `: ${quoted}` : ''}`
+    }
   }
 }

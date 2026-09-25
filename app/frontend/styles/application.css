@@ -146,3 +146,14 @@
 .ai-icon {
   color: var(--color-ai-to);
 }
+
+/* Selects draw their own chevron so it sits clear of the right edge, whatever
+   padding a select's own classes set. */
+select:not([multiple]) {
+  appearance: none;
+  padding-right: 2rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%238a92a0' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.625rem center;
+  background-size: 0.875rem;
+}

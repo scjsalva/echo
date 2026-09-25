@@ -9,10 +9,12 @@ module Github::DashboardData
   def self.notifications
     waiting = GithubNotification.where(resolved_at: nil, reason: WaitingItems::GITHUB_REASONS.keys)
     recent = GithubNotification.where(occurred_at: NOTIFICATION_WINDOW.ago..).order(occurred_at: :desc).limit(NOTIFICATION_LIMIT)
+    # Whether the PR is yours decides "approved your PR" or "approved the PR".
+    mine = GithubPullRequest.where(mine: true).pluck(:key).to_set
     (recent.to_a | waiting.to_a).sort_by { -it.occurred_at.to_i }.map do |n|
       repo, number = n.pr_key.split("#")
       { id: "github-#{n.thread_id}", reason: n.reason, pr_key: n.pr_key, title: n.title, actor: n.actor, body: n.body, at: n.occurred_at,
-        unread: n.read_at.nil?, resolution: n.resolution, url: "https://github.com/#{repo}/pull/#{number}" }
+        unread: n.read_at.nil?, resolution: n.resolution, url: "https://github.com/#{repo}/pull/#{number}", mine: mine.include?(n.pr_key) }
     end
   end
 end

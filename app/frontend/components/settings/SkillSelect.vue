@@ -17,7 +17,7 @@ const groups = computed(() =>
   <select
     :value="modelValue ?? ''"
     :aria-label="label"
-    class="rounded-md border border-line bg-surface px-2.5 py-1.5 text-[13px]"
+    class="min-w-56 rounded-md border border-line bg-surface px-2.5 py-1.5 text-[13px]"
     @change="emit('update:modelValue', ($event.target as HTMLSelectElement).value || null)"
   >
     <option v-if="inheritLabel" value="">{{ inheritLabel }}</option>
