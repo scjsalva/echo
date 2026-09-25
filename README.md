@@ -25,9 +25,11 @@ Echo runs on your Mac and nothing is hosted. It reads Claude Code's own files an
 ## Running it
 
 ```bash
-bin/setup        # installs gems and npm packages, prepares the database
-bin/dev          # http://localhost:4848
+npm install
+bin/setup        # installs gems, prepares the database, then starts Echo at http://localhost:4848
 ```
+
+After that, `bin/dev` starts it again.
 
 To keep Echo running in the background, starting when you log in:
 
