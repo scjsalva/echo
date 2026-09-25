@@ -34,7 +34,17 @@ func quoted(_ value: String) -> String {
   "\"" + value.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"") + "\""
 }
 
-/// Points an open Echo tab in the default browser at `target` and brings it forward.
+/// The link as a fragment for an open Echo tab: changing only the part after
+/// `#` doesn't reload the page, so the tab opens the item in a drawer over
+/// whatever you're looking at.
+func linkFragment(_ target: String) -> String {
+  guard let url = URLComponents(string: target) else { return "" }
+  // Keep the query encoded: a PR key's "#" would otherwise end the link early.
+  let link = url.percentEncodedPath + (url.percentEncodedQuery.map { "?" + $0 } ?? "")
+  return "#echo-open=" + (link.addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? "")
+}
+
+/// Brings an open Echo tab in the default browser forward and hands it `target`.
 func focusEchoTab(_ target: String) -> Bool {
   guard let browser = NSWorkspace.shared.urlForApplication(toOpen: URL(string: "http://localhost")!),
         let bundleID = Bundle(url: browser)?.bundleIdentifier,
@@ -56,7 +66,10 @@ func focusEchoTab(_ target: String) -> Bool {
       repeat with t in tabs of w
         set i to i + 1
         if (URL of t) starts with \(quoted(echoURL())) then
-          set URL of t to \(quoted(target))
+          set AppleScript's text item delimiters to "#"
+          set pageURL to text item 1 of (URL of t as text)
+          set AppleScript's text item delimiters to ""
+          set URL of t to pageURL & \(quoted(linkFragment(target)))
           \(select)
           set index of w to 1
           activate

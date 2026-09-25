@@ -4,6 +4,7 @@ import BasePill from '@/components/ui/BasePill.vue'
 import ListRow from '@/components/ui/ListRow.vue'
 import { useDashboard } from '@/composables/useDashboard'
 import { useDrawer } from '@/composables/useDrawer'
+import { jiraNotificationText } from '@/lib/jiraNotifications'
 import { timeAgo } from '@/lib/format'
 import { jiraKind } from '@/lib/labels'
 import type { JiraNotification } from '@/types/dashboard'
@@ -14,12 +15,7 @@ const dashboard = useDashboard()
 const { open } = useDrawer()
 
 const ticket = computed(() => dashboard.ticket(props.notification.key))
-const summary = computed(() => {
-  const n = props.notification
-  if (n.kind === 'transition') return n.actor ? `${n.actor} moved it: ${n.body}` : `Status moved: ${n.body}`
-  if (n.kind === 'assigned') return n.actor ? `${n.actor} assigned it to you` : 'Assigned to you'
-  return `${n.actor}: “${n.body}”`
-})
+const summary = computed(() => jiraNotificationText(props.notification))
 
 function select() {
   dashboard.markRead(props.notification.id)

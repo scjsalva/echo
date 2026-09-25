@@ -2,8 +2,10 @@
 import { PhX } from '@phosphor-icons/vue'
 import SourceBadge from '@/components/ui/SourceBadge.vue'
 import { useAlerts } from '@/composables/useAlerts'
+import { useNotificationLink } from '@/composables/useNotificationLink'
 
 const { alerts, dismiss } = useAlerts()
+const { openLink } = useNotificationLink()
 
 const BADGE: Record<string, string> = { agent: 'CC', github: 'GH', jira: 'JIRA' }
 
@@ -20,7 +22,7 @@ const path = (url?: string) => (url ? `${new URL(url).pathname}${new URL(url).se
       class="pointer-events-auto grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-3 rounded-xl border border-warn/40 bg-surface px-3.5 py-3 shadow-xl"
     >
       <SourceBadge :tone="alert.source === 'jira' ? 'jira' : 'default'">{{ BADGE[alert.source] ?? 'ECHO' }}</SourceBadge>
-      <a :href="path(alert.url)" class="grid min-w-0 gap-0.5 hover:opacity-80">
+      <a :href="path(alert.url)" class="grid min-w-0 gap-0.5 hover:opacity-80" @click.prevent="(openLink(path(alert.url)), dismiss(alert.id))">
         <span class="text-[13px] font-semibold">{{ alert.title }}<template v-if="alert.subtitle"> · {{ alert.subtitle }}</template></span>
         <span class="line-clamp-2 text-[12.5px] break-words text-muted">{{ alert.message }}</span>
       </a>

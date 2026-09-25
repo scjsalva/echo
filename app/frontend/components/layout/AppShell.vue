@@ -1,9 +1,13 @@
 <script setup lang="ts">
-import { PhBell, PhGear } from '@phosphor-icons/vue'
+import { onBeforeUnmount, onMounted } from 'vue'
+import { PhGear } from '@phosphor-icons/vue'
 import AlertStack from './AlertStack.vue'
+import LinkedDrawer from './LinkedDrawer.vue'
+import NotificationMenu from './NotificationMenu.vue'
 import EchoLogo from './EchoLogo.vue'
 import FirstRunBanner from './FirstRunBanner.vue'
 import ToastHost from './ToastHost.vue'
+import { useNotificationLink } from '@/composables/useNotificationLink'
 import { useNow } from '@/composables/useNow'
 import { timeAgo } from '@/lib/format'
 import type { ShellProps } from '@/types/dashboard'
@@ -13,6 +17,26 @@ withDefaults(defineProps<{ shell: ShellProps; title?: string; refreshFailed?: bo
 })
 
 const now = useNow()
+
+// Clicking an OS notification sets #echo-open=<link> on an open Echo tab rather
+// than loading the link, so the item opens in a drawer over whatever page you're on.
+const { linked, openLink, close } = useNotificationLink()
+const LINK_HASH = '#echo-open='
+function openFromHash() {
+  if (!location.hash.startsWith(LINK_HASH)) return
+  const link = decodeURIComponent(location.hash.slice(LINK_HASH.length))
+  history.replaceState(null, '', `${location.pathname}${location.search}`)
+  openLink(link)
+}
+onMounted(() => {
+  openFromHash()
+  window.addEventListener('hashchange', openFromHash)
+})
+onBeforeUnmount(() => window.removeEventListener('hashchange', openFromHash))
+const fallback = (target: NonNullable<typeof linked.value>) =>
+  target.type === 'agent'
+    ? `/agents?agent=${encodeURIComponent(target.id)}`
+    : `/${target.type === 'pullRequest' ? 'github?pr' : 'jira?ticket'}=${encodeURIComponent(target.key)}${target.notificationId ? `&notification=${encodeURIComponent(target.notificationId)}` : ''}`
 const iconLink = 'inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[12.5px] text-muted hover:bg-subtle hover:text-ink'
 </script>
 
@@ -39,11 +63,7 @@ const iconLink = 'inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[12
           {{ refreshFailed ? "Couldn't refresh" : `Updated ${timeAgo(shell.updatedAt, now)} ago` }}
         </span>
         <span class="mx-0.5 h-4 w-px bg-line" aria-hidden="true" />
-        <a href="/inbox" :class="iconLink" :aria-label="`Notifications: ${shell.waitingCount} waiting, ${shell.unreadCount} unread`">
-          <PhBell :size="15" :weight="shell.unreadCount || shell.waitingCount ? 'fill' : 'regular'" />
-          <span v-if="shell.waitingCount" class="rounded-full bg-warn px-1.5 font-mono text-[10.5px] font-semibold text-on-accent">{{ shell.waitingCount }}</span>
-          <span v-if="shell.unreadCount" class="rounded-full bg-accent px-1.5 font-mono text-[10.5px] font-semibold text-on-accent">{{ shell.unreadCount }}</span>
-        </a>
+        <NotificationMenu :shell="shell" :link-class="iconLink" />
         <a href="/settings" :class="iconLink" aria-label="Settings">
           <PhGear :size="15" />
           <span class="hidden sm:inline">Settings</span>
@@ -55,5 +75,6 @@ const iconLink = 'inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[12
     <slot />
     <ToastHost />
     <AlertStack />
+    <LinkedDrawer v-if="linked" :key="JSON.stringify(linked)" :target="linked" :fallback="fallback(linked)" @closed="close" />
   </div>
 </template>
