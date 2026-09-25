@@ -15,6 +15,13 @@ class ClaudeCode::JobTest < ActiveSupport::TestCase
     assert_equal [ "job-abc", "background", "blocked", "Confirm posting the approval", "~/Projects/app" ], job.values_at(:id, :kind, :status, :needs, :cwd)
   end
 
+  test "leaves out jobs that have finished" do
+    write_json("jobs/finished/state.json", { name: "Done already", state: "done", updatedAt: 1.hour.ago.iso8601 })
+    write_json("jobs/live/state.json", { name: "Still going", state: "running", updatedAt: 1.minute.ago.iso8601 })
+
+    assert_equal [ "Still going" ], ClaudeCode::Job.recent.pluck(:name)
+  end
+
   test "leaves out jobs that haven't changed in a week" do
     write_json("jobs/old/state.json", { name: "Old", state: "blocked", updatedAt: 10.days.ago.iso8601 })
 

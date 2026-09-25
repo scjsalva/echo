@@ -2,9 +2,12 @@
 class ClaudeCode::Job
   WINDOW = 7.days
   STATUSES = { "blocked" => "blocked", "running" => "busy", "working" => "busy" }.freeze
+  # A job in one of these has finished, so it's no longer a live agent.
+  FINISHED = %w[done completed failed error cancelled canceled killed stopped exited].freeze
 
   def self.recent
-    Dir[ClaudeCode.root.join("jobs/*/state.json")].filter_map { from_file(it) }.select { it[:active] > WINDOW.ago }
+    Dir[ClaudeCode.root.join("jobs/*/state.json")].filter_map { from_file(it) }
+      .select { it[:active] > WINDOW.ago && !FINISHED.include?(it[:jobs].first[:state]) }
   end
 
   def self.from_file(path)

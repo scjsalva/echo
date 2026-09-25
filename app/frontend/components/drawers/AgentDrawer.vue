@@ -30,7 +30,8 @@ const newName = ref('')
 const nameInput = ref<HTMLInputElement>()
 
 async function startRenaming() {
-  newName.value = props.agent.renamed ? props.agent.name : ''
+  // Start from the name shown, so renaming is an edit rather than retyping it.
+  newName.value = props.agent.renamed ? props.agent.name : (props.agent.title ?? props.agent.name)
   renaming.value = true
   await nextTick()
   nameInput.value?.focus()
