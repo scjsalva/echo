@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { PhArrowSquareOut, PhGitDiff } from '@phosphor-icons/vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BasePill from '@/components/ui/BasePill.vue'
@@ -15,7 +15,9 @@ import { useDrawer } from '@/composables/useDrawer'
 import { timeAgo } from '@/lib/format'
 import { githubNotificationText } from '@/lib/githubNotifications'
 import { ci, githubReason } from '@/lib/labels'
-import type { PullRequest } from '@/types/dashboard'
+import { useToast } from '@/composables/useToast'
+import { request } from '@/lib/api'
+import type { JiraTicket, PullRequest } from '@/types/dashboard'
 
 const props = defineProps<{ pr: PullRequest; notificationId?: string }>()
 
@@ -23,7 +25,27 @@ const dashboard = useDashboard()
 const { open } = useDrawer()
 
 const notification = computed(() => dashboard.githubNotification(props.notificationId))
-const ticket = computed(() => (props.pr.jiraKey ? dashboard.ticket(props.pr.jiraKey) : undefined))
+const toast = useToast()
+const loadingTicket = ref(false)
+
+// Any ticket named in the title opens here, synced or not; one Echo doesn't
+// sync (e.g. a teammate's) is looked up in Jira when you click.
+async function openTicket(key: string) {
+  const synced = dashboard.ticket(key)
+  if (synced) return open({ type: 'ticket', key })
+
+  loadingTicket.value = true
+  try {
+    const { items } = await request<{ items: JiraTicket[] }>('GET', `/api/jira/search?${new URLSearchParams({ q: key })}`)
+    const found = items.find((t) => t.key === key)
+    if (found) open({ type: 'ticket', key, ticket: found })
+    else toast.show(`Couldn't find ${key} in Jira`)
+  } catch (error) {
+    toast.show(error instanceof Error ? error.message : `Couldn't load ${key}`)
+  } finally {
+    loadingTicket.value = false
+  }
+}
 const facts = computed(() => [
   { label: 'files', value: props.pr.changedFiles },
   { label: 'lines', value: `+${props.pr.additions} −${props.pr.deletions}` },
@@ -46,7 +68,9 @@ const reviewTone = (state: string) => (state === 'approved' ? 'ok' : state === '
       <BaseButton :href="`/reviews/${pr.fullName ?? pr.key.split('#')[0]}/${pr.number}`" tooltip="Opens the diff to review it here, yourself or with Claude">
         <PhGitDiff :size="14" /> Review
       </BaseButton>
-      <BaseButton v-if="ticket" @click="open({ type: 'ticket', key: ticket.key })">{{ ticket.key }}</BaseButton>
+      <BaseButton v-if="pr.jiraKey" :disabled="loadingTicket" tooltip="Opens the Jira ticket named in the title" @click="openTicket(pr.jiraKey)">
+        {{ loadingTicket ? 'Loading…' : pr.jiraKey }}
+      </BaseButton>
     </template>
 
     <NotificationContext

@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { describe, expect, it, vi } from 'vitest'
+import { flushPromises, mount } from '@vue/test-utils'
 import OverviewPage from './OverviewPage.vue'
 import fixture from '@/test/overview.fixture.json'
 import type { OverviewProps } from '@/types/dashboard'
@@ -81,5 +81,20 @@ describe('OverviewPage', () => {
 
     expect(page.find('[role="dialog"]').exists()).toBe(false)
     page.unmount()
+  })
+
+  it("opens the ticket named in a PR's title even when Echo doesn't sync it", async () => {
+    const pr = { ...props.reviewQueue.items[0], jiraKey: 'APP-99999' }
+    const teammates = { ...props.jiraTickets[0], key: 'APP-99999', title: "A teammate's ticket" }
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => new Response(JSON.stringify(url.startsWith('/api/jira/search') ? { items: [teammates], more: false } : { alerts: [] }), { status: 200 })))
+    const page = mount(OverviewPage, { props: { ...props, reviewQueue: { ...props.reviewQueue, items: [pr] }, pullRequests: [pr] }, attachTo: document.body })
+
+    await page.findAll('button').filter((b) => b.text().includes(pr.title)).at(-1)!.trigger('click')
+    await page.findAll('[role="dialog"] button').find((b) => b.text() === 'APP-99999')!.trigger('click')
+    await flushPromises()
+
+    expect(page.find('[role="dialog"]').text()).toContain("A teammate's ticket")
+    page.unmount()
+    vi.unstubAllGlobals()
   })
 })

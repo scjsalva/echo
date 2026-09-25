@@ -128,7 +128,7 @@ Uses the GitHub CLI (`gh`) and its login.
 - **The PR drawer:**
   - the description, files, lines and commits changed, and reviews
   - GitHub comments, grouped into threads for comments on lines; bot comments start collapsed
-  - buttons for Open on GitHub, and **Review**, which opens Echo's review page
+  - buttons for Open on GitHub, **Review**, which opens Echo's review page, and the Jira ticket named in the PR's title. That ticket opens even if Echo doesn't sync it, e.g. a teammate's; it's loaded from Jira when you click.
 - **Syncing:** every minute. Echo also records review requests, changes requested on your PRs, new commits pushed after your review, and teammates' PRs becoming ready for review.
 
 ## Jira
