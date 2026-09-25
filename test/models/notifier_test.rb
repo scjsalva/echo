@@ -64,6 +64,17 @@ class NotifierTest < ActiveSupport::TestCase
     assert_equal [ "Comment" ], @sent.map(&:second)
   end
 
+  test "unticked kinds still show in the inbox but don't count as unread" do
+    Notifier.update(scope: "custom", types: Notifier::TYPES.pluck(:id) - %w[jira.transition])
+    moved = { id: "t1", kind: "transition", key: "APP-1", actor: "Dana", body: "To Do → Done", at: Time.current, unread: true }
+    comment = { id: "c1", kind: "comment", key: "APP-1", actor: "Dana", body: "Looks good", at: Time.current, unread: true }
+
+    board = dashboard(jira_notifications: [ moved, comment ])
+
+    assert_equal [ [ "t1", false ], [ "c1", true ] ], board.jira_notifications.map { it.values_at(:id, :unread) }
+    assert_equal 1, board.shell_props[:unread_count]
+  end
+
   test "custom can turn off waiting items too" do
     Setting[Notifier::SEEDED] = "1"
     Notifier.update(scope: "custom", types: [])

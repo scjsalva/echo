@@ -123,7 +123,8 @@ class Dashboard
 
   def github_notifications
     @github_notifications ||= @data[:github_notifications].map do |notification|
-      notification.reverse_merge(pr_key: "#{@data[:github_org]}/#{notification[:repo]}##{notification[:number]}").merge(unread: notification[:unread] || false)
+      notification.reverse_merge(pr_key: "#{@data[:github_org]}/#{notification[:repo]}##{notification[:number]}")
+        .merge(unread: (notification[:unread] && !muted?("github", notification[:reason])) || false)
     end
   end
 
@@ -134,7 +135,14 @@ class Dashboard
   end
 
   def jira_notifications
-    @jira_notifications ||= @data[:jira_notifications].map { it.merge(unread: it[:unread] || false) }
+    @jira_notifications ||= @data[:jira_notifications].map { it.merge(unread: (it[:unread] && !muted?("jira", it[:kind])) || false) }
+  end
+
+  # Kinds you unticked under Custom still show in the inbox, but as read: they
+  # don't notify you, so they shouldn't wait for you to open them either.
+  def muted?(source, kind)
+    @muted ||= Notifier.scope == "custom" ? (Notifier::TYPES.pluck(:id) - Notifier.enabled_types).to_set : Set.new
+    @muted.include?(Notifier.type_of(source, kind))
   end
 
   # The review queue minus what's already approved, for the review reminder.
