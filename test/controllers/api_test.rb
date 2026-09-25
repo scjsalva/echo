@@ -170,11 +170,11 @@ class ApiTest < ActionDispatch::IntegrationTest
     Github::Cli.stub(:run, { "merged" => false }) do
       assert_enqueued_with(job: AiReviewJob) { post "/api/reviews/#{review.id}/ai_review" }
     end
-    assert_equal "running", review.reload.ai_status
+    assert_equal "queued", review.reload.ai_status
 
     assert_no_enqueued_jobs(only: AiReviewJob) { post "/api/reviews/#{review.id}/ai_review" }
     assert_response :success
-    assert_equal "running", response.parsed_body["aiStatus"]
+    assert_equal "queued", response.parsed_body["aiStatus"]
   end
 
   test "an AI review can't start on a merged PR" do

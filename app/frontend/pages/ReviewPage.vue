@@ -133,13 +133,13 @@ async function send(event: 'comment' | 'approve' | 'request_changes', body: stri
             <template v-if="!locked">
               <div class="relative flex">
                 <BaseButton
-                  :disabled="starting || review.aiStatus === 'running'"
+                  :disabled="starting || review.aiStatus === 'running' || review.aiStatus === 'queued'"
                   tooltip="Claude reviews the diff and stages comments. Uses tokens."
                   :class="[verdict && 'rounded-r-none', clean ? 'border-ok! bg-ok-soft! text-ok!' : 'ai-border']"
                   @click="run(startAi, 'Couldn\'t start the review')"
                 >
                   <component :is="clean ? PhCheckCircle : PhSparkle" :size="14" weight="fill" :class="!clean && 'ai-icon'" />
-                  <span :class="!clean && 'ai-text'">{{ starting ? 'Starting…' : review.aiStatus === 'running' ? 'Reviewing…' : review.aiStatus === 'idle' ? 'Start AI review' : 'Review again' }}</span>
+                  <span :class="!clean && 'ai-text'">{{ starting ? 'Starting…' : review.aiStatus === 'queued' ? 'Queued…' : review.aiStatus === 'running' ? 'Reviewing…' : review.aiStatus === 'idle' ? 'Start AI review' : 'Review again' }}</span>
                 </BaseButton>
                 <template v-if="verdict">
                   <BaseButton
@@ -186,7 +186,8 @@ async function send(event: 'comment' | 'approve' | 'request_changes', body: stri
             <BasePill tone="ok">{{ count('committed') }} committed</BasePill>
           </span>
           <span>
-            <template v-if="review.aiStatus === 'running'">Claude is reading the diff. Its comments appear on the lines as staged.</template>
+            <template v-if="review.aiStatus === 'queued'">Queued: the most AI reviews that can run at once are running. This one starts when one finishes.</template>
+            <template v-else-if="review.aiStatus === 'running'">Claude is reading the diff. Its comments appear on the lines as staged.</template>
             <template v-else-if="review.aiStatus === 'failed'"><span class="text-bad">The AI review didn't finish: {{ review.aiError }}</span></template>
             <template v-else-if="review.aiStatus === 'done' && !review.aiReport">Claude's done. Commit the comments you want to keep; nothing is posted until you send the review.</template>
             <template v-else-if="review.aiStatus === 'done'">Commit the comments you want to keep; nothing is posted until you send the review.</template>

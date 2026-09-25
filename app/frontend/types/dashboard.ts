@@ -362,7 +362,7 @@ export interface ReviewDraft {
   prKey: string
   headSha: string | null
   status: 'draft' | 'sent'
-  aiStatus: 'idle' | 'running' | 'done' | 'failed'
+  aiStatus: 'idle' | 'queued' | 'running' | 'done' | 'failed'
   /** What the last AI review did with each finding. */
   aiReport?: { summary: string; added: number; leftOut: { path: string; line: number; body: string; reason: string }[] } | null
   aiError: string | null
@@ -437,6 +437,9 @@ export interface ContextFile {
 }
 
 export interface ClaudeSettings {
+  /** How many AI reviews run at once; more wait their turn. */
+  reviewLimit: number
+  reviewLimitOptions: number[]
   skills: SkillAction[]
   context: {
     global: ContextFile[]

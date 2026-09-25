@@ -8,7 +8,7 @@ const POLL_MS = 3_000
 export function useReview(initial: ReviewDraft) {
   const review = ref(initial)
   const starting = ref(false)
-  const busy = computed(() => review.value.aiStatus === 'running' || review.value.comments.some((c) => c.asking))
+  const busy = computed(() => ['queued', 'running'].includes(review.value.aiStatus) || review.value.comments.some((c) => c.asking))
 
   async function reload() {
     review.value = await request<ReviewDraft>('GET', `/api/reviews/${review.value.id}`)

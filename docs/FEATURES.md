@@ -168,6 +168,7 @@ Open any PR's **Review** button, or go to `/reviews/<owner>/<repo>/<number>`. Yo
   - An empty answer counts as a failed run, not a clean review.
   - "Use as review summary" copies the verdict into Send review.
 - **Leaving the page** doesn't stop a review; it runs on the server, and the page picks it back up when you return.
+- **How many at once:** up to 3 AI reviews run at the same time; change it (1 to 5) in **Settings → Claude**. Any more show **Queued** and start as one finishes. A review cut off part-way, e.g. by a restart, is marked as interrupted and frees its slot, so you can start it again.
 
 ### Comments
 
@@ -227,7 +228,7 @@ Settings is split into sections, listed on the left: Connections, GitHub, Claude
   - the repos the review queue watches
   - your team (with suggestions from your organisation)
   - **Code for AI reviews:** point each repo at a clone you already have, or Echo keeps its own copy, downloaded on the first review. Once you use your own clone, you can remove Echo's copy.
-- **Claude:** the skills for each action and repo, and what Echo's Claude runs can see, including extra context.
+- **Claude:** how many AI reviews run at once, the skills for each action and repo, and what Echo's Claude runs can see, including extra context.
 - **Notifications:**
   - Simple or Custom (with the checklist)
   - the review reminder

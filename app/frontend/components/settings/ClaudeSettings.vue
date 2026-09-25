@@ -13,6 +13,15 @@ const props = defineProps<{ settings: ClaudeSettings; part: 'skills' | 'context'
 
 const toast = useToast()
 const skills = ref(props.settings.skills)
+const reviewLimit = ref(props.settings.reviewLimit)
+
+async function saveLimit() {
+  try {
+    await request('PATCH', '/api/settings', { ai_review_limit: reviewLimit.value })
+  } catch (error) {
+    toast.show(error instanceof Error ? error.message : "Couldn't save that")
+  }
+}
 const context = ref(props.settings.context)
 
 // Adding extra context: for every run or one repo, a file path or a skill.
@@ -115,7 +124,15 @@ const size = (files: ContextFile[]) => `${Math.max(1, Math.round(files.reduce((n
     </div>
   </div>
 
-  <div v-for="action in part === 'skills' ? skills : []" :key="action.action" class="border-t border-line-soft first-of-type:border-t-0">
+  <SettingRow v-if="part === 'skills'">
+    <template #title>AI reviews at once</template>
+    <template #description>Any more wait their turn as Queued, and start when one finishes.</template>
+    <select v-model.number="reviewLimit" aria-label="AI reviews at once" class="rounded-md border border-line bg-surface px-2.5 py-1.5 text-[13px]" @change="saveLimit">
+      <option v-for="n in settings.reviewLimitOptions" :key="n" :value="n">{{ n }}</option>
+    </select>
+  </SettingRow>
+
+  <div v-for="action in part === 'skills' ? skills : []" :key="action.action" class="border-t border-line-soft">
     <SettingRow>
       <template #title>{{ action.label }}</template>
       <template #description>

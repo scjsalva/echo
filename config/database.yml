@@ -2,7 +2,8 @@
 # GitHub syncs) get their own database so they never lock the app's.
 default: &default
   adapter: sqlite3
-  max_connections: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  # Enough for the job worker's 8 threads plus its own bookkeeping.
+  max_connections: <%= ENV.fetch("RAILS_MAX_THREADS") { 12 } %>
   timeout: 5000
 
 development:
