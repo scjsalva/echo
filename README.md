@@ -17,6 +17,7 @@ The full list, page by page, is in [docs/FEATURES.md](docs/FEATURES.md).
 - **AI reviews**: a GitHub-style diff with a file tree. Claude reads the PR's code and stages review comments, each one verified against the code, with a verdict every run. You commit the comments you want and send the review yourself; nothing is posted until you do.
 - **Notifications**: macOS, Linux or Windows notifications, or in-app alerts, for what's waiting on you or whatever you pick.
 - **Skills**: each Claude action uses Echo's own skill by default. You can swap in one of yours, or a repo's, for all repos or just one.
+- **Inside Claude Code**: your counts on Claude Code's status line, `/echo` to check what's waiting, your PRs, agents and tickets (and mark read, dismiss or jump to an agent), and `/echo-review` to run an AI review from any session. Install it from Settings → Connections.
 
 ## Requirements
 
@@ -42,7 +43,7 @@ bin/service install    # http://localhost:4747
 bin/service status | logs | restart | uninstall
 ```
 
-Connect GitHub and Jira from **Settings → Connections**. Installing the Claude Code hooks there is optional; it makes "waiting on you" instant and refreshes open pages right away.
+Connect GitHub and Jira from **Settings → Connections**. Two optional installs live there too: the Claude Code hooks, which make "waiting on you" instant and refresh open pages right away, and **Echo in Claude Code**, which adds the status line and the `/echo` and `/echo-review` skills.
 
 ## Privacy
 
