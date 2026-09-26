@@ -1,19 +1,15 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { PhBell, PhGithubLogo, PhPlugs, PhSlidersHorizontal, PhSparkle } from '@phosphor-icons/vue'
 import AppShell from '@/components/layout/AppShell.vue'
 import ConnectionRow from '@/components/settings/ConnectionRow.vue'
-import SegmentedControl from '@/components/ui/SegmentedControl.vue'
-import SettingRow from '@/components/settings/SettingRow.vue'
 import SettingsCard from '@/components/settings/SettingsCard.vue'
+import SettingsSection from '@/components/settings/SettingsSection.vue'
+import ThemeSetting from '@/components/settings/ThemeSetting.vue'
 import ClaudeSettings from '@/components/settings/ClaudeSettings.vue'
 import GithubSettings from '@/components/settings/GithubSettings.vue'
 import NotificationSettings from '@/components/settings/NotificationSettings.vue'
 import TimeZoneSetting from '@/components/settings/TimeZoneSetting.vue'
-import { provideSettingsDraft } from '@/composables/useSettingsDraft'
-import { useTheme } from '@/composables/useTheme'
-import { useToast } from '@/composables/useToast'
-import BaseButton from '@/components/ui/BaseButton.vue'
 import type { ClaudeSettings as ClaudePreferences, Connection, GithubPreferences, NotificationSettings as NotificationPreferences, ShellProps, TimeZoneSettings } from '@/types/dashboard'
 
 const props = defineProps<{
@@ -47,9 +43,12 @@ watch(section, (id) => (document.title = `${sections.value.find((s) => s.id === 
 function fromHash() {
   const id = location.hash.slice(1)
   const match = ALIASES[id] ?? sections.value.find((s) => s.id === id)?.id
-  if (match) section.value = match
+  if (!match || match === section.value) return
+  if (canLeave(section.value)) section.value = match
+  else history.replaceState(null, '', `#${section.value}`)
 }
 function select(id: Section) {
+  if (id === section.value || !canLeave(section.value)) return
   section.value = id
   history.replaceState(null, '', `#${id}`)
   window.scrollTo({ top: 0 })
@@ -60,36 +59,27 @@ onMounted(() => {
 })
 onBeforeUnmount(() => window.removeEventListener('hashchange', fromHash))
 
-const { preference } = useTheme()
-
-// Every setting waits for Save; Cancel puts them all back. Actions (logging in,
-// installing, Send test) still happen straight away.
-const draft = provideSettingsDraft()
-const toast = useToast()
-// Theme shows as you pick it; Cancel puts back the one you had.
-let savedTheme = preference.value
-watch(preference, (value) => value !== savedTheme && draft.stage('theme', async () => undefined))
-draft.onCancel(() => (preference.value = savedTheme))
-draft.onSaved(() => (savedTheme = preference.value))
-
-async function saveAll() {
-  try {
-    await draft.save()
-    toast.show('Settings saved')
-  } catch (error) {
-    toast.show(error instanceof Error ? error.message : "Couldn't save everything; what's left is still unsaved")
-  }
+// Each section has its own Save and Cancel. Moving to another section, or
+// leaving Settings, with unsaved changes asks first.
+const dirty = reactive<Partial<Record<Section, boolean>>>({})
+const sectionRefs: Partial<Record<Section, InstanceType<typeof SettingsSection>>> = {}
+const setSectionRef = (id: Section) => (el: unknown) => {
+  if (el) sectionRefs[id] = el as InstanceType<typeof SettingsSection>
+}
+function canLeave(id: Section) {
+  if (!dirty[id]) return true
+  const label = sections.value.find((s) => s.id === id)?.label
+  if (!window.confirm(`You have unsaved changes in ${label}. Discard them?`)) return false
+  sectionRefs[id]?.cancel()
+  return true
 }
 const warnBeforeLeaving = (event: BeforeUnloadEvent) => {
-  if (draft.dirty.value) event.preventDefault()
+  if (!Object.values(dirty).some(Boolean)) return
+  event.preventDefault()
+  event.returnValue = ''
 }
 onMounted(() => window.addEventListener('beforeunload', warnBeforeLeaving))
 onBeforeUnmount(() => window.removeEventListener('beforeunload', warnBeforeLeaving))
-const themes = [
-  { value: 'system', label: 'System' },
-  { value: 'light', label: 'Light' },
-  { value: 'dark', label: 'Dark' },
-] as const
 </script>
 
 <template>
@@ -114,58 +104,51 @@ const themes = [
         >
           <component :is="item.icon" :size="15" :weight="section === item.id ? 'fill' : 'regular'" />
           {{ item.label }}
-          <span v-if="item.attention" class="ml-auto size-1.5 rounded-full bg-warn" aria-label="Needs attention" />
+          <span v-if="dirty[item.id]" class="ml-auto size-1.5 rounded-full bg-accent" aria-label="Unsaved changes" />
+          <span v-else-if="item.attention" class="ml-auto size-1.5 rounded-full bg-warn" aria-label="Needs attention" />
         </button>
       </nav>
 
-      <div class="grid gap-4">
-        <!-- v-show, not v-if: each section keeps what you changed while you look at another. -->
-        <SettingsCard v-show="section === 'connections'" title="Connections" description="Claude Code sessions work out of the box. These connect the rest, through tools you already use.">
-          <ConnectionRow v-for="connection in connections" :key="connection.key" :connection="connection" @change="connections = $event" />
-        </SettingsCard>
+      <!-- v-show, not v-if: each section keeps what you changed while you look at another. -->
+      <div>
+        <SettingsSection v-show="section === 'connections'" :ref="setSectionRef('connections')" label="Connections" @dirty="dirty.connections = $event">
+          <SettingsCard title="Connections" description="Claude Code sessions work out of the box. These connect the rest, through tools you already use.">
+            <ConnectionRow v-for="connection in connections" :key="connection.key" :connection="connection" @change="connections = $event" />
+          </SettingsCard>
+        </SettingsSection>
 
-        <SettingsCard v-show="section === 'github'" title="GitHub">
-          <GithubSettings :preferences="github" />
-        </SettingsCard>
+        <SettingsSection v-show="section === 'github'" :ref="setSectionRef('github')" label="GitHub" @dirty="dirty.github = $event">
+          <SettingsCard title="GitHub">
+            <GithubSettings :preferences="github" />
+          </SettingsCard>
+        </SettingsSection>
 
-        <SettingsCard v-show="section === 'claude'" title="Skills" description="The skill behind each of Echo's AI actions, for all repos or one.">
-          <ClaudeSettings :settings="claude" part="skills" />
-        </SettingsCard>
-        <SettingsCard
-          v-show="section === 'claude'"
-          title="What Claude sees"
-          description="Every AI review, question and summary Echo runs includes your own Claude instructions, sent to Claude the same way Claude Code sends them when you use it."
-        >
-          <ClaudeSettings :settings="claude" part="context" />
-        </SettingsCard>
+        <SettingsSection v-show="section === 'claude'" :ref="setSectionRef('claude')" label="Claude" @dirty="dirty.claude = $event">
+          <SettingsCard title="Skills" description="The skill behind each of Echo's AI actions, for all repos or one.">
+            <ClaudeSettings :settings="claude" part="skills" />
+          </SettingsCard>
+          <SettingsCard
+            title="What Claude sees"
+            description="Every AI review, question and summary Echo runs includes your own Claude instructions, sent to Claude the same way Claude Code sends them when you use it."
+          >
+            <ClaudeSettings :settings="claude" part="context" />
+          </SettingsCard>
+        </SettingsSection>
 
-        <SettingsCard v-show="section === 'notifications'" title="Notifications">
-          <NotificationSettings :settings="notifications" />
-        </SettingsCard>
+        <SettingsSection v-show="section === 'notifications'" :ref="setSectionRef('notifications')" label="Notifications" @dirty="dirty.notifications = $event">
+          <SettingsCard title="Notifications">
+            <NotificationSettings :settings="notifications" />
+          </SettingsCard>
+        </SettingsSection>
 
-        <SettingsCard v-show="section === 'general'" title="Time">
-          <TimeZoneSetting :time-zone="timeZone" />
-        </SettingsCard>
-        <SettingsCard v-show="section === 'general'" title="Appearance">
-          <SettingRow>
-            <template #title>Theme</template>
-            <template #description>System follows your computer.</template>
-            <SegmentedControl v-model="preference" :options="themes" label="Theme" />
-          </SettingRow>
-        </SettingsCard>
-
-        <div
-          v-if="draft.dirty.value"
-          class="sticky bottom-4 z-20 flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-accent/40 bg-surface px-5 py-3 shadow-lg"
-          role="region"
-          aria-label="Unsaved changes"
-        >
-          <p class="text-[13px] text-muted">You have unsaved changes.</p>
-          <div class="flex gap-2">
-            <BaseButton :disabled="draft.saving.value" @click="draft.cancel()">Cancel</BaseButton>
-            <BaseButton variant="primary" :disabled="draft.saving.value" @click="saveAll">{{ draft.saving.value ? 'Saving…' : 'Save' }}</BaseButton>
-          </div>
-        </div>
+        <SettingsSection v-show="section === 'general'" :ref="setSectionRef('general')" label="General" @dirty="dirty.general = $event">
+          <SettingsCard title="Time">
+            <TimeZoneSetting :time-zone="timeZone" />
+          </SettingsCard>
+          <SettingsCard title="Appearance">
+            <ThemeSetting />
+          </SettingsCard>
+        </SettingsSection>
       </div>
     </div>
   </AppShell>

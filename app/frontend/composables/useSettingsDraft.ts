@@ -65,10 +65,21 @@ export function useSettingsDraft(): Draft {
   return draft
 }
 
+// Reactive proxies can sit anywhere inside a value (e.g. a list assigned in),
+// and structuredClone can't copy them, so unwrap every level first.
+function unwrap(value: unknown): unknown {
+  const raw = toRaw(value)
+  if (Array.isArray(raw)) return raw.map(unwrap)
+  if (raw instanceof Set) return new Set([...raw].map(unwrap))
+  if (raw instanceof Map) return new Map([...raw].map(([k, v]) => [k, unwrap(v)]))
+  if (raw && typeof raw === 'object') return Object.fromEntries(Object.entries(raw).map(([k, v]) => [k, unwrap(v)]))
+  return raw
+}
+
 /** A setting's value on screen: Cancel returns it to the last saved value, Save makes it the new one. */
 export function useDraftValue<T>(initial: T): Ref<T> {
   const draft = useSettingsDraft()
-  const copy = (value: T): T => structuredClone(toRaw(value))
+  const copy = (value: T): T => structuredClone(unwrap(value)) as T
   const value = ref(copy(initial)) as Ref<T>
   let saved = copy(initial)
   const reset = () => (value.value = copy(saved))
