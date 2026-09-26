@@ -63,7 +63,12 @@ const themes = [
 </script>
 
 <template>
-  <AppShell :shell="shell" title="Settings" :show-first-run="false">
+  <AppShell
+    :shell="shell"
+    :title="sections.find((s) => s.id === section)?.label"
+    :trail="[{ label: 'Settings', href: '/settings' }]"
+    :show-first-run="false"
+  >
     <div class="grid items-start gap-6 md:grid-cols-[200px_minmax(0,48rem)] md:gap-8">
       <nav aria-label="Settings sections" class="flex flex-wrap gap-1 md:sticky md:top-4 md:flex-col">
         <button

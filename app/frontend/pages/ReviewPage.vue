@@ -121,7 +121,7 @@ async function send(event: 'comment' | 'approve' | 'request_changes', body: stri
 </script>
 
 <template>
-  <AppShell :shell="shell" title="Review" :show-first-run="false">
+  <AppShell :shell="shell" :title="pullRequest ? `PR #${pullRequest.number}` : 'Review'" :trail="[{ label: 'GitHub', href: '/github' }]" :show-first-run="false">
     <p v-if="error" class="rounded-xl border border-dashed border-line px-6 py-10 text-muted">Couldn't load this pull request: {{ error }}</p>
 
     <template v-else>

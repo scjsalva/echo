@@ -12,7 +12,15 @@ import { useNow } from '@/composables/useNow'
 import { timeAgo } from '@/lib/format'
 import type { ShellProps } from '@/types/dashboard'
 
-withDefaults(defineProps<{ shell: ShellProps; title?: string; refreshFailed?: boolean; showFirstRun?: boolean }>(), {
+withDefaults(defineProps<{
+  shell: ShellProps
+  title?: string
+  /** Pages between Echo and this one, e.g. GitHub for a PR's review page. */
+  trail?: { label: string; href: string }[]
+  refreshFailed?: boolean
+  showFirstRun?: boolean
+}>(), {
+  trail: () => [],
   showFirstRun: true,
 })
 
@@ -48,6 +56,10 @@ const iconLink = 'inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[12
           <EchoLogo />
           Echo
         </a>
+        <template v-for="crumb in trail" :key="crumb.href">
+          <span class="text-faint">/</span>
+          <a :href="crumb.href" class="text-[15px] font-medium text-muted hover:text-accent">{{ crumb.label }}</a>
+        </template>
         <template v-if="title">
           <span class="text-faint">/</span>
           <h1 class="text-[15px] font-medium text-muted">{{ title }}</h1>
