@@ -36,6 +36,20 @@ Rails.application.routes.draw do
     resource :github_echo_copy, only: :destroy, path: "github/echo_copy"
     resource :skill, only: %i[show update]
     resource :claude_context, only: :update
+    scope "cli", controller: "cli", as: "cli" do
+      get :status
+      get :summary
+      get :waiting
+      get :inbox
+      get :prs
+      get :agents
+      get "jira/:key", action: :ticket
+      post :read
+      post :dismiss
+      post :focus
+      post :reviews, action: :start_review
+      get "reviews/:id", action: :show_review
+    end
     get "github/pull_requests/:owner/:repo/:number/threads", to: "github_review_threads#index", constraints: { owner: /[\w.-]+/, repo: /[\w.-]+/, number: /\d+/ }
     get "github/pull_requests/:owner/:repo/:number/comments", to: "github_pull_request_comments#index", constraints: { owner: /[\w.-]+/, repo: /[\w.-]+/, number: /\d+/ }
     resources :reviews, only: :show do

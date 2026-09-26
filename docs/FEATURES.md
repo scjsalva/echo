@@ -11,6 +11,7 @@ Everything Echo does, page by page. For setup, see the [README](../README.md).
 - [Jira](#jira)
 - [AI reviews](#ai-reviews)
 - [Skills and your own instructions](#skills-and-your-own-instructions)
+- [Echo in Claude Code](#echo-in-claude-code)
 - [Settings](#settings)
 - [Privacy and safety](#privacy-and-safety)
 - [Where things live](#where-things-live)
@@ -220,11 +221,34 @@ Repo instructions come from your clone, or the default branch of Echo's copy, an
 - A skill added this way is reference only; it doesn't change the skill an action uses.
 - A file or skill that has moved or been deleted is skipped and marked missing, instead of failing the run.
 
+## Echo in Claude Code
+
+Install it from **Settings → Connections → Echo in Claude Code**. It adds:
+
+- **The status line:** your counts at the bottom of every Claude Code session, e.g. `Echo: 2 waiting · 5 unread · 17 to review`, or `Echo: all clear`. If you already had a status line, it keeps running, with Echo's counts after it. When Echo isn't running, the counts simply don't show.
+- **`/echo`:** a summary of what's waiting on you, unread notifications and the review queue. Or ask for one part:
+
+  | Command | What it does |
+  |---|---|
+  | `/echo waiting` | what's waiting on you |
+  | `/echo inbox` | unread notifications |
+  | `/echo prs` | the review queue |
+  | `/echo agents` | live agents |
+  | `/echo jira APP-123` | a Jira ticket |
+  | `/echo read <id>` | mark a notification read (`read all` for everything) |
+  | `/echo dismiss <key>` | dismiss a waiting item |
+  | `/echo focus <agent>` | bring an agent's terminal forward |
+
+  Claude can use it without being asked too, e.g. "anything need me?".
+- **`/echo-review <PR>`:** starts an AI review in Echo (`web#27014`, `owner/repo#123` or a GitHub link), waits for it, and shows the verdict and the comments it staged. It never posts to GitHub: you send reviews from Echo's review page.
+
+The skills live in `~/.claude/skills/echo` and `~/.claude/skills/echo-review`. Echo won't overwrite a skill of yours with the same name, and **Remove** takes everything back out and restores your previous status line. They talk to Echo through local-only plain-text endpoints under `/api/cli`, so they're cheap on tokens.
+
 ## Settings
 
 Settings is split into sections, listed on the left: Connections, GitHub, Claude, Notifications and General. The address follows the section, e.g. `/settings#claude`, so it can be linked to. A dot next to Connections means something isn't connected.
 
-- **Connections:** GitHub, Jira and Claude Code hooks. Echo never asks for tokens: logging in opens Terminal with the CLI's own login command.
+- **Connections:** GitHub, Jira, Claude Code hooks, and Echo in Claude Code. Echo never asks for tokens: logging in opens Terminal with the CLI's own login command.
 - **GitHub:**
   - the repos the review queue watches
   - your team (with suggestions from your organisation)

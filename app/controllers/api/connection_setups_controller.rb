@@ -5,6 +5,7 @@ class Api::ConnectionSetupsController < ApplicationController
 
   def create
     return install_hooks if params[:connection_key] == "claude_hooks"
+    return install_integration if params[:connection_key] == "claude_integration"
 
     command = COMMANDS[params[:connection_key]] or return head :not_found
 
@@ -20,5 +21,12 @@ class Api::ConnectionSetupsController < ApplicationController
   def install_hooks
     ClaudeCode::Hooks.install(request.base_url)
     head :no_content
+  end
+
+  def install_integration
+    ClaudeCode::Integration.install(request.base_url)
+    head :no_content
+  rescue ArgumentError => e
+    render json: { error: e.message }, status: :unprocessable_content
   end
 end

@@ -35,9 +35,13 @@ async function install() {
   try {
     await request('POST', `/api/connections/${props.connection.key}/setup`)
     await fetchConnections()
-    toast.show('Hooks installed. Sessions you start from now on will use them.')
+    toast.show(
+      props.connection.key === 'claude_integration'
+        ? 'Installed. Try /echo in Claude Code; the status line shows up on its next refresh.'
+        : 'Hooks installed. Sessions you start from now on will use them.',
+    )
   } catch (error) {
-    toast.show(error instanceof Error ? error.message : "Couldn't install the hooks")
+    toast.show(error instanceof Error ? error.message : "Couldn't install it")
   } finally {
     busy.value = false
   }
@@ -70,7 +74,7 @@ async function disconnect() {
   try {
     await request('DELETE', `/api/connections/${props.connection.key}`)
     await fetchConnections()
-    toast.show(props.connection.instant ? 'Hooks removed' : `Logged out of ${props.connection.name}`)
+    toast.show(props.connection.instant ? `${props.connection.name} removed` : `Logged out of ${props.connection.name}`)
   } catch (error) {
     toast.show(error instanceof Error ? error.message : "Couldn't log out")
   } finally {

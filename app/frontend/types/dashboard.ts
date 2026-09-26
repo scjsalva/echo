@@ -196,7 +196,7 @@ export interface WaitingItem {
 }
 
 export interface Connection {
-  key: 'github' | 'jira' | 'claude_hooks'
+  key: 'github' | 'jira' | 'claude_hooks' | 'claude_integration'
   name: string
   connected: boolean
   optional?: boolean

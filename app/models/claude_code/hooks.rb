@@ -38,6 +38,9 @@ module ClaudeCode::Hooks
     settings_path.exist? ? JSON.parse(settings_path.read) : {}
   end
 
+  # Other parts of Echo that change Claude Code's settings go through the same backup and atomic write.
+  def self.write_settings(config) = write(config)
+
   def self.without_ours(config)
     config = config.deep_dup
     (config["hooks"] || {}).each do |event, entries|
@@ -57,5 +60,5 @@ module ClaudeCode::Hooks
     File.rename(temp, settings_path)
   end
 
-  private_class_method :settings, :without_ours, :write
+  private_class_method :without_ours, :write
 end

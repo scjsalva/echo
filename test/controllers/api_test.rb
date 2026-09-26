@@ -254,4 +254,24 @@ class ApiTest < ActionDispatch::IntegrationTest
     assert_response :no_content
     assert bumped
   end
+
+  test "the CLI endpoints answer in plain text" do
+    get "/api/cli/status"
+
+    assert_response :success
+    assert_equal "text/plain", response.media_type
+    assert_equal "Echo: all clear\n", response.body
+  end
+
+  test "the CLI can dismiss a waiting item and start a review from a short PR ref" do
+    post "/api/cli/dismiss", params: { key: "github-g1" }
+    assert Dismissal.exists?(item_key: "github-g1")
+
+    Github::Preferences.update(repos: [ "acme/app" ])
+    Github::Cli.stub(:run, { "merged" => false }) do
+      assert_enqueued_with(job: AiReviewJob) { post "/api/cli/reviews", params: { pr: "app#12" } }
+    end
+    assert_match "Started review", response.body
+    assert_equal "queued", Review.find_by(pr_key: "acme/app#12").ai_status
+  end
 end

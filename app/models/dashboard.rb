@@ -96,7 +96,10 @@ class Dashboard
         detail: connected[:jira] ? Jira::Connection.status[:detail] : "Reads your tickets and mentions through the Atlassian CLI (acli)." },
       { key: "claude_hooks", name: "Claude Code hooks", connected: ClaudeCode::Hooks.installed?, optional: true, setup: true, instant: true,
         detail: ClaudeCode::Hooks.installed_url&.then { "Sending session events to #{it}" } ||
-          "Optional. Shows when an agent is waiting on you, the moment it happens, and refreshes open pages right away." }
+          "Optional. Shows when an agent is waiting on you, the moment it happens, and refreshes open pages right away." },
+      { key: "claude_integration", name: "Echo in Claude Code", connected: ClaudeCode::Integration.installed?, optional: true, setup: true, instant: true,
+        detail: ClaudeCode::Integration.installed? ? "Your counts are on Claude Code's status line, and /echo and /echo-review are ready in every session." :
+          "Optional. Adds the /echo and /echo-review skills, and Echo's counts to Claude Code's status line. A status line you already have is kept." }
     ]
   end
 

@@ -15,6 +15,7 @@ class Api::ConnectionsController < ApplicationController
     case params[:key]
     when "jira" then Jira::Connection.log_out
     when "claude_hooks" then ClaudeCode::Hooks.uninstall
+    when "claude_integration" then ClaudeCode::Integration.uninstall
     else return head :not_found
     end
     head :no_content
