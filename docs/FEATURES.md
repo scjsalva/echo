@@ -262,7 +262,10 @@ Settings is split into sections, listed on the left: Connections, GitHub, Claude
 
 Changes wait for **Save**, section by section. As soon as something changes in a section, a bar appears at the bottom of it with **Save** and **Cancel**, and a dot marks the section in the list. Both apply to that section only; Cancel puts its settings back to how they were, including the theme, which previews as you pick it. Moving to another section, or leaving Settings, with unsaved changes asks first. Actions still happen straight away: logging in and out, installing or removing, Send test, and removing Echo's copy of a repo.
 
-- **Connections:** GitHub, Jira, Claude Code hooks, and Echo in Claude Code. Echo never asks for tokens: logging in opens Terminal with the CLI's own login command.
+- **Connections:** GitHub, Jira, Claude Code hooks, and Echo in Claude Code.
+- **Health** (under Connections): how each background sync is doing (GitHub, Jira and the notification check). It shows when each last succeeded, any failures in a row with the last error, and a **Sync now** button, on top of the automatic runs. Failed syncs retry on their own every minute.
+  - **Scheduler:** Health also shows the background scheduler that starts the syncs. If it stops for 3 minutes, Echo runs the syncs itself; if it's still stuck after 5, Echo restarts it.
+  - **After sending a review:** Echo syncs GitHub straight away, so an approval shows at once. Echo never asks for tokens: logging in opens Terminal with the CLI's own login command.
 - **GitHub:**
   - the repos the review queue watches
   - your team (with suggestions from your organisation)

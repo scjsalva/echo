@@ -5,6 +5,7 @@ import AppShell from '@/components/layout/AppShell.vue'
 import ConnectionRow from '@/components/settings/ConnectionRow.vue'
 import SettingsCard from '@/components/settings/SettingsCard.vue'
 import SettingsSection from '@/components/settings/SettingsSection.vue'
+import SyncHealthCard from '@/components/settings/SyncHealthCard.vue'
 import ThemeSetting from '@/components/settings/ThemeSetting.vue'
 import ClaudeSettings from '@/components/settings/ClaudeSettings.vue'
 import GithubSettings from '@/components/settings/GithubSettings.vue'
@@ -114,6 +115,9 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', warnBeforeLeavi
         <SettingsSection v-show="section === 'connections'" :ref="setSectionRef('connections')" label="Connections" @dirty="dirty.connections = $event">
           <SettingsCard title="Connections" description="Claude Code sessions work out of the box. These connect the rest, through tools you already use.">
             <ConnectionRow v-for="connection in connections" :key="connection.key" :connection="connection" @change="connections = $event" />
+          </SettingsCard>
+          <SettingsCard title="Health" description="How Echo's background syncs are doing. Each retries on its own; Sync now runs one straight away.">
+            <SyncHealthCard />
           </SettingsCard>
         </SettingsSection>
 

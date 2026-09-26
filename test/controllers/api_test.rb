@@ -294,4 +294,12 @@ class ApiTest < ActionDispatch::IntegrationTest
     assert JiraNotification.find_by(external_id: "c1").read_at
     assert_nil JiraNotification.find_by(external_id: "c2").read_at
   end
+
+  test "health lists each sync, and Sync now starts one" do
+    get "/api/health"
+    assert_equal %w[github jira notify], response.parsed_body["syncs"].pluck("source")
+
+    assert_enqueued_with(job: GithubSyncJob) { patch "/api/health", params: { source: "github" } }
+    assert_response :accepted
+  end
 end

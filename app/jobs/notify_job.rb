@@ -3,5 +3,5 @@
 class NotifyJob < ApplicationJob
   limits_concurrency to: 1, key: "notify", duration: 2.minutes
 
-  def perform = Notifier.deliver_new
+  def perform = SyncHealth.track("notify") { Notifier.deliver_new }
 end

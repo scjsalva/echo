@@ -37,6 +37,7 @@ Rails.application.routes.draw do
     resource :github_echo_copy, only: :destroy, path: "github/echo_copy"
     resource :skill, only: %i[show update]
     resource :claude_context, only: :update
+    resource :sync_health, only: %i[show update], path: "health"
     scope "cli", controller: "cli", as: "cli" do
       get :status
       get :summary

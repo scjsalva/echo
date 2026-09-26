@@ -17,6 +17,8 @@ module ReviewSubmission
 
     committed.update_all(state: "sent")
     review.update!(status: "sent", event:, summary: body, sent_at: Time.current, github_url: result["html_url"])
+    # So the dashboard shows the approval (or changes requested) straight away.
+    GithubSyncJob.perform_later
   rescue Github::Cli::Error => e
     # GitHub explains itself, e.g. that you can't approve your own pull request.
     raise Error, e.message[/"message":"([^"]+)"/, 1] || e.message

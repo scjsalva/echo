@@ -5,7 +5,7 @@ class GithubSyncJob < ApplicationJob
   def perform
     return unless Github::Connection.connected?
 
-    Github::Sync.new.run
+    SyncHealth.track("github") { Github::Sync.new.run }
     Changes.bump
     Notifier.deliver_new
   end

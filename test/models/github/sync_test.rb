@@ -115,7 +115,7 @@ class Github::SyncTest < ActiveSupport::TestCase
   end
 
   def sync
-    cli = lambda do |*args, json: false|
+    cli = lambda do |*args, json: false, timeout: nil|
       path = Github::Cli.api_path(args)
       case path
       when "graphql"

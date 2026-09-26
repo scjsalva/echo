@@ -32,7 +32,8 @@ const nav = (page: ReturnType<typeof mount>, label: string) =>
 
 describe('SettingsPage', () => {
   it('saves and cancels one section at a time, and asks before leaving one with changes', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ alerts: [], version: 0 }), { status: 200 })))
+    const health = { scheduler: { lastRunAt: null, stalled: false, coveringSince: null }, syncs: [] }
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => new Response(JSON.stringify(url === '/api/health' ? health : { alerts: [], version: 0 }), { status: 200 })))
     history.replaceState(null, '', '/settings#notifications')
     const page = mount(SettingsPage, { props: props as never, attachTo: document.body })
     await flushPromises()

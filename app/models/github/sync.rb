@@ -36,7 +36,8 @@ class Github::Sync
       "-f", "mine=is:pr is:open author:@me archived:false",
       "-f", "requested=is:pr is:open review-requested:@me archived:false",
       "-f", "queue=is:pr is:open draft:false -author:@me archived:false #{repos.map { "repo:#{it}" }.join(' ')}",
-      "-F", "withQueue=#{repos.any?}", json: true).fetch("data")
+      # The one big query; GitHub can be slow to answer it.
+      "-F", "withQueue=#{repos.any?}", json: true, timeout: 60).fetch("data")
     @me = data.dig("viewer", "login")
 
     requested_keys = nodes(data, "requested").map { key_of(it) }.to_set
