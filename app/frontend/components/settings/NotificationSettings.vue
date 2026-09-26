@@ -81,59 +81,64 @@ async function sendTest() {
 </script>
 
 <template>
-  <SettingRow>
-    <template #title>
-      Notify me about
-      <InfoHint text="Simple sends only what's waiting on you. Custom lets you pick from everything Echo can send." />
-    </template>
-    <template #description>Sent as OS notifications when those are on, otherwise as alerts on any open Echo page.</template>
-    <SegmentedControl v-model="scope" :options="scopes" label="Notify me about" @update:model-value="save({ notify_scope: $event })" />
-  </SettingRow>
+  <!-- A setting and its options are one block, so the card's divider falls between settings only. -->
+  <div>
+    <SettingRow>
+      <template #title>
+        Notify me about
+        <InfoHint text="Simple sends only what's waiting on you. Custom lets you pick from everything Echo can send." />
+      </template>
+      <template #description>Sent as OS notifications when those are on, otherwise as alerts on any open Echo page.</template>
+      <SegmentedControl v-model="scope" :options="scopes" label="Notify me about" @update:model-value="save({ notify_scope: $event })" />
+    </SettingRow>
 
-  <div v-if="scope === 'custom'" class="grid gap-4 pb-3 sm:grid-cols-3" aria-label="Notifications to send">
-    <div v-for="(column, c) in columns" :key="c" class="grid content-start gap-4">
-      <fieldset v-for="[group, types] in column" :key="group" class="grid content-start gap-1.5">
-        <legend class="mb-1.5 text-[11px] font-medium tracking-[0.07em] text-faint uppercase">{{ group }}</legend>
-        <label v-for="type in types" :key="type.id" class="flex cursor-pointer items-start gap-2 text-[13px]">
-          <input
-            type="checkbox"
-            :checked="enabled.has(type.id)"
-            class="mt-0.5 accent-(--color-accent)"
-            @change="toggle(type.id, ($event.target as HTMLInputElement).checked)"
-          />
-          <span>{{ type.label }}</span>
-        </label>
-      </fieldset>
-    </div>
+    <div v-if="scope === 'custom'" class="grid gap-4 pb-3 sm:grid-cols-3" aria-label="Notifications to send">
+      <div v-for="(column, c) in columns" :key="c" class="grid content-start gap-4">
+        <fieldset v-for="[group, types] in column" :key="group" class="grid content-start gap-1.5">
+          <legend class="mb-1.5 text-[11px] font-medium tracking-[0.07em] text-faint uppercase">{{ group }}</legend>
+          <label v-for="type in types" :key="type.id" class="flex cursor-pointer items-start gap-2 text-[13px]">
+            <input
+              type="checkbox"
+              :checked="enabled.has(type.id)"
+              class="mt-0.5 accent-(--color-accent)"
+              @change="toggle(type.id, ($event.target as HTMLInputElement).checked)"
+            />
+            <span>{{ type.label }}</span>
+          </label>
+        </fieldset>
+      </div>
+  </div>
   </div>
 
-  <SettingRow>
-    <template #title>Working hours</template>
-    <template #description>
-      <template v-if="hours.enabled">
-        Notifications only come in these hours, in {{ hours.timeZone }} (change it in General). Anything from outside them arrives when they start.
-        <template v-if="overnight"> Ends after midnight, so it counts as the day it starts.</template>
+  <div>
+    <SettingRow>
+      <template #title>Working hours</template>
+      <template #description>
+        <template v-if="hours.enabled">
+          Notifications only come in these hours, in {{ hours.timeZone }} (change it in General). Anything from outside them arrives when they start.
+          <template v-if="overnight"> Ends after midnight, so it counts as the day it starts.</template>
+        </template>
+        <template v-else>Off, so notifications can come at any time.</template>
       </template>
-      <template v-else>Off, so notifications can come at any time.</template>
-    </template>
-    <ToggleSwitch v-model="hours.enabled" label="Working hours" @update:model-value="saveHours" />
-  </SettingRow>
-  <div v-if="hours.enabled" class="flex flex-wrap items-center gap-x-5 gap-y-3 pb-3" aria-label="Working hours">
-    <div class="flex flex-wrap gap-1" role="group" aria-label="Working days">
-      <button
-        v-for="day in dayOrder"
-        :key="day"
-        type="button"
-        :aria-pressed="hours.days.includes(day)"
-        :class="[
-          'rounded-md border px-2 py-1 text-[12.5px] font-medium',
-          hours.days.includes(day) ? 'border-accent bg-accent-soft text-accent' : 'border-line text-muted hover:text-ink',
-        ]"
-        @click="toggleDay(day)"
-      >
-        {{ DAYS[day] }}
-      </button>
-    </div>
+      <ToggleSwitch v-model="hours.enabled" label="Working hours" @update:model-value="saveHours" />
+    </SettingRow>
+    <div v-if="hours.enabled" class="flex flex-wrap items-center gap-x-5 gap-y-3 pb-3" aria-label="Working hours">
+      <div class="flex flex-wrap gap-1" role="group" aria-label="Working days">
+        <button
+          v-for="day in dayOrder"
+          :key="day"
+          type="button"
+          :aria-pressed="hours.days.includes(day)"
+          :class="[
+            'rounded-md border px-2 py-1 text-[12.5px] font-medium',
+            hours.days.includes(day) ? 'border-accent bg-accent-soft text-accent' : 'border-line text-muted hover:text-ink',
+          ]"
+          @click="toggleDay(day)"
+        >
+          {{ DAYS[day] }}
+        </button>
+      </div>
+  </div>
     <label class="flex items-center gap-2 text-[13px] text-muted">
       From
       <input v-model="hours.start" type="time" aria-label="Start" class="rounded-md border border-line bg-surface px-2 py-1 text-[13px] text-ink" @change="saveHours" />
