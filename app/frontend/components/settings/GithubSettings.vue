@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref } from 'vue'
 import ChipListEditor from './ChipListEditor.vue'
 import LocalRepoRow from './LocalRepoRow.vue'
+import { useDraftValue, useSettingsDraft } from '@/composables/useSettingsDraft'
 import { useToast } from '@/composables/useToast'
 import { request } from '@/lib/api'
 import type { GithubPreferences } from '@/types/dashboard'
@@ -9,21 +9,41 @@ import type { GithubPreferences } from '@/types/dashboard'
 const props = defineProps<{ preferences: GithubPreferences }>()
 
 const toast = useToast()
-const prefs = ref(props.preferences)
+const draft = useSettingsDraft()
+const prefs = useDraftValue(props.preferences)
 
-async function save(change: { github_repos?: string[]; github_team?: string[]; github_local_repo?: { repo: string; path: string } }) {
-  try {
+type Change = { github_repos?: string[]; github_team?: string[]; github_local_repo?: { repo: string; path: string } }
+
+// Held until Save; the server's answer then replaces what's shown.
+function stage(key: string, change: Change) {
+  draft.stage(key, async () => {
     const { github } = await request<{ github: GithubPreferences }>('PATCH', '/api/settings', change)
     prefs.value = github
-  } catch (error) {
-    toast.show(error instanceof Error ? error.message : "Couldn't save that")
-  }
+  })
 }
 
+function setRepos(repos: string[]) {
+  prefs.value.repos = repos
+  stage('github_repos', { github_repos: repos })
+}
+
+function setTeam(team: string[]) {
+  prefs.value.team = team
+  stage('github_team', { github_team: team })
+}
+
+function useClone(repo: string, path: string) {
+  const entry = prefs.value.localRepos.find((e) => e.repo === repo)
+  if (entry) entry.path = path || null
+  stage(`local_repo:${repo}`, { github_local_repo: { repo, path } })
+}
+
+// Deleting Echo's copy is an action, not a setting, so it happens straight away.
 async function removeCopy(repo: string) {
   try {
-    const { github } = await request<{ github: GithubPreferences }>('DELETE', `/api/github/echo_copy?repo=${encodeURIComponent(repo)}`)
-    prefs.value = github
+    await request('DELETE', `/api/github/echo_copy?repo=${encodeURIComponent(repo)}`)
+    const entry = prefs.value.localRepos.find((e) => e.repo === repo)
+    if (entry) entry.echoCopyBytes = null
     toast.show(`Removed Echo's copy of ${repo}`)
   } catch (error) {
     toast.show(error instanceof Error ? error.message : "Couldn't remove it")
@@ -43,7 +63,7 @@ async function removeCopy(repo: string) {
       :suggestions="prefs.knownRepos"
       placeholder="owner/repo"
       label="watched repos"
-      @change="save({ github_repos: $event })"
+      @change="setRepos"
     />
   </div>
   <div class="grid gap-1.5 py-2.5">
@@ -54,7 +74,7 @@ async function removeCopy(repo: string) {
       :suggestions="prefs.knownPeople.map((p) => ({ value: p.login, label: p.name }))"
       placeholder="GitHub username or name"
       label="team"
-      @change="save({ github_team: $event })"
+      @change="setTeam"
     />
   </div>
   <div class="grid gap-1 border-t border-line-soft pt-3">
@@ -67,7 +87,7 @@ async function removeCopy(repo: string) {
       v-for="entry in prefs.localRepos"
       :key="`${entry.repo}-${entry.path}`"
       :entry="entry"
-      @use="(path) => save({ github_local_repo: { repo: entry.repo, path } })"
+      @use="(path) => useClone(entry.repo, path)"
       @remove-copy="removeCopy(entry.repo)"
     />
   </div>

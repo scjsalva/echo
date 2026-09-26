@@ -10,7 +10,10 @@ import ClaudeSettings from '@/components/settings/ClaudeSettings.vue'
 import GithubSettings from '@/components/settings/GithubSettings.vue'
 import NotificationSettings from '@/components/settings/NotificationSettings.vue'
 import TimeZoneSetting from '@/components/settings/TimeZoneSetting.vue'
+import { provideSettingsDraft } from '@/composables/useSettingsDraft'
 import { useTheme } from '@/composables/useTheme'
+import { useToast } from '@/composables/useToast'
+import BaseButton from '@/components/ui/BaseButton.vue'
 import type { ClaudeSettings as ClaudePreferences, Connection, GithubPreferences, NotificationSettings as NotificationPreferences, ShellProps, TimeZoneSettings } from '@/types/dashboard'
 
 const props = defineProps<{
@@ -58,6 +61,30 @@ onMounted(() => {
 onBeforeUnmount(() => window.removeEventListener('hashchange', fromHash))
 
 const { preference } = useTheme()
+
+// Every setting waits for Save; Cancel puts them all back. Actions (logging in,
+// installing, Send test) still happen straight away.
+const draft = provideSettingsDraft()
+const toast = useToast()
+// Theme shows as you pick it; Cancel puts back the one you had.
+let savedTheme = preference.value
+watch(preference, (value) => value !== savedTheme && draft.stage('theme', async () => undefined))
+draft.onCancel(() => (preference.value = savedTheme))
+draft.onSaved(() => (savedTheme = preference.value))
+
+async function saveAll() {
+  try {
+    await draft.save()
+    toast.show('Settings saved')
+  } catch (error) {
+    toast.show(error instanceof Error ? error.message : "Couldn't save everything; what's left is still unsaved")
+  }
+}
+const warnBeforeLeaving = (event: BeforeUnloadEvent) => {
+  if (draft.dirty.value) event.preventDefault()
+}
+onMounted(() => window.addEventListener('beforeunload', warnBeforeLeaving))
+onBeforeUnmount(() => window.removeEventListener('beforeunload', warnBeforeLeaving))
 const themes = [
   { value: 'system', label: 'System' },
   { value: 'light', label: 'Light' },
@@ -126,6 +153,19 @@ const themes = [
             <SegmentedControl v-model="preference" :options="themes" label="Theme" />
           </SettingRow>
         </SettingsCard>
+
+        <div
+          v-if="draft.dirty.value"
+          class="sticky bottom-4 z-20 flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-accent/40 bg-surface px-5 py-3 shadow-lg"
+          role="region"
+          aria-label="Unsaved changes"
+        >
+          <p class="text-[13px] text-muted">You have unsaved changes.</p>
+          <div class="flex gap-2">
+            <BaseButton :disabled="draft.saving.value" @click="draft.cancel()">Cancel</BaseButton>
+            <BaseButton variant="primary" :disabled="draft.saving.value" @click="saveAll">{{ draft.saving.value ? 'Saving…' : 'Save' }}</BaseButton>
+          </div>
+        </div>
       </div>
     </div>
   </AppShell>

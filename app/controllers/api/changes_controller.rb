@@ -1,5 +1,8 @@
 class Api::ChangesController < ApplicationController
   def show
-    render json: { version: Changes.version }
+    # With shell=1, also the header's counts, for pages that don't load the dashboard.
+    body = { version: Changes.version }
+    body[:shell] = camelize(Dashboard.current.shell_props) if params[:shell]
+    render json: body
   end
 end

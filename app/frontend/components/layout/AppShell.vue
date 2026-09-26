@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted } from 'vue'
+import { computed, onBeforeUnmount, onMounted, provide, ref } from 'vue'
 import { PhGear } from '@phosphor-icons/vue'
 import AlertStack from './AlertStack.vue'
 import LinkedDrawer from './LinkedDrawer.vue'
@@ -7,12 +7,14 @@ import NotificationMenu from './NotificationMenu.vue'
 import EchoLogo from './EchoLogo.vue'
 import FirstRunBanner from './FirstRunBanner.vue'
 import ToastHost from './ToastHost.vue'
+import { useOptionalDashboard } from '@/composables/useDashboard'
 import { useNotificationLink } from '@/composables/useNotificationLink'
+import { request } from '@/lib/api'
 import { useNow } from '@/composables/useNow'
 import { timeAgo } from '@/lib/format'
 import type { ShellProps } from '@/types/dashboard'
 
-withDefaults(defineProps<{
+const props = withDefaults(defineProps<{
   shell: ShellProps
   title?: string
   /** Pages between Echo and this one, e.g. GitHub for a PR's review page. */
@@ -25,6 +27,28 @@ withDefaults(defineProps<{
 })
 
 const now = useNow()
+
+// The header's counts. Pages with a dashboard keep them fresh; the others
+// (Settings, a review) follow changes here, so the bell never needs a reload.
+const dashboard = useOptionalDashboard()
+const ownShell = ref<ShellProps | null>(null)
+const shell = computed(() => ownShell.value ?? props.shell)
+async function refreshShell() {
+  if (dashboard) return dashboard.refresh()
+  ownShell.value = (await request<{ shell: ShellProps }>('GET', '/api/changes?shell=1').catch(() => null))?.shell ?? ownShell.value
+}
+provide('refreshShell', refreshShell)
+const CHANGES_MS = 5_000
+let seen: number | null = null
+const followChanges = dashboard
+  ? undefined
+  : setInterval(async () => {
+      if (document.visibilityState !== 'visible') return
+      const { version } = await request<{ version: number }>('GET', '/api/changes').catch(() => ({ version: seen ?? 0 }))
+      if (seen !== null && version !== seen) refreshShell()
+      seen = version
+    }, CHANGES_MS)
+onBeforeUnmount(() => clearInterval(followChanges))
 
 // Clicking an OS notification sets #echo-open=<link> on an open Echo tab rather
 // than loading the link, so the item opens in a drawer over whatever page you're on.

@@ -108,8 +108,11 @@ module Notifier
     preferences[:sound] unless preferences[:sound] == "none"
   end
 
-  def self.test = DesktopNotification.show(**two_lines(title: "Test notification", message: "This is how Echo will get your attention."),
-    sound: preferences[:sound])
+  # The sound you've picked, even before it's saved, or the saved one.
+  def self.test(sound: nil)
+    sound = preferences[:sound] unless sound == "none" || DesktopNotification.sounds.include?(sound)
+    DesktopNotification.show(**two_lines(title: "Test notification", message: "This is how Echo will get your attention."), sound:)
+  end
 
   def self.candidates(dashboard)
     custom = scope == "custom"

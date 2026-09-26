@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue'
 import SettingRow from './SettingRow.vue'
 import SkillSelect from './SkillSelect.vue'
-import { useToast } from '@/composables/useToast'
+import { useDraftValue, useSettingsDraft } from '@/composables/useSettingsDraft'
 import { request } from '@/lib/api'
 import { PhX } from '@phosphor-icons/vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
@@ -11,18 +11,12 @@ import type { ClaudeSettings, ContextExtra, ContextFile, SkillAction } from '@/t
 // Settings shows the skills and what Claude sees as two cards, one part each.
 const props = defineProps<{ settings: ClaudeSettings; part: 'skills' | 'context' }>()
 
-const toast = useToast()
-const skills = ref(props.settings.skills)
-const reviewLimit = ref(props.settings.reviewLimit)
+const draft = useSettingsDraft()
+const skills = useDraftValue(props.settings.skills)
+const reviewLimit = useDraftValue(props.settings.reviewLimit)
+const context = useDraftValue(props.settings.context)
 
-async function saveLimit() {
-  try {
-    await request('PATCH', '/api/settings', { ai_review_limit: reviewLimit.value })
-  } catch (error) {
-    toast.show(error instanceof Error ? error.message : "Couldn't save that")
-  }
-}
-const context = ref(props.settings.context)
+const stageLimit = () => draft.stage('ai_review_limit', () => request('PATCH', '/api/settings', { ai_review_limit: reviewLimit.value }))
 
 // Adding extra context: for every run or one repo, a file path or a skill.
 const scope = ref<string>('')
@@ -33,33 +27,42 @@ const skillOptions = computed(() =>
   scope.value ? (skills.value[0]?.repos.find((r) => r.repo === scope.value)?.options ?? []) : (skills.value[0]?.options ?? []),
 )
 
-async function saveExtras(extras: ContextExtra[]) {
-  try {
+// Shown straight away; Echo checks each file or skill exists when you Save.
+function setExtras(extras: ContextExtra[]) {
+  context.value.extras = extras
+  draft.stage('context_extras', async () => {
     const result = await request<{ context: ClaudeSettings['context'] }>('PATCH', '/api/claude_context', {
       extras: extras.map(({ kind, value, repo }) => ({ kind, value, repo })),
     })
     context.value = result.context
-    return true
-  } catch (error) {
-    toast.show(error instanceof Error ? error.message : "Couldn't save that")
-    return false
-  }
+  })
 }
 
-async function addExtra() {
+function addExtra() {
   if (!value.value.trim()) return
-  if (await saveExtras([...context.value.extras, { kind: kind.value, value: value.value.trim(), repo: scope.value || null }])) value.value = ''
+  setExtras([...context.value.extras, { kind: kind.value, value: value.value.trim(), repo: scope.value || null, found: true }])
+  value.value = ''
 }
 
-const removeExtra = (extra: ContextExtra) => saveExtras(context.value.extras.filter((e) => e !== extra))
+const removeExtra = (extra: ContextExtra) => setExtras(context.value.extras.filter((e) => e !== extra))
 
-async function choose(action: SkillAction['action'], skill: string | null, repo?: string) {
-  try {
-    const result = await request<{ skills: SkillAction[] }>('PATCH', '/api/skill', { skill_action: action, skill, repo })
-    skills.value = result.skills
-  } catch (error) {
-    toast.show(error instanceof Error ? error.message : "Couldn't save that")
+function choose(action: SkillAction['action'], skill: string | null, repo?: string) {
+  const entry = skills.value.find((a) => a.action === action)
+  if (entry) {
+    if (repo) {
+      const row = entry.repos.find((r) => r.repo === repo)
+      if (row) {
+        row.override = skill
+        row.current = row.options.find((o) => o.id === skill) ?? entry.current
+      }
+    } else {
+      entry.current = entry.options.find((o) => o.id === skill) ?? entry.current
+      entry.repos.filter((r) => !r.override).forEach((r) => (r.current = entry.current))
+    }
   }
+  draft.stage(`skill:${action}:${repo ?? ''}`, async () => {
+    skills.value = (await request<{ skills: SkillAction[] }>('PATCH', '/api/skill', { skill_action: action, skill, repo })).skills
+  })
 }
 
 const size = (files: ContextFile[]) => `${Math.max(1, Math.round(files.reduce((n, f) => n + f.chars, 0) / 1000))}k characters`
@@ -127,7 +130,7 @@ const size = (files: ContextFile[]) => `${Math.max(1, Math.round(files.reduce((n
   <SettingRow v-if="part === 'skills'">
     <template #title>AI reviews at once</template>
     <template #description>Any more wait their turn as Queued, and start when one finishes.</template>
-    <select v-model.number="reviewLimit" aria-label="AI reviews at once" class="rounded-md border border-line bg-surface px-2.5 py-1.5 text-[13px]" @change="saveLimit">
+    <select v-model.number="reviewLimit" aria-label="AI reviews at once" class="rounded-md border border-line bg-surface px-2.5 py-1.5 text-[13px]" @change="stageLimit">
       <option v-for="n in settings.reviewLimitOptions" :key="n" :value="n">{{ n }}</option>
     </select>
   </SettingRow>

@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { PhBellRinging } from '@phosphor-icons/vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import InfoHint from '@/components/ui/InfoHint.vue'
 import SegmentedControl from '@/components/ui/SegmentedControl.vue'
 import SettingRow from './SettingRow.vue'
 import ToggleSwitch from '@/components/ui/ToggleSwitch.vue'
+import { useDraftValue, useSettingsDraft } from '@/composables/useSettingsDraft'
 import { useToast } from '@/composables/useToast'
 import { request } from '@/lib/api'
 import type { NotificationSettings } from '@/types/dashboard'
@@ -13,25 +14,30 @@ import type { NotificationSettings } from '@/types/dashboard'
 const props = defineProps<{ settings: NotificationSettings }>()
 
 const toast = useToast()
-const desktop = ref(props.settings.desktop)
-const scope = ref(props.settings.scope)
-const enabled = ref(new Set(props.settings.enabledTypes))
-const sound = ref(props.settings.sound)
-const reminder = ref(props.settings.reminderMinutes)
+const draft = useSettingsDraft()
+const desktop = useDraftValue(props.settings.desktop)
+const scope = useDraftValue(props.settings.scope)
+const enabled = useDraftValue(new Set(props.settings.enabledTypes))
+const sound = useDraftValue(props.settings.sound)
+const reminder = useDraftValue(props.settings.reminderMinutes)
+const hours = useDraftValue({ ...props.settings.workingHours })
 
-const hours = ref({ ...props.settings.workingHours })
+// Held until Save; changing the same setting again replaces the earlier change.
+const stage = (key: string, change: Record<string, unknown>) => draft.stage(key, () => request('PATCH', '/api/settings', change))
+
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 // Monday first, as a working week reads.
 const dayOrder = [1, 2, 3, 4, 5, 6, 0]
 const overnight = computed(() => hours.value.end <= hours.value.start && hours.value.end !== hours.value.start)
-function saveHours() {
-  save({ working_hours: { enabled: hours.value.enabled, days: hours.value.days, start: hours.value.start, end: hours.value.end } })
+function stageHours() {
+  const { enabled: on, days, start, end } = hours.value
+  stage('working_hours', { working_hours: { enabled: on, days, start, end } })
 }
 function toggleDay(day: number) {
   const days = new Set(hours.value.days)
   if (!days.delete(day)) days.add(day)
   hours.value = { ...hours.value, days: [...days].sort() }
-  saveHours()
+  stageHours()
 }
 const every = (minutes: number) => (minutes === 0 ? 'Off' : minutes < 60 ? `Every ${minutes} minutes` : minutes === 60 ? 'Every hour' : `Every ${minutes / 60} hours`)
 
@@ -63,19 +69,12 @@ function toggle(id: string, on: boolean) {
   if (on) next.add(id)
   else next.delete(id)
   enabled.value = next
-  save({ notify_types: props.settings.types.map((t) => t.id).filter((t) => next.has(t)) })
+  stage('notify_types', { notify_types: props.settings.types.map((t) => t.id).filter((t) => next.has(t)) })
 }
 
-async function save(change: Record<string, unknown>) {
-  try {
-    await request('PATCH', '/api/settings', change)
-  } catch (error) {
-    toast.show(error instanceof Error ? error.message : "Couldn't save that")
-  }
-}
-
+// A test is an action, not a setting, so it goes now, with the sound you've picked.
 async function sendTest() {
-  await request('POST', '/api/test_notification').catch(() => null)
+  await request('POST', '/api/test_notification', { sound: sound.value }).catch(() => null)
   toast.show(`Sent. If nothing appeared, check that Echo is allowed in ${props.settings.settingsHint}.`)
 }
 </script>
@@ -89,7 +88,7 @@ async function sendTest() {
         <InfoHint text="Simple sends only what's waiting on you. Custom lets you pick from everything Echo can send." />
       </template>
       <template #description>Sent as OS notifications when those are on, otherwise as alerts on any open Echo page.</template>
-      <SegmentedControl v-model="scope" :options="scopes" label="Notify me about" @update:model-value="save({ notify_scope: $event })" />
+      <SegmentedControl v-model="scope" :options="scopes" label="Notify me about" @update:model-value="stage('notify_scope', { notify_scope: $event })" />
     </SettingRow>
 
     <div v-if="scope === 'custom'" class="grid gap-4 pb-3 sm:grid-cols-3" aria-label="Notifications to send">
@@ -107,7 +106,7 @@ async function sendTest() {
           </label>
         </fieldset>
       </div>
-  </div>
+    </div>
   </div>
 
   <div>
@@ -120,7 +119,7 @@ async function sendTest() {
         </template>
         <template v-else>Off, so notifications can come at any time.</template>
       </template>
-      <ToggleSwitch v-model="hours.enabled" label="Working hours" @update:model-value="saveHours" />
+      <ToggleSwitch v-model="hours.enabled" label="Working hours" @update:model-value="stageHours" />
     </SettingRow>
     <div v-if="hours.enabled" class="flex flex-wrap items-center gap-x-5 gap-y-3 pb-3" aria-label="Working hours">
       <div class="flex flex-wrap gap-1" role="group" aria-label="Working days">
@@ -138,13 +137,13 @@ async function sendTest() {
           {{ DAYS[day] }}
         </button>
       </div>
-  </div>
-    <label class="flex items-center gap-2 text-[13px] text-muted">
-      From
-      <input v-model="hours.start" type="time" aria-label="Start" class="rounded-md border border-line bg-surface px-2 py-1 text-[13px] text-ink" @change="saveHours" />
-      to
-      <input v-model="hours.end" type="time" aria-label="End" class="rounded-md border border-line bg-surface px-2 py-1 text-[13px] text-ink" @change="saveHours" />
-    </label>
+      <label class="flex items-center gap-2 text-[13px] text-muted">
+        From
+        <input v-model="hours.start" type="time" aria-label="Start" class="rounded-md border border-line bg-surface px-2 py-1 text-[13px] text-ink" @change="stageHours" />
+        to
+        <input v-model="hours.end" type="time" aria-label="End" class="rounded-md border border-line bg-surface px-2 py-1 text-[13px] text-ink" @change="stageHours" />
+      </label>
+    </div>
   </div>
 
   <SettingRow :class="reminderOff && 'opacity-50'">
@@ -158,7 +157,7 @@ async function sendTest() {
       aria-label="Review reminder"
       :disabled="reminderOff"
       class="rounded-md border border-line bg-surface px-2.5 py-1.5 text-[13px] disabled:cursor-not-allowed"
-      @change="save({ review_reminder_minutes: reminder })"
+      @change="stage('review_reminder_minutes', { review_reminder_minutes: reminder })"
     >
       <option v-for="minutes in settings.reminderOptions" :key="minutes" :value="minutes">{{ every(minutes) }}</option>
     </select>
@@ -176,7 +175,7 @@ async function sendTest() {
       <template v-else-if="desktop">Works even when no Echo page is open, and clears after 30 seconds. In-app alerts are off while these are on, so you're not told twice.</template>
       <template v-else>Off, so new items show as alerts on any open Echo page instead.</template>
     </template>
-    <ToggleSwitch v-model="desktop" :disabled="!settings.available" label="OS notifications" @update:model-value="save({ notify_desktop: $event })" />
+    <ToggleSwitch v-model="desktop" :disabled="!settings.available" label="OS notifications" @update:model-value="stage('notify_desktop', { notify_desktop: $event })" />
   </SettingRow>
 
   <SettingRow>
@@ -186,7 +185,7 @@ async function sendTest() {
       v-model="sound"
       aria-label="Notification sound"
       class="rounded-md border border-line bg-surface px-2.5 py-1.5 text-[13px]"
-      @change="save({ notify_sound: sound })"
+      @change="stage('notify_sound', { notify_sound: sound })"
     >
       <option value="none">No sound</option>
       <option v-for="name in settings.sounds" :key="name" :value="name">{{ name }}</option>

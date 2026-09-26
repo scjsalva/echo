@@ -260,6 +260,8 @@ The skills live in `~/.claude/skills/echo` and `~/.claude/skills/echo-review`. E
 
 Settings is split into sections, listed on the left: Connections, GitHub, Claude, Notifications and General. The address follows the section, e.g. `/settings#claude`, so it can be linked to. A dot next to Connections means something isn't connected.
 
+Changes wait for **Save**. A bar appears at the bottom as soon as something's changed, on any section, with **Save** and **Cancel**; Cancel puts every setting back to how it was, including the theme, which previews as you pick it. Leaving the page with unsaved changes asks first. Actions still happen straight away: logging in and out, installing or removing, Send test, and removing Echo's copy of a repo.
+
 - **Connections:** GitHub, Jira, Claude Code hooks, and Echo in Claude Code. Echo never asks for tokens: logging in opens Terminal with the CLI's own login command.
 - **GitHub:**
   - the repos the review queue watches

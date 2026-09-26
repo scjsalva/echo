@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, inject, onBeforeUnmount, ref, watch } from 'vue'
 import { PhBell } from '@phosphor-icons/vue'
 import SourceBadge from '@/components/ui/SourceBadge.vue'
 import { useNotificationLink } from '@/composables/useNotificationLink'
@@ -21,6 +21,8 @@ const failed = ref(false)
 const root = ref<HTMLElement>()
 const now = useNow()
 const { openLink } = useNotificationLink()
+// Updates the counts in the header once what you've seen is marked read.
+const refreshShell = inject<() => Promise<unknown>>('refreshShell', async () => undefined)
 
 interface Row {
   id: string
@@ -65,7 +67,7 @@ async function load() {
 // you to act. The dots stay for this look, so you can tell what was new.
 function markSeen() {
   const ids = rows.value.filter((row) => row.unread && !row.needsAction).map((row) => row.id)
-  if (ids.length) request('POST', '/api/notifications/read_some', { ids }).catch(() => null)
+  if (ids.length) request('POST', '/api/notifications/read_some', { ids }).then(refreshShell, () => null)
 }
 
 function choose(row: Row) {

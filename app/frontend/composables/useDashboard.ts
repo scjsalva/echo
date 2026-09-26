@@ -91,6 +91,9 @@ export function provideDashboard<T extends PageData>(initial: T, endpoint = '/ap
   return dashboard
 }
 
+/** The page's dashboard, or undefined on pages that don't load one (Settings, a review). */
+export const useOptionalDashboard = (): Dashboard | undefined => inject(DashboardKey, undefined)
+
 export function useDashboard(): Dashboard {
   const dashboard = inject(DashboardKey)
   if (!dashboard) throw new Error('useDashboard() needs provideDashboard() in a parent component')
