@@ -274,4 +274,13 @@ class ApiTest < ActionDispatch::IntegrationTest
     assert_match "Started review", response.body
     assert_equal "queued", Review.find_by(pr_key: "acme/app#12").ai_status
   end
+
+  test "the CLI finds a PR by its number alone, unless two repos share it" do
+    GithubPullRequest.create!(key: "acme/app#12", data: {})
+    assert_equal "acme/app#12", CliText.pr_key("#12")
+    assert_equal "acme/app#12", CliText.pr_key("12")
+
+    GithubPullRequest.create!(key: "acme/other#12", data: {})
+    assert_raises(CliText::Ambiguous) { CliText.pr_key("#12") }
+  end
 end

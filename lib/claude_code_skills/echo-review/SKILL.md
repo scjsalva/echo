@@ -1,7 +1,7 @@
 ---
 name: echo-review
 description: Start an AI review of a GitHub pull request in Echo, the user's local console, and report Claude's verdict and the comments it staged. Use when the user asks to review a PR with Echo, or to check on a review Echo is running. Never posts to GitHub.
-argument-hint: "PR (owner/repo#123, repo#123 or a GitHub link)"
+argument-hint: "PR (#123, repo#123, owner/repo#123 or a GitHub link)"
 allowed-tools: Bash(curl -s *)
 ---
 <!-- Installed by Echo. Echo keeps this file up to date and removes it when uninstalled. -->

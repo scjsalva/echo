@@ -11,6 +11,14 @@ class Api::CliController < ApplicationController
   def inbox = text(CliText.inbox)
   def prs = text(CliText.prs)
   def agents = text(CliText.agents)
+  def mine = text(CliText.mine)
+
+  def pr
+    key = CliText.pr_key(params[:ref]) or return text("Couldn't find PR #{params[:ref]}. Give it as #123, repo#123, owner/repo#123 or a GitHub link.", :not_found)
+    text(CliText.pull_request(key))
+  rescue Github::Cli::Error, CliText::Ambiguous => e
+    text(e.message, :unprocessable_content)
+  end
   def ticket = text(CliText.ticket(params[:key]))
 
   # Marks one notification read by its id, or all of them with id=all.
@@ -46,7 +54,7 @@ class Api::CliController < ApplicationController
 
   # Starts an AI review of a PR, e.g. pr=web#27014 or a GitHub link.
   def start_review
-    key = CliText.pr_key(params[:pr]) or return text("Give a PR as owner/repo#123, repo#123 or a GitHub link", :unprocessable_content)
+    key = CliText.pr_key(params[:pr]) or return text("Couldn't find PR #{params[:pr]}. Give it as #123, repo#123, owner/repo#123 or a GitHub link.", :unprocessable_content)
     review = Review.for(key)
     return text("#{key} is already merged, so it can't be reviewed", :unprocessable_content) if review.merged?
 
@@ -55,7 +63,7 @@ class Api::CliController < ApplicationController
       AiReviewJob.perform_later(review)
     end
     text("Started review #{review.id} of #{key}\n#{CliText.review(review)}")
-  rescue Github::Cli::Error => e
+  rescue Github::Cli::Error, CliText::Ambiguous => e
     text(e.message, :unprocessable_content)
   end
 

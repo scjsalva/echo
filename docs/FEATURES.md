@@ -233,6 +233,9 @@ Install it from **Settings → Connections → Echo in Claude Code**. It adds:
   | `/echo waiting` | what's waiting on you |
   | `/echo inbox` | unread notifications |
   | `/echo prs` | the review queue |
+  | `/echo mine` | your own open PRs |
+  | `/echo pr #27014` | one PR in full: status, CI, reviews, description and its unresolved threads |
+  | `/echo review #27014` | an AI review, same as `/echo-review` |
   | `/echo agents` | live agents |
   | `/echo jira APP-123` | a Jira ticket |
   | `/echo read <id>` | mark a notification read (`read all` for everything) |
@@ -240,9 +243,10 @@ Install it from **Settings → Connections → Echo in Claude Code**. It adds:
   | `/echo focus <agent>` | bring an agent's terminal forward |
 
   Claude can use it without being asked too, e.g. "anything need me?".
-- **`/echo-review <PR>`:** starts an AI review in Echo (`web#27014`, `owner/repo#123` or a GitHub link), waits for it, and shows the verdict and the comments it staged. It never posts to GitHub: you send reviews from Echo's review page.
+- **PRs can be given** as `#27014` or just `27014` (Echo works out the repo, and asks if two of your repos share that number), `web#27014`, `owner/repo#123`, or a GitHub link.
+- **`/echo-review <PR>`:** starts an AI review in Echo, waits for it, and shows the verdict and the comments it staged. It never posts to GitHub: you send reviews from Echo's review page.
 
-The skills live in `~/.claude/skills/echo` and `~/.claude/skills/echo-review`. Echo won't overwrite a skill of yours with the same name, and **Remove** takes everything back out and restores your previous status line. They talk to Echo through local-only plain-text endpoints under `/api/cli`, so they're cheap on tokens.
+The skills live in `~/.claude/skills/echo` and `~/.claude/skills/echo-review`. Echo keeps installed copies up to date when it starts, won't overwrite a skill of yours with the same name, and **Remove** takes everything back out and restores your previous status line. They talk to Echo through local-only plain-text endpoints under `/api/cli`, so they're cheap on tokens.
 
 ## Settings
 

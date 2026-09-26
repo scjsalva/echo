@@ -41,6 +41,17 @@ class ClaudeCode::IntegrationTest < ActiveSupport::TestCase
     assert_equal "echo mine", settings.dig("statusLine", "command")
   end
 
+  test "brings installed skills up to date" do
+    ClaudeCode::Integration.install("http://localhost:4848")
+    File.write(@home.join("skills/echo/SKILL.md"), "<!-- Installed by Echo -->\nan older version")
+    # Installs from before the address was saved still get refreshed.
+    Setting.find_by(key: ClaudeCode::Integration::BASE_URL_SETTING)&.destroy
+
+    ClaudeCode::Integration.refresh
+
+    assert_includes @home.join("skills/echo/SKILL.md").read, "review PR"
+  end
+
   test "won't replace a skill of yours with the same name" do
     FileUtils.mkdir_p(@home.join("skills/echo"))
     File.write(@home.join("skills/echo/SKILL.md"), "my own echo")

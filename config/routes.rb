@@ -43,6 +43,8 @@ Rails.application.routes.draw do
       get :inbox
       get :prs
       get :agents
+      get :mine
+      get :pr
       get "jira/:key", action: :ticket
       post :read
       post :dismiss

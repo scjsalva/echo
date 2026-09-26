@@ -11,7 +11,27 @@ module ClaudeCode::Integration
   def self.script = DesktopNotification.home.join("statusline.sh")
   def self.previous_file = DesktopNotification.home.join("statusline-previous.json")
 
+  BASE_URL_SETTING = "claude_integration_base_url".freeze
+
   def self.installed? = ClaudeCode::Hooks.settings.dig("statusLine", "command").to_s.include?(script.to_s)
+
+  # Keeps installed copies of the skills in step with the ones Echo ships, e.g.
+  # after an update adds a command. Runs when Echo starts.
+  def self.refresh
+    return unless installed? && (base_url = Setting[BASE_URL_SETTING] || installed_base_url)
+
+    skill_names.each do |name|
+      file = skills_root.join(name, "SKILL.md")
+      next if file.exist? && !file.read.include?(MARKER)
+
+      wanted = SKILLS.join(name, "SKILL.md").read.gsub("{{BASE_URL}}", base_url)
+      FileUtils.mkdir_p(file.dirname)
+      File.write(file, wanted) unless file.exist? && file.read == wanted
+    end
+  end
+
+  # Installs from before the address was saved: it's in the status line script.
+  def self.installed_base_url = script.exist? ? script.read[%r{(https?://[^/\s'"]+)/api/cli/status}, 1] : nil
 
   def self.install(base_url)
     taken = skill_names.select { (existing = skills_root.join(it, "SKILL.md")).exist? && !existing.read.include?(MARKER) }
@@ -26,6 +46,7 @@ module ClaudeCode::Integration
     previous = settings["statusLine"] unless installed?
     File.write(previous_file, previous.to_json) if previous
     write_script(base_url)
+    Setting[BASE_URL_SETTING] = base_url
     ClaudeCode::Hooks.write_settings(settings.merge("statusLine" => { "type" => "command", "command" => script.to_s }))
   end
 

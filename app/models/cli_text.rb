@@ -46,6 +46,38 @@ module CliText
     end
   end
 
+  def self.mine(dashboard = Dashboard.current)
+    list("Your open PRs", dashboard.pull_requests.select { it[:mine] }.sort_by { it[:opened].to_s }.reverse, 30) do |pr|
+      state = pr[:draft] ? "draft" : pr[:review_state]&.tr("_", " ")
+      "- #{pr[:key]} \"#{pr[:title]}\" (#{[ state, pr[:ci] ].compact.join(', ')}) · opened #{ago(pr[:opened])}"
+    end
+  end
+
+  # One PR in full: where it stands, who reviewed it, its description and the
+  # review threads still unresolved. Works for PRs Echo doesn't sync too.
+  def self.pull_request(key, dashboard = Dashboard.current)
+    repo, number = key.split("#")
+    pr = dashboard.pull_requests.find { it[:key] == key } ||
+      Github::PullRequest.from_rest(Github::Cli.run("api", "repos/#{repo}/pulls/#{number}", json: true), me: Github::Connection.login)
+    reviews = Array(pr[:reviews]).map { "#{it[:login]} #{it[:state].to_s.tr('_', ' ')}" }
+    threads = Github::ReviewThreads.unresolved(repo, number)
+
+    lines = [
+      "#{pr[:key]} \"#{pr[:title]}\" by #{pr[:author]}#{' (draft)' if pr[:draft]}",
+      "CI #{pr[:ci]} · #{pr[:review_state].to_s.tr('_', ' ')} · +#{pr[:additions]} -#{pr[:deletions]} in #{pr[:changed_files]} files · opened #{ago(pr[:opened])}",
+      pr[:url], "Review in Echo: #{DesktopNotification.base_url}/reviews/#{repo}/#{number}"
+    ]
+    lines << "Reviews: #{reviews.join(', ')}" if reviews.any?
+    lines << "\n#{pr[:description].to_s.truncate(1_500)}" if pr[:description].present?
+    lines << "\nUnresolved threads (#{threads.size}):" if threads.any?
+    threads.first(LIMIT).each do |t|
+      first = t[:comments].first
+      where = t[:outdated] ? "#{t[:path]} (older code)" : "#{t[:path]}:#{t[:line]}"
+      lines << "- #{where} · #{first&.dig(:author)}: #{first&.dig(:body).to_s.squish.truncate(200)} (#{t[:comments].size} comment#{'s' unless t[:comments].size == 1})"
+    end
+    lines.join("\n")
+  end
+
   def self.ticket(key, dashboard = Dashboard.current)
     t = dashboard.jira_tickets.find { it[:key].casecmp?(key) } ||
       Jira::TicketSearch.page(site: Jira::Connection.status[:site], query: key)[:items].find { it[:key].casecmp?(key) }
@@ -69,7 +101,10 @@ module CliText
     lines.join("\n")
   end
 
-  # "owner/repo#123", "repo#123" (one of your watched repos) or a GitHub PR link.
+  class Ambiguous < StandardError; end
+
+  # "owner/repo#123", "repo#123" (one of your watched repos), a GitHub PR link,
+  # or just "#123" / "123" when only one PR Echo syncs has that number.
   def self.pr_key(ref)
     ref = ref.to_s.strip
     if (m = ref.match(%r{github\.com/([\w.-]+/[\w.-]+)/pull/(\d+)}) || ref.match(%r{\A([\w.-]+/[\w.-]+)#(\d+)\z}))
@@ -77,7 +112,21 @@ module CliText
     elsif (m = ref.match(/\A([\w.-]+)#(\d+)\z/))
       repo = Github::Preferences.repos.find { it.split("/").last == m[1] } or return
       "#{repo}##{m[2]}"
+    elsif (m = ref.match(/\A#?(\d+)\z/))
+      keys = GithubPullRequest.pluck(:key).select { it.end_with?("##{m[1]}") }
+      # Not synced (e.g. someone's draft): ask GitHub which watched repos have it.
+      keys = Github::Preferences.repos.map { "#{it}##{m[1]}" }.select { pr_exists?(it) } if keys.empty?
+      raise Ambiguous, "More than one repo has a PR ##{m[1]}: #{keys.join(', ')}. Say which one, e.g. #{keys.first}." if keys.many?
+
+      keys.first
     end
+  end
+
+  def self.pr_exists?(key)
+    repo, number = key.split("#")
+    Github::Cli.run("api", "repos/#{repo}/pulls/#{number}", "--jq", ".number").strip == number
+  rescue Github::Cli::Error
+    false
   end
 
   def self.list(title, items, limit, &line)
@@ -92,5 +141,5 @@ module CliText
     time ? "#{ActionController::Base.helpers.time_ago_in_words(time)} ago" : ""
   end
 
-  private_class_method :list, :ago
+  private_class_method :list, :ago, :pr_exists?
 end
