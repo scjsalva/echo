@@ -1,3 +1,2 @@
-- pr_title = @props[:pull_request]&.then { it[:title] || it["title"] }
-- content_for :title, ["Review ##{params[:number]}", pr_title, "Echo"].compact.join(" · ")
+- content_for :title, "PR ##{params[:number]} · GitHub · Echo"
 = vue_page "ReviewPage", @props

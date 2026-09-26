@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { PhBell, PhGithubLogo, PhPlugs, PhSlidersHorizontal, PhSparkle } from '@phosphor-icons/vue'
 import AppShell from '@/components/layout/AppShell.vue'
 import ConnectionRow from '@/components/settings/ConnectionRow.vue'
@@ -37,6 +37,9 @@ const sections = computed(() => [
 // Older links still work, e.g. the skill picker's /settings#skills.
 const ALIASES: Record<string, Section> = { skills: 'claude', time: 'general', appearance: 'general' }
 const section = ref<Section>('connections')
+
+// The tab title follows the breadcrumb, e.g. "Claude · Settings · Echo".
+watch(section, (id) => (document.title = `${sections.value.find((s) => s.id === id)?.label} · Settings · Echo`), { immediate: true })
 
 function fromHash() {
   const id = location.hash.slice(1)
