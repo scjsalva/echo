@@ -62,7 +62,7 @@ One list of everything blocked on you. Each item clears itself when its source s
 
 ### The bell
 
-The bell in the top right shows the count waiting on you and the unread count. Clicking it opens the 10 latest notifications, with a link to the inbox at the bottom. Opening one marks it read, unless it's still waiting on you to act (a review request, a mention you haven't replied to, changes requested on your PR, or a Jira assignment still in To Do). The same goes for OS notifications and in-app alerts, and every open Echo page updates its count straight away.
+The bell in the top right shows the count waiting on you and the unread count. Clicking it opens the 10 latest notifications, with a link to the inbox at the bottom. Opening the bell marks what it shows as read, except what's still waiting on you to act (a review request, a mention you haven't replied to, changes requested on your PR, or a Jira assignment still in To Do). The dots stay for that look, so you can tell what was new. Opening a notification from an OS notification or an in-app alert marks it read the same way, and every open Echo page updates its count straight away.
 
 ### OS notifications and in-app alerts
 
@@ -93,6 +93,14 @@ The bell in the top right shows the count waiting on you and the unread count. C
 - **Unticked kinds** still appear in the inbox, but as read. They don't notify you and don't add to the unread count.
 - **Kinds added later** start ticked.
 - **Your own activity,** and bots' comments, never notify you.
+
+### Working hours
+
+Turn on **Working hours** in Settings → Notifications and choose your days and hours. Outside them, Echo sends nothing (no OS notifications, in-app alerts or review reminders). Anything that came in meanwhile arrives when your hours start: the first 3, then "…and N more".
+
+- **Past midnight:** a shift can run past midnight, e.g. 4pm to 1am. It counts as the day it starts, so 1am Saturday is still Friday's shift.
+- **Time zone:** times are in Echo's time zone, set in Settings → General (automatic by default), so 8am to 5pm means 8am to 5pm wherever you are.
+- **The inbox:** it still fills up as usual; only the notifying waits.
 
 ### Review reminder
 

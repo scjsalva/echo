@@ -26,6 +26,7 @@ Rails.application.routes.draw do
     resources :notifications, only: :index do
       patch :read, on: :member
       post :read_all, on: :collection
+      post :read_some, on: :collection
     end
     resource :settings, only: :update
     resource :test_notification, only: :create

@@ -18,6 +18,21 @@ const scope = ref(props.settings.scope)
 const enabled = ref(new Set(props.settings.enabledTypes))
 const sound = ref(props.settings.sound)
 const reminder = ref(props.settings.reminderMinutes)
+
+const hours = ref({ ...props.settings.workingHours })
+const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+// Monday first, as a working week reads.
+const dayOrder = [1, 2, 3, 4, 5, 6, 0]
+const overnight = computed(() => hours.value.end <= hours.value.start && hours.value.end !== hours.value.start)
+function saveHours() {
+  save({ working_hours: { enabled: hours.value.enabled, days: hours.value.days, start: hours.value.start, end: hours.value.end } })
+}
+function toggleDay(day: number) {
+  const days = new Set(hours.value.days)
+  if (!days.delete(day)) days.add(day)
+  hours.value = { ...hours.value, days: [...days].sort() }
+  saveHours()
+}
 const every = (minutes: number) => (minutes === 0 ? 'Off' : minutes < 60 ? `Every ${minutes} minutes` : minutes === 60 ? 'Every hour' : `Every ${minutes / 60} hours`)
 
 const scopes = [
@@ -90,6 +105,41 @@ async function sendTest() {
         </label>
       </fieldset>
     </div>
+  </div>
+
+  <SettingRow>
+    <template #title>Working hours</template>
+    <template #description>
+      <template v-if="hours.enabled">
+        Notifications only come in these hours, in {{ hours.timeZone }} (change it in General). Anything from outside them arrives when they start.
+        <template v-if="overnight"> Ends after midnight, so it counts as the day it starts.</template>
+      </template>
+      <template v-else>Off, so notifications can come at any time.</template>
+    </template>
+    <ToggleSwitch v-model="hours.enabled" label="Working hours" @update:model-value="saveHours" />
+  </SettingRow>
+  <div v-if="hours.enabled" class="flex flex-wrap items-center gap-x-5 gap-y-3 pb-3" aria-label="Working hours">
+    <div class="flex flex-wrap gap-1" role="group" aria-label="Working days">
+      <button
+        v-for="day in dayOrder"
+        :key="day"
+        type="button"
+        :aria-pressed="hours.days.includes(day)"
+        :class="[
+          'rounded-md border px-2 py-1 text-[12.5px] font-medium',
+          hours.days.includes(day) ? 'border-accent bg-accent-soft text-accent' : 'border-line text-muted hover:text-ink',
+        ]"
+        @click="toggleDay(day)"
+      >
+        {{ DAYS[day] }}
+      </button>
+    </div>
+    <label class="flex items-center gap-2 text-[13px] text-muted">
+      From
+      <input v-model="hours.start" type="time" aria-label="Start" class="rounded-md border border-line bg-surface px-2 py-1 text-[13px] text-ink" @change="saveHours" />
+      to
+      <input v-model="hours.end" type="time" aria-label="End" class="rounded-md border border-line bg-surface px-2 py-1 text-[13px] text-ink" @change="saveHours" />
+    </label>
   </div>
 
   <SettingRow :class="reminderOff && 'opacity-50'">

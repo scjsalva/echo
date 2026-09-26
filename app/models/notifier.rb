@@ -37,7 +37,7 @@ module Notifier
   def self.preferences
     {
       desktop: setting("notify_desktop") == "on", scope:, types: TYPES, enabled_types:,
-      reminder_minutes:, reminder_options: REMINDER_OPTIONS,
+      reminder_minutes:, reminder_options: REMINDER_OPTIONS, working_hours: WorkingHours.props,
       sound: Setting["notify_sound"] || DesktopNotification.default_sound,
       sounds: DesktopNotification.sounds, available: DesktopNotification.available?, settings_hint: DesktopNotification.settings_hint
     }
@@ -74,6 +74,9 @@ module Notifier
   end
 
   def self.deliver_new(dashboard = Dashboard.current)
+    # Outside working hours nothing is recorded as sent, so it all arrives when they start.
+    return unless WorkingHours.within?
+
     candidates = candidates(dashboard)
     sent = Delivery.where(item_key: candidates.map { it[:key] }).pluck(:item_key).to_set
     fresh = candidates.reject { sent.include?(it[:key]) }
@@ -93,6 +96,8 @@ module Notifier
 
   # The same new-item feed, for in-app alerts on whatever page is open.
   def self.alerts(dashboard = Dashboard.current)
+    return [] unless WorkingHours.within?
+
     candidates(dashboard).map { |c| { id: c[:key], source: c[:key].split("-").first, **c[:notification] } }
   end
 

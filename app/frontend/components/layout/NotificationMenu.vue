@@ -55,15 +55,21 @@ async function load() {
   try {
     data.value = await request('GET', '/api/notifications')
     failed.value = false
+    markSeen()
   } catch {
     failed.value = true
   }
 }
 
-// Looking at a notification marks it read, unless it's still waiting on you to act.
+// Opening the bell counts as seeing what it shows, except what still waits on
+// you to act. The dots stay for this look, so you can tell what was new.
+function markSeen() {
+  const ids = rows.value.filter((row) => row.unread && !row.needsAction).map((row) => row.id)
+  if (ids.length) request('POST', '/api/notifications/read_some', { ids }).catch(() => null)
+}
+
 function choose(row: Row) {
   open.value = false
-  if (row.unread && !row.needsAction) request('PATCH', `/api/notifications/${encodeURIComponent(row.id)}/read`).catch(() => null)
   openLink(row.link)
 }
 

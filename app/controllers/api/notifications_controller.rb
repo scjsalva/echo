@@ -16,6 +16,15 @@ class Api::NotificationsController < ApplicationController
     head :no_content
   end
 
+  # Several at once, e.g. what the bell showed you.
+  def read_some
+    ids = Array(params[:ids]).map(&:to_s)
+    mark_github_read(GithubNotification.where(thread_id: ids.filter_map { it.delete_prefix("github-") if it.start_with?("github-") }, read_at: nil))
+    JiraNotification.where(external_id: ids.reject { it.start_with?("github-") }, read_at: nil).update_all(read_at: Time.current)
+    Changes.bump
+    head :no_content
+  end
+
   def read_all
     JiraNotification.where(read_at: nil).update_all(read_at: Time.current)
     mark_github_read(GithubNotification.where(read_at: nil))

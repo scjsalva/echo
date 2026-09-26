@@ -26,24 +26,20 @@ describe('NotificationMenu', () => {
     menu.unmount()
   })
 
-  it('marks what you open read, but leaves what still waits on you unread', async () => {
+  it('marks what it shows read when opened, but leaves what still waits on you unread', async () => {
     const approval = { ...many[0], id: 'g-approved', reason: 'approved' as const, unread: true, resolution: null, title: 'Approved one' }
     const request = { ...many[0], id: 'g-request', reason: 'review_requested' as const, unread: true, resolution: null, title: 'Review me', at: new Date(Date.now() - 3_600_000).toISOString() }
-    const fetchMock = vi.fn(async (_url: string) => new Response(JSON.stringify({ ...overview, githubNotifications: [approval, request], jiraNotifications: [], pullRequests: [] }), { status: 200 }))
+    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => new Response(JSON.stringify({ ...overview, githubNotifications: [approval, request], jiraNotifications: [], pullRequests: [] }), { status: 200 }))
     vi.stubGlobal('fetch', fetchMock)
     vi.stubGlobal('location', { ...location, assign: vi.fn(), origin: 'http://localhost' })
     const menu = mount(NotificationMenu, { props: { shell: overview.shell, linkClass: '' }, attachTo: document.body })
-    const openRow = async (title: string) => {
-      await menu.find('button[aria-label^="Notifications"]').trigger('click')
-      await flushPromises()
-      await menu.findAll('[role="dialog"] li button').find((b) => b.text().includes(title))!.trigger('click')
-    }
+    await menu.find('button[aria-label^="Notifications"]').trigger('click')
+    await flushPromises()
 
-    await openRow('Approved one')
-    await openRow('Review me')
-
-    const reads = fetchMock.mock.calls.map(([url]) => String(url)).filter((url) => url.endsWith('/read'))
-    expect(reads).toEqual(['/api/notifications/g-approved/read'])
+    const reads = fetchMock.mock.calls.filter(([url]) => String(url).endsWith('/read_some'))
+    expect(reads).toHaveLength(1)
+    expect(JSON.parse(reads[0][1]!.body as string)).toEqual({ ids: ['g-approved'] })
+    expect(menu.find('[role="dialog"]').text()).toContain('Approved one')
     menu.unmount()
   })
 })

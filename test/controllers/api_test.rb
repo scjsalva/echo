@@ -283,4 +283,15 @@ class ApiTest < ActionDispatch::IntegrationTest
     GithubPullRequest.create!(key: "acme/other#12", data: {})
     assert_raises(CliText::Ambiguous) { CliText.pr_key("#12") }
   end
+
+  test "marks several notifications read at once" do
+    JiraNotification.create!(external_id: "c1", kind: "comment", ticket_key: "APP-1", occurred_at: Time.current)
+    JiraNotification.create!(external_id: "c2", kind: "comment", ticket_key: "APP-1", occurred_at: Time.current)
+
+    post "/api/notifications/read_some", params: { ids: %w[c1] }, as: :json
+
+    assert_response :no_content
+    assert JiraNotification.find_by(external_id: "c1").read_at
+    assert_nil JiraNotification.find_by(external_id: "c2").read_at
+  end
 end

@@ -263,6 +263,8 @@ export interface NotificationSettings {
   /** How often to say how many PRs wait for review, in minutes; 0 is off. */
   reminderMinutes: number
   reminderOptions: number[]
+  /** When notifications may be sent; days are 0 (Sunday) to 6, times HH:MM in timeZone. */
+  workingHours: { enabled: boolean; days: number[]; start: string; end: string; timeZone: string }
   sound: string
   sounds: string[]
 }

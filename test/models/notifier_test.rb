@@ -139,6 +139,21 @@ class NotifierTest < ActiveSupport::TestCase
     assert_equal "github.mention", Notifier.type_of("github", "team_mention")
   end
 
+  test "outside working hours nothing is sent, and it arrives when they start" do
+    Setting[Notifier::SEEDED] = "1"
+    LocalTimeZone.preference = "UTC"
+    WorkingHours.update(enabled: true, days: (0..6).to_a, start: "09:00", finish: "17:00")
+
+    blocked_at = Time.utc(2026, 9, 28, 2, 59)
+
+    travel_to(Time.utc(2026, 9, 28, 3, 0)) { Notifier.deliver_new(dashboard(agents: [ blocked_agent(blocked_at) ])) }
+    assert_empty @sent
+
+    # The same agent, still blocked, once hours start.
+    travel_to(Time.utc(2026, 9, 28, 9, 0)) { Notifier.deliver_new(dashboard(agents: [ blocked_agent(blocked_at) ])) }
+    assert_equal [ "Allow Bash(ls) · app-a1" ], @sent.map { it.third.split(" · ", 2).last }
+  end
+
   test "rejects unknown notification types" do
     assert_raises(ArgumentError) { Notifier.update(types: %w[github.everything]) }
   end
