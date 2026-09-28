@@ -155,6 +155,20 @@ describe('ReviewPage', () => {
     page.unmount()
   })
 
+  it("uses Claude's answer as the comment and brings the comment into view", async () => {
+    const answered = comment({ notes: [{ role: 'you', text: 'Shorter?' }, { role: 'claude', text: 'fallback may be nil' }] })
+    const page = mount(ReviewPage, { props: props(draft({ comments: [answered] })), attachTo: document.body })
+    const scroll = vi.fn()
+    Element.prototype.scrollIntoView = scroll
+
+    await button(page, 'Use as comment').trigger('click')
+    await flushPromises()
+
+    expect(fetchMock).toHaveBeenCalledWith('/api/review_comments/1', expect.objectContaining({ method: 'PATCH', body: JSON.stringify({ body: 'fallback may be nil' }) }))
+    expect(scroll).toHaveBeenCalledWith(expect.objectContaining({ block: 'start' }))
+    page.unmount()
+  })
+
   it('keeps the review summary when Send review is closed and opened again', async () => {
     const page = mount(ReviewPage, { props: props(), attachTo: document.body })
 

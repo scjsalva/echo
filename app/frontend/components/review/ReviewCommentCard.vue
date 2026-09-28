@@ -15,6 +15,18 @@ const emit = defineEmits<{ update: [fields: Partial<Pick<ReviewComment, 'body' |
 
 const SEVERITY: Record<string, Tone> = { high: 'bad', medium: 'warn', low: 'accent', nit: 'neutral' }
 
+const card = ref<HTMLElement>()
+const justReplaced = ref(false)
+
+// The answer replaces the comment further up the card, so bring that into view
+// and flash it, or the change is easy to miss.
+function useAnswer(text: string) {
+  emit('update', { body: text })
+  card.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  justReplaced.value = true
+  setTimeout(() => (justReplaced.value = false), 1_500)
+}
+
 const editing = ref(false)
 const asking = ref(false)
 const question = ref('')
@@ -29,8 +41,9 @@ function ask() {
 
 <template>
   <article
+    ref="card"
     :class="[
-      'grid gap-2 rounded-lg border bg-surface px-3 py-2.5 font-sans shadow-sm',
+      'grid scroll-mt-4 gap-2 rounded-lg border bg-surface px-3 py-2.5 font-sans shadow-sm',
       comment.state === 'committed' ? 'border-ok/50' : comment.state === 'sent' ? 'border-line opacity-80' : comment.author === 'ai' ? 'ai-border' : 'border-accent/40',
     ]"
   >
@@ -45,7 +58,12 @@ function ask() {
     </header>
 
     <CommentComposer v-if="editing" :initial="comment.body" :rows="10" submit-label="Save" @submit="(body) => (emit('update', { body }), (editing = false))" @cancel="editing = false" />
-    <MarkdownBlock v-else-if="comment.body" :source="comment.body" />
+    <div
+      v-else-if="comment.body"
+      :class="['-mx-1.5 rounded-md px-1.5 transition-colors duration-700', justReplaced ? 'bg-accent-soft' : 'bg-transparent']"
+    >
+      <MarkdownBlock :source="comment.body" />
+    </div>
     <p v-else class="text-[13px] text-faint">No comment yet. Use Claude's answer, or edit to write your own.</p>
     <details v-if="comment.evidence && !editing" class="group rounded-md bg-subtle px-2.5 py-1.5 text-[12.5px]">
       <summary class="cursor-pointer text-muted select-none group-open:mb-1">How Claude checked this</summary>
@@ -60,7 +78,7 @@ function ask() {
       >
         <span class="font-mono text-[10.5px] tracking-wide text-faint uppercase">{{ note.role === 'you' ? 'You asked' : note.role === 'claude' ? 'Claude' : 'Error' }}</span>
         <p :class="['whitespace-pre-line break-words', note.role === 'error' && 'text-bad']">{{ note.text }}</p>
-        <BaseButton v-if="note.role === 'claude' && !locked" size="sm" class="justify-self-start" tooltip="Replaces the comment with this answer" @click="emit('update', { body: note.text })">
+        <BaseButton v-if="note.role === 'claude' && !locked" size="sm" class="justify-self-start" tooltip="Replaces the comment with this answer" @click="useAnswer(note.text)">
           Use as comment
         </BaseButton>
       </div>
