@@ -54,6 +54,7 @@ Rails.application.routes.draw do
       post :reviews, action: :start_review
       get "reviews/:id", action: :show_review
     end
+    get "github/pull_requests/:owner/:repo/:number", to: "github_pull_requests#show", constraints: { owner: /[\w.-]+/, repo: /[\w.-]+/, number: /\d+/ }
     get "github/pull_requests/:owner/:repo/:number/threads", to: "github_review_threads#index", constraints: { owner: /[\w.-]+/, repo: /[\w.-]+/, number: /\d+/ }
     get "github/pull_requests/:owner/:repo/:number/comments", to: "github_pull_request_comments#index", constraints: { owner: /[\w.-]+/, repo: /[\w.-]+/, number: /\d+/ }
     resources :reviews, only: :show do

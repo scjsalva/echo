@@ -30,11 +30,7 @@ useDeepLink((params) => {
   const key = params.get('pr')
   const notificationId = params.get('notification') ?? undefined
   if (notificationId) dashboard.markRead(notificationId)
-  if (key && dashboard.pullRequest(key)) open({ type: 'pullRequest', key, notificationId })
-  else if (notificationId) {
-    const url = dashboard.githubNotification(notificationId)?.url
-    if (url) window.open(url, '_blank', 'noopener')
-  }
+  if (key) open({ type: 'pullRequest', key, notificationId })
 })
 
 type Tab = 'queue' | 'mine'

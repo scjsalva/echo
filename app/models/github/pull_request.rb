@@ -36,7 +36,8 @@ module Github::PullRequest
       author: pr.dig("user", "login"), mine: pr.dig("user", "login") == me, draft: pr["draft"], ci: "running",
       review_state: pr["draft"] ? "draft" : "review_required", approvals: 0, approvals_required: nil, requested_from_me: false,
       opened: pr["created_at"], updated: pr["updated_at"], additions: pr["additions"], deletions: pr["deletions"],
-      changed_files: pr["changed_files"], commits: pr["commits"], reviews: []
+      changed_files: pr["changed_files"], commits: pr["commits"], reviews: [],
+      state: pr["merged_at"] ? "merged" : pr["state"]
     }
   end
 

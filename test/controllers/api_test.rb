@@ -187,6 +187,20 @@ class ApiTest < ActionDispatch::IntegrationTest
     assert_no_enqueued_jobs only: AiReviewJob
   end
 
+  test "a PR Echo doesn't sync is fetched for its drawer, merged and with each reviewer's latest review" do
+    pr = { "number" => 7, "title" => "Tidy up", "body" => "", "html_url" => "https://github.com/acme/app/pull/7", "state" => "closed",
+           "merged_at" => "2026-09-28T10:00:00Z", "draft" => false, "user" => { "login" => "dana" }, "base" => { "repo" => { "full_name" => "acme/app" } } }
+    reviews = [ { "user" => { "login" => "sam" }, "state" => "COMMENTED" }, { "user" => { "login" => "sam" }, "state" => "APPROVED" },
+                { "user" => { "login" => "lee" }, "state" => "PENDING" } ]
+    gh = ->(*args, **) { args.last.end_with?("/reviews") ? reviews : pr }
+
+    Github::Connection.stub(:login, "me") { Github::Cli.stub(:run, gh) { get "/api/github/pull_requests/acme/app/7" } }
+
+    assert_response :success
+    assert_equal [ "acme/app#7", "merged" ], response.parsed_body.values_at("key", "state")
+    assert_equal [ { "login" => "sam", "state" => "approved" } ], response.parsed_body["reviews"]
+  end
+
   test "PR comments are fetched on demand and camelCased" do
     Github::PullRequestComments.stub(:fetch, ->(repo, number) { [ { id: "comment-1", kind: "comment", html_url: nil, repo:, number: } ] }) do
       get "/api/github/pull_requests/acme/app.js/7/comments"

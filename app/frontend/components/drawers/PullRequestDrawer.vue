@@ -60,7 +60,9 @@ const reviewTone = (state: string) => (state === 'approved' ? 'ok' : state === '
     <template #eyebrow>
       <span class="font-mono text-xs text-faint">{{ pr.repo }}#{{ pr.number }}</span>
       <BasePill v-if="pr.draft">Draft</BasePill>
-      <BasePill :tone="ci[pr.ci].tone">{{ ci[pr.ci].label }}</BasePill>
+      <BasePill v-if="pr.state === 'merged'" tone="ok">Merged</BasePill>
+      <BasePill v-else-if="pr.state === 'closed'">Closed</BasePill>
+      <BasePill v-else :tone="ci[pr.ci].tone">{{ ci[pr.ci].label }}</BasePill>
     </template>
     <template #title>{{ pr.title }}</template>
     <template #actions>

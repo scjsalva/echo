@@ -13,8 +13,9 @@ const drawer = provideDrawer()
 
 onMounted(() => {
   const t = props.target
-  const found = t.type === 'agent' ? dashboard.agent(t.id) : t.type === 'pullRequest' ? dashboard.pullRequest(t.key) : t.type === 'ticket' ? dashboard.ticket(t.key) : undefined
-  // Not synced any more: its own page knows where else to send you.
+  // A PR the drawer fetches itself when it isn't synced; anything else not synced
+  // any more goes to its own page, which knows where else to send you.
+  const found = t.type === 'pullRequest' || (t.type === 'agent' ? dashboard.agent(t.id) : t.type === 'ticket' ? dashboard.ticket(t.key) : undefined)
   if (!found) return location.assign(props.fallback)
 
   // Opening one is a deliberate look, so it's read, even if it still waits on you

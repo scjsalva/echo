@@ -22,8 +22,7 @@ const summary = computed(() => githubNotificationText(props.notification))
 
 function select() {
   dashboard.markRead(props.notification.id)
-  if (pr.value) open({ type: 'pullRequest', key: pr.value.key, notificationId: props.notification.id })
-  else if (props.notification.url) window.open(props.notification.url, '_blank', 'noopener')
+  open({ type: 'pullRequest', key: props.notification.prKey, notificationId: props.notification.id })
 }
 </script>
 

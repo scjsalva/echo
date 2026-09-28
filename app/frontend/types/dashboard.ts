@@ -87,6 +87,8 @@ export interface PullRequest {
   changedFiles: number
   commits: number
   reviews: { login: string; state: string }[]
+  /** Only on PRs fetched outside the sync, which can be merged or closed. */
+  state?: 'open' | 'merged' | 'closed'
 }
 
 export type GithubReason =
