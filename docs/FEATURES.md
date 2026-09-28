@@ -291,6 +291,20 @@ Changes wait for **Save**, section by section. Each section has **Save** and **C
   - they're tracked and ended when they finish or time out
 - **Your clones:** when a review reads from your clone, Echo checks the PR out in a separate folder. Your branch and working files are never touched, and no branches or tags are added.
 
+## What Echo keeps, and for how long
+
+An hourly clean-up keeps Echo's data small:
+
+| What | Kept for |
+|---|---|
+| Finished background jobs and their schedule records | 1 day |
+| Failed background jobs | 7 days |
+| Notifications, and the record of which were sent | 30 days, unless still waiting on you |
+| Sent reviews, and drafts you haven't touched | 30 days |
+| Echo's own Claude runs, and hook signals from ended sessions | 1 day after they end |
+
+PRs and Jira tickets are replaced on every sync, and your settings are kept until you change them.
+
 ## Where things live
 
 | What | Where |
