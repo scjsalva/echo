@@ -262,7 +262,7 @@ The skills live in `~/.claude/skills/echo` and `~/.claude/skills/echo-review`. E
 
 Settings is split into sections, listed on the left: Connections, GitHub, Claude, Notifications and General. The address follows the section, e.g. `/settings#claude`, so it can be linked to. A dot next to Connections means something isn't connected.
 
-Changes wait for **Save**, section by section. Each section has **Save** and **Cancel** at its bottom, greyed out until something changes; then they light up and a dot marks the section in the list. Both apply to that section only; Cancel puts its settings back to how they were, including the theme, which previews as you pick it. Moving to another section, or leaving Settings, with unsaved changes asks first. Actions still happen straight away: logging in and out, installing or removing, Send test, and removing Echo's copy of a repo.
+Changes wait for **Save**, section by section. Once something in a section changes, **Save** and **Cancel** appear at its bottom and a dot marks the section in the list. Both apply to that section only; Cancel puts its settings back to how they were, including the theme, which previews as you pick it. Moving to another section, or leaving Settings, with unsaved changes asks first. Actions still happen straight away: logging in and out, installing or removing, Send test, and removing Echo's copy of a repo.
 
 - **Connections:** GitHub, Jira, Claude Code hooks, and Echo in Claude Code.
 - **Health** (under Connections): how each background sync is doing (GitHub, Jira and the notification check). It shows when each last succeeded, any failures in a row with the last error, and a **Sync now** button, on top of the automatic runs. Failed syncs retry on their own every minute.

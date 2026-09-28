@@ -52,7 +52,6 @@ describe('SettingsPage', () => {
     expect(nav(page, 'GitHub').attributes('aria-current')).toBe('page')
     expect((page.find('select[aria-label="Notification sound"]').element as HTMLSelectElement).value).toBe('Ping')
     expect(page.find('[aria-label^="Unsaved changes in"]').exists()).toBe(false)
-    expect(page.find('[aria-label="Save GitHub"]').text()).toContain('No unsaved changes')
     page.unmount()
   })
 })
