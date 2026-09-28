@@ -14,6 +14,7 @@ import type { OverviewProps, ShellProps } from '@/types/dashboard'
 const props = defineProps<{ shell: ShellProps; linkClass: string }>()
 
 const LIMIT = 10
+const UNREAD_LIMIT = 20
 
 const open = ref(false)
 const data = ref<Pick<OverviewProps, 'githubNotifications' | 'jiraNotifications' | 'pullRequests' | 'jiraTickets'> | null>(null)
@@ -50,7 +51,12 @@ const rows = computed<Row[]>(() => {
     text: jiraNotificationText(n),
     link: `/jira?${new URLSearchParams({ ticket: n.key, notification: n.id })}`,
   }))
-  return [...github, ...jira].sort((a, b) => Date.parse(b.at) - Date.parse(a.at)).slice(0, LIMIT)
+  // Every unread one shows, however old, so the count always matches the dots;
+  // the latest read ones fill the rest.
+  const all = [...github, ...jira].sort((a, b) => Date.parse(b.at) - Date.parse(a.at))
+  const unread = all.filter((row) => row.unread).slice(0, UNREAD_LIMIT)
+  const read = all.filter((row) => !row.unread).slice(0, Math.max(0, LIMIT - unread.length))
+  return [...unread, ...read].sort((a, b) => Date.parse(b.at) - Date.parse(a.at))
 })
 
 async function load() {
@@ -80,6 +86,12 @@ function markSeen() {
     refreshShell()
   }, () => null)
 }
+
+// Unread ones beyond what the bell has room for.
+const moreUnread = computed(() => {
+  const total = [...(data.value?.githubNotifications ?? []), ...(data.value?.jiraNotifications ?? [])].filter((n) => n.unread).length
+  return Math.max(0, total - UNREAD_LIMIT)
+})
 
 function choose(row: Row) {
   open.value = false
@@ -152,6 +164,7 @@ onBeforeUnmount(() => {
           </button>
         </li>
       </ul>
+      <p v-if="moreUnread" class="border-t border-line-soft px-4 py-2 text-center text-[12.5px] text-muted">…and {{ moreUnread }} more unread in the inbox</p>
       <a href="/inbox" class="border-t border-line-soft px-4 py-2.5 text-center text-[12.5px] font-medium text-accent hover:bg-subtle">See all notifications →</a>
     </div>
   </div>

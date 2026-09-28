@@ -13,7 +13,8 @@ afterEach(() => vi.unstubAllGlobals())
 
 describe('NotificationMenu', () => {
   it('shows the 10 latest notifications and links to the rest', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ ...overview, githubNotifications: many, jiraNotifications: [], pullRequests: [] }), { status: 200 })))
+    const read = many.map((n) => ({ ...n, unread: false }))
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ ...overview, githubNotifications: read, jiraNotifications: [], pullRequests: [] }), { status: 200 })))
     const menu = mount(NotificationMenu, { props: { shell: overview.shell, linkClass: '' }, attachTo: document.body })
 
     await menu.trigger('mouseenter')
@@ -47,6 +48,21 @@ describe('NotificationMenu', () => {
     const row = (title: string) => menu.findAll('[role="dialog"] li').find((li) => li.text().includes(title))!
     expect(row('Approved one').find('[aria-label="Unread"]').exists()).toBe(false)
     expect(row('Review me').find('[aria-label="Unread"]').exists()).toBe(true)
+    menu.unmount()
+  })
+
+  it('shows unread ones however old, so the count matches what you see', async () => {
+    const old = { ...many[0], id: 'g-old', title: 'Old but unread', unread: true, at: new Date(Date.now() - 3 * 86_400_000).toISOString() }
+    const recent = many.map((n) => ({ ...n, unread: false }))
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ ...overview, githubNotifications: [...recent, old], jiraNotifications: [], pullRequests: [] }), { status: 200 })))
+    const menu = mount(NotificationMenu, { props: { shell: overview.shell, linkClass: '' }, attachTo: document.body })
+
+    await menu.trigger('mouseenter')
+    await flushPromises()
+
+    const rows = menu.findAll('[role="dialog"] li')
+    expect(rows).toHaveLength(10)
+    expect(rows.at(-1)!.text()).toContain('Old but unread')
     menu.unmount()
   })
 })
