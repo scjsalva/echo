@@ -26,7 +26,9 @@ Rails.application.configure do
 
   # Log to STDOUT with the current request id as a default log tag.
   config.log_tags = [ :request_id ]
-  config.logger   = ActiveSupport::TaggedLogging.logger(STDOUT)
+  # To a file that rolls over at 10MB, rather than the service's output, which grows forever.
+  config.logger   = ActiveSupport::TaggedLogging.new(ActiveSupport::Logger.new(Rails.root.join("log/production.log"), 1, 10.megabytes))
+  config.solid_queue.logger = ActiveSupport::Logger.new(Rails.root.join("log/jobs.log"), 1, 2.megabytes).tap { it.level = :warn }
 
   # Change to "debug" to log everything (including potentially personally-identifiable information!).
   config.log_level = ENV.fetch("RAILS_LOG_LEVEL", "info")

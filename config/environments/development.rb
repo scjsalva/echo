@@ -59,6 +59,13 @@ Rails.application.configure do
   # config.generators.apply_rubocop_autocorrect_after_generate!
 
   # Background syncs run through Solid Queue inside Puma, as in production.
+  # Info, not debug: debug writes every database query, which (with the job
+  # queue running all the time) filled hundreds of MB. Rolls over at 10MB.
+  config.log_level = :info
+  config.logger = ActiveSupport::TaggedLogging.new(ActiveSupport::Logger.new(Rails.root.join("log/development.log"), 1, 10.megabytes))
+  # The job queue only reports problems, in its own small file.
+  config.solid_queue.logger = ActiveSupport::Logger.new(Rails.root.join("log/jobs.log"), 1, 2.megabytes).tap { it.level = :warn }
+
   config.active_job.queue_adapter = :solid_queue
   config.solid_queue.connects_to = { database: { writing: :queue } }
 end

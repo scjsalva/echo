@@ -283,6 +283,7 @@ Changes wait for **Save**, section by section. Each section has **Save** and **C
 ## Privacy and safety
 
 - **Local:** Echo runs on your machine only. Its data is in a local SQLite database.
+- **Logs:** they never contain what Claude Code hooks send (your prompts, what agents ran and saw, Claude's replies); those show as `[FILTERED]`. Logs roll over at 10MB, keeping one old file.
 - **GitHub and Jira:**
   - Echo only reads. The only exceptions are marking a GitHub notification read and sending a review you submitted.
   - The commands Echo may run are on a fixed allowlist.
