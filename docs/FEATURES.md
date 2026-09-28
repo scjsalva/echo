@@ -93,6 +93,7 @@ The bell in the top right shows the count waiting on you and the unread count. H
 - **Unticked kinds** still appear in the inbox, but as read. They don't notify you and don't add to the unread count.
 - **Kinds added later** start ticked.
 - **Your own activity,** and bots' comments, never notify you.
+- **Replies on review threads** notify you only in threads you started or have commented in, or when they mention you.
 
 ### Working hours
 
