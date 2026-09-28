@@ -27,6 +27,10 @@ function describe(n: Pick<GithubNotification, 'reason' | 'actor' | 'body' | 'min
       return `${who} requested changes${said}`
     case 'changes_requested_other':
       return `${who} requested changes on the PR${said}`
+    case 'reply':
+      return `${who} replied${said}`
+    case 'line_comment':
+      return `${who} commented on the code${said}`
     case 'mention':
       return `${who} mentioned you${said}`
     case 'team_mention':

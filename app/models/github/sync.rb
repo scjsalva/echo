@@ -103,6 +103,12 @@ class Github::Sync
   # was one. Otherwise the latest review, or the PR's own state, says what happened.
   ACTIVITY_WINDOW = 15.minutes
 
+  def review_comment(repo, number, review_id)
+    Array(Github::Cli.run("api", "repos/#{repo}/pulls/#{number}/reviews/#{review_id}/comments", json: true)).first
+  rescue Github::Cli::Error
+    nil
+  end
+
   def latest_activity(path)
     repo, number = path.values_at(:repo, :number)
     review = Array(Github::Cli.run("api", "repos/#{repo}/pulls/#{number}/reviews?per_page=100", json: true))
@@ -113,6 +119,12 @@ class Github::Sync
         return [ nil, nil, :covered ] if @pull_requests["#{repo}##{number}"]&.dig(:mine)
 
         return [ review.dig("user", "login"), review["body"].to_s.squish.truncate(2_000).presence, "changes_requested_other" ]
+      end
+
+      # A reply on a comment thread, or a lone comment on the code, arrives as a
+      # "review" with no text of its own; what was said is in its comment.
+      if review["state"] == "COMMENTED" && review["body"].blank? && (said = review_comment(repo, number, review["id"]))
+        return [ review.dig("user", "login"), said["body"].to_s.squish.truncate(2_000), said["in_reply_to_id"] ? "reply" : "line_comment" ]
       end
 
       state = { "APPROVED" => "approved", "COMMENTED" => "reviewed", "DISMISSED" => "review_dismissed" }.fetch(review["state"], "reviewed")

@@ -14,4 +14,9 @@ class Github::NotificationTextTest < ActiveSupport::TestCase
     assert_equal "You were assigned to the PR", Github::NotificationText.for(reason: "assign", actor: nil, body: nil)
     assert_equal "dana requested changes on the PR", Github::NotificationText.for(reason: "changes_requested_other", actor: "dana", body: nil)
   end
+
+  test "a reply on a thread is a reply, not a review" do
+    assert_equal %(jhon50 replied: "fixed in 696214f"), Github::NotificationText.for(reason: "reply", actor: "jhon50", body: "fixed in 696214f")
+    assert_equal %(dana commented on the code: "nil here?"), Github::NotificationText.for(reason: "line_comment", actor: "dana", body: "nil here?")
+  end
 end

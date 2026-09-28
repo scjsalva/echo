@@ -13,6 +13,8 @@ module Github::NotificationText
     when "review_dismissed" then "#{who}'s review was dismissed"
     when "changes_requested" then "#{who} requested changes#{said}"
     when "changes_requested_other" then "#{who} requested changes on the PR#{said}"
+    when "reply" then "#{who} replied#{said}"
+    when "line_comment" then "#{who} commented on the code#{said}"
     when "mention" then "#{who} mentioned you#{said}"
     when "team_mention" then "#{who} mentioned your team#{said}"
     when "assign" then "You were assigned to the PR"

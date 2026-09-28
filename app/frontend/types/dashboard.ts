@@ -92,7 +92,7 @@ export interface PullRequest {
 export type GithubReason =
   | 'review_requested' | 'comment' | 'mention' | 'team_mention' | 'follow_up' | 'changes_requested'
   | 'ci_activity' | 'author' | 'assign' | 'state_change' | 'subscribed' | 'manual'
-  | 'approved' | 'reviewed' | 'review_dismissed' | 'merged' | 'closed' | 'ready_for_review' | 'changes_requested_other'
+  | 'approved' | 'reviewed' | 'review_dismissed' | 'merged' | 'closed' | 'ready_for_review' | 'changes_requested_other' | 'reply' | 'line_comment'
 
 export interface GithubNotification {
   id: string

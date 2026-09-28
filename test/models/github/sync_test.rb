@@ -60,6 +60,16 @@ class Github::SyncTest < ActiveSupport::TestCase
     assert_equal [ "changes_requested_other", "dana", nil ], GithubNotification.find_by(thread_id: "31").slice(:reason, :actor, :read_at).values
   end
 
+  test "a reply on a comment thread says what was replied, not that they reviewed" do
+    sync
+    @threads << thread(32, "author", 1.minute.ago, comment: nil)
+    @reviews = [ { "id" => 7, "user" => { "login" => "jhon50" }, "state" => "COMMENTED", "submitted_at" => 1.minute.ago.iso8601, "body" => "" } ]
+    @review_comments = [ { "body" => "fixed in 696214f", "in_reply_to_id" => 3 } ]
+    sync
+
+    assert_equal [ "reply", "jhon50", "fixed in 696214f" ], GithubNotification.find_by(thread_id: "32").slice(:reason, :actor, :body).values
+  end
+
   test "says what happened when the activity wasn't a comment" do
     sync
     @threads << thread(30, "author", 1.minute.ago, comment: nil)
@@ -127,6 +137,7 @@ class Github::SyncTest < ActiveSupport::TestCase
         login, body = @comments.fetch(Regexp.last_match(1).to_i)
         { "user" => { "login" => login }, "body" => body }
       when %r{/issues/\d+/comments} then @replies
+      when %r{/reviews/\d+/comments} then @review_comments || []
       when %r{/pulls/\d+/reviews} then @reviews || []
       when %r{/pulls/\d+\z} then { "state" => "open" }
       else []

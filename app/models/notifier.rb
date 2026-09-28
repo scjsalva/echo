@@ -26,7 +26,7 @@ module Notifier
     { id: "jira.comment", group: "Jira", label: "Comments" },
     { id: "jira.transition", group: "Jira", label: "Status changes" }
   ].freeze
-  GITHUB_TYPES = { "team_mention" => "mention", "review_dismissed" => "reviewed", "changes_requested_other" => "reviewed", "ci_activity" => "ci",
+  GITHUB_TYPES = { "reply" => "comment", "line_comment" => "comment", "team_mention" => "mention", "review_dismissed" => "reviewed", "changes_requested_other" => "reviewed", "ci_activity" => "ci",
     "author" => "other", "assign" => "other", "state_change" => "other", "subscribed" => "other", "manual" => "other" }.freeze
   BURST = 3
   # How often the review reminder says how many PRs are waiting for review, in minutes; 0 is off.
