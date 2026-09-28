@@ -10,7 +10,7 @@ defineProps<{ label: string; actor: string | null; at: string; text: string; hre
     <span class="text-[11px] tracking-[0.07em] text-faint uppercase">{{ label }} · {{ timeAgo(at) }} ago</span>
     <p class="flex items-start gap-2">
       <UserAvatar v-if="actor" :name="actor" />
-      <span class="whitespace-pre-line break-words"><strong v-if="actor" class="font-medium">{{ actor }}</strong> {{ text }}</span>
+      <span class="min-w-0 whitespace-pre-line wrap-anywhere"><strong v-if="actor" class="font-medium">{{ actor }}</strong> {{ text }}</span>
     </p>
     <a v-if="href" :href="href" target="_blank" rel="noopener" class="text-[12.5px] text-accent hover:opacity-80">{{ hrefLabel }} ↗</a>
   </div>

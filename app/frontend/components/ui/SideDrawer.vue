@@ -30,7 +30,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKey))
     :aria-label="label"
     tabindex="-1"
     :class="[
-      'fixed inset-y-0 z-30 w-full max-w-[560px] overflow-y-auto border-line bg-surface shadow-2xl outline-none',
+      'fixed inset-y-0 z-30 w-full max-w-[560px] overflow-x-hidden overflow-y-auto border-line wrap-anywhere bg-surface shadow-2xl outline-none',
       side === 'left' ? 'left-0 border-r' : 'right-0 border-l',
     ]"
   >
@@ -52,6 +52,6 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKey))
       <h3 class="text-base font-semibold tracking-tight text-balance"><slot name="title" /></h3>
       <div v-if="$slots.actions" class="flex flex-wrap gap-2"><slot name="actions" /></div>
     </header>
-    <div class="grid gap-5 px-5 pt-4 pb-8"><slot /></div>
+    <div class="grid gap-5 px-5 pt-4 pb-8 [&>*]:min-w-0"><slot /></div>
   </aside>
 </template>
