@@ -7,7 +7,8 @@ class Api::AiReviewsController < ApplicationController
     return render(json: { error: "This PR is already merged, so it can't be reviewed" }, status: :unprocessable_content) if review.merged?
 
     # The job starts it once one of the limited slots is free.
-    review.update!(ai_status: "queued", ai_error: nil, ai_report: nil)
+    # Your direction for Claude, if any; kept so Review again starts with it.
+    review.update!(ai_status: "queued", ai_error: nil, ai_report: nil, ai_guidance: params[:guidance].to_s.strip.first(4_000).presence)
     AiReviewJob.perform_later(review)
     render json: camelize(review.to_props)
   rescue Github::Cli::Error => e

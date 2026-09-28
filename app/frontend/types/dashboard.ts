@@ -367,6 +367,8 @@ export interface ReviewDraft {
   headSha: string | null
   status: 'draft' | 'sent'
   aiStatus: 'idle' | 'queued' | 'running' | 'done' | 'failed'
+  /** What you asked Claude to focus on, if anything. */
+  aiGuidance?: string | null
   /** What the last AI review did with each finding. */
   aiReport?: { summary: string; added: number; leftOut: { path: string; line: number; body: string; reason: string }[] } | null
   aiError: string | null

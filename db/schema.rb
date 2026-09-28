@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_25_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_28_120000) do
   create_table "deliveries", force: :cascade do |t|
     t.string "item_key", null: false
     t.datetime "created_at", null: false
@@ -122,6 +122,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_25_140000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.json "ai_report"
+    t.text "ai_guidance"
     t.index ["pr_key"], name: "index_reviews_on_pr_key"
   end
 

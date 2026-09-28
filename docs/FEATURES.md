@@ -165,7 +165,8 @@ Open any PR's **Review** button, or go to `/reviews/<owner>/<repo>/<number>`. Yo
 
 ### Claude's review
 
-- **Start AI review:**
+- **Start AI review** (and **Review again**) opens a panel where you can direct Claude first, e.g. "focus on app/models/order.rb", "check it meets the ticket's criteria" or "ignore the test changes". Claude treats it as the priority for that review; its rules still apply. Your direction is kept, so Review again starts with it. Leave it empty for a normal review.
+- **What the review does:**
   - Claude reads the PR's code from a checkout of its latest commit. It can read and search the code but can't run anything.
   - It uses your own instructions and the review skill for that repo (see below).
   - It stages comments on lines.

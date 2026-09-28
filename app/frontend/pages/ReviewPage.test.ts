@@ -169,6 +169,19 @@ describe('ReviewPage', () => {
     page.unmount()
   })
 
+  it('starts an AI review with your direction for Claude', async () => {
+    const page = mount(ReviewPage, { props: props(draft({ aiStatus: 'idle', comments: [] })), attachTo: document.body })
+
+    await button(page, 'Start AI review').trigger('click')
+    expect(fetchMock.mock.calls.some(([url]) => String(url).endsWith('/ai_review'))).toBe(false)
+    await page.find('textarea[aria-label="Direction for Claude"]').setValue('Focus on app/menu.rb')
+    await button(page, 'Start review').trigger('click')
+    await flushPromises()
+
+    expect(fetchMock).toHaveBeenCalledWith('/api/reviews/5/ai_review', expect.objectContaining({ method: 'POST', body: JSON.stringify({ guidance: 'Focus on app/menu.rb' }) }))
+    page.unmount()
+  })
+
   it('keeps the review summary when Send review is closed and opened again', async () => {
     const page = mount(ReviewPage, { props: props(), attachTo: document.body })
 

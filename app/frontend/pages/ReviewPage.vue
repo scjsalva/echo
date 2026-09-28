@@ -5,6 +5,7 @@ import AppShell from '@/components/layout/AppShell.vue'
 import DiffFile from '@/components/review/DiffFile.vue'
 import FileTree from '@/components/review/FileTree.vue'
 import AiVerdictPopover from '@/components/review/AiVerdictPopover.vue'
+import AiReviewPanel from '@/components/review/AiReviewPanel.vue'
 import PullRequestComments from '@/components/drawers/PullRequestComments.vue'
 import SendReviewDialog from '@/components/review/SendReviewDialog.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
@@ -39,6 +40,7 @@ const sending = ref(false)
 const verdict = computed(() => (review.value.aiStatus === 'done' ? (review.value.aiReport ?? null) : null))
 const clean = computed(() => verdict.value?.added === 0)
 const showVerdict = ref(false)
+const aiPanel = ref(false)
 const summaryDraft = ref('')
 const decision = ref<'comment' | 'approve' | 'request_changes'>('comment')
 
@@ -150,7 +152,8 @@ async function send(event: 'comment' | 'approve' | 'request_changes', body: stri
                   :disabled="starting || review.aiStatus === 'running' || review.aiStatus === 'queued'"
                   tooltip="Claude reviews the diff and stages comments. Uses tokens."
                   :class="[verdict && 'rounded-r-none', clean ? 'border-ok! bg-ok-soft! text-ok!' : 'ai-border']"
-                  @click="run(startAi, 'Couldn\'t start the review')"
+                  :aria-expanded="aiPanel"
+                  @click="aiPanel = !aiPanel"
                 >
                   <component :is="clean ? PhCheckCircle : PhSparkle" :size="14" weight="fill" :class="!clean && 'ai-icon'" />
                   <span :class="!clean && 'ai-text'">{{ starting ? 'Starting…' : review.aiStatus === 'queued' ? 'Queued…' : review.aiStatus === 'running' ? 'Reviewing…' : review.aiStatus === 'idle' ? 'Start AI review' : 'Review again' }}</span>
@@ -166,6 +169,13 @@ async function send(event: 'comment' | 'approve' | 'request_changes', body: stri
                   </BaseButton>
                   <AiVerdictPopover v-if="showVerdict" :report="verdict" @close="showVerdict = false" @use-as-summary="useVerdictAsSummary" />
                 </template>
+                <AiReviewPanel
+                  v-if="aiPanel"
+                  :initial="review.aiGuidance"
+                  :again="review.aiStatus !== 'idle'"
+                  @start="(guidance) => ((aiPanel = false), run(() => startAi(guidance), 'Couldn\'t start the review'))"
+                  @cancel="aiPanel = false"
+                />
               </div>
               <div class="relative">
                 <BaseButton variant="primary" :aria-expanded="sending" @click="sending = !sending">

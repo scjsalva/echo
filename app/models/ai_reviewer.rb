@@ -49,7 +49,7 @@ module AiReviewer
   def self.run(review)
     pr = GithubPullRequest.find_by(key: review.pr_key)&.data || {}
     files = Github::PullRequestFiles.fetch(review.repo, review.number)
-    result = ask(prompt(pr, files), Github::Checkout.for_pull_request(review.repo, review.number), repo: review.repo, ref: review.pr_key)
+    result = ask(prompt(pr, files, review.ai_guidance), Github::Checkout.for_pull_request(review.repo, review.number), repo: review.repo, ref: review.pr_key)
     findings = Array(result["findings"])
     # A run always answers, so an empty one means something went wrong rather than "all good".
     raise Error, "Claude finished without saying anything, so this review can't be trusted. Try again." if result["summary"].blank?
@@ -68,7 +68,7 @@ module AiReviewer
   end
 
   # The diff with every line numbered the way GitHub does, so the answer can point at real lines.
-  def self.prompt(pr, files)
+  def self.prompt(pr, files, guidance = nil)
     diff = files.map do |file|
       lines = file[:hunks].flat_map do |hunk|
         [ hunk[:header] ] + hunk[:lines].map do |l|
@@ -79,7 +79,9 @@ module AiReviewer
       "### #{file[:path]} (#{file[:status]})\n#{file[:too_large] ? '(diff too large to show)' : lines.join("\n")}"
     end.join("\n\n").truncate(MAX_DIFF_CHARS, omission: "\n…(rest of the diff left out)")
 
-    "# #{pr['title']}\n\n#{pr['description'] || pr['summary']}\n\n## Diff\n\n#{diff}"
+    direction = guidance.present? ? "## From the reviewer\n\nThey asked you to follow this; it comes before your own priorities. " \
+      "Echo's rules still apply.\n\n#{guidance}\n\n" : ""
+    "# #{pr['title']}\n\n#{pr['description'] || pr['summary']}\n\n#{direction}## Diff\n\n#{diff}"
   end
 
   def self.ask(input, checkout, repo:, ref:)

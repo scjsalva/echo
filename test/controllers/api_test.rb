@@ -314,4 +314,15 @@ class ApiTest < ActionDispatch::IntegrationTest
     assert_response :conflict
     assert_not typed
   end
+
+  test "an AI review keeps your direction for Claude" do
+    review = Review.for("acme/app#13")
+
+    Github::Cli.stub(:run, { "merged" => false }) do
+      post "/api/reviews/#{review.id}/ai_review", params: { guidance: "  Focus on app/models/order.rb  " }, as: :json
+    end
+
+    assert_equal "Focus on app/models/order.rb", review.reload.ai_guidance
+    assert_equal "Focus on app/models/order.rb", response.parsed_body["aiGuidance"]
+  end
 end

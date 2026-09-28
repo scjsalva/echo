@@ -53,7 +53,7 @@ class Review < ApplicationRecord
 
   def to_props
     {
-      id:, pr_key:, head_sha:, status:, ai_status:, ai_error:, ai_report:, sent_at:, github_url:,
+      id:, pr_key:, head_sha:, status:, ai_status:, ai_error:, ai_report:, ai_guidance:, sent_at:, github_url:,
       comments: comments.where.not(state: "removed").map(&:to_props)
     }
   end

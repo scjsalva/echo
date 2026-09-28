@@ -26,10 +26,10 @@ export function useReview(initial: ReviewDraft) {
     review,
     busy,
     starting,
-    startAi: async () => {
+    startAi: async (guidance = '') => {
       starting.value = true
       try {
-        review.value = await request<ReviewDraft>('POST', `/api/reviews/${review.value.id}/ai_review`)
+        review.value = await request<ReviewDraft>('POST', `/api/reviews/${review.value.id}/ai_review`, { guidance })
       } finally {
         starting.value = false
       }

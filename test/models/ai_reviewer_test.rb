@@ -26,12 +26,15 @@ class AiReviewerTest < ActiveSupport::TestCase
     command = folder = nil
     claude = ->(args, input:, chdir:, **) { input_seen, command, folder = input, args, chdir; [ answer, Status.new(true) ] }
 
+    @review.update!(ai_guidance: "Check the nil case")
     with_diff { ClaudeCode::Headless.stub(:run, claude) { AiReviewer.run(@review) } }
 
     assert_equal [ [ "app/x.rb", 2, "RIGHT", "nil.size raises", "staged", "ai", "high", "x.rb:2 calls size on nil" ] ],
       @review.comments.pluck(:path, :line, :side, :body, :state, :author, :severity, :evidence)
     assert_includes input_seen, "R2     + b = nil.size"
     assert_includes input_seen, "# Add b"
+    assert_includes input_seen, "## From the reviewer"
+    assert_includes input_seen, "Check the nil case"
     report = @review.reload.ai_report
     assert_equal [ "One real bug.", 1 ], report.values_at("summary", "added")
     assert_equal [ "Claude couldn't confirm it in the code", "Not on a line in this diff" ], report["left_out"].pluck("reason")
