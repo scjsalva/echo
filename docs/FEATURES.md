@@ -62,7 +62,7 @@ One list of everything blocked on you. Each item clears itself when its source s
 
 ### The bell
 
-The bell in the top right shows the count waiting on you and the unread count. Hovering it opens the 10 latest notifications, with a link to the inbox at the bottom; clicking it goes to the inbox. Once it's been open a moment, it marks what it shows as read, except what's still waiting on you to act (a review request, a mention you haven't replied to, changes requested on your PR, or a Jira assignment still in To Do). The dots stay for that look, so you can tell what was new. Opening a notification from an OS notification or an in-app alert marks it read the same way, and every open Echo page updates its count straight away.
+The bell in the top right shows the count waiting on you and the unread count. Hovering it opens the 10 latest notifications, with a link to the inbox at the bottom; clicking it goes to the inbox. Once it's been open a moment, it marks what it shows as read, except what's still waiting on you to act (a review request, a mention you haven't replied to, changes requested on your PR, or a Jira assignment still in To Do). Their dots then fade out, so you see what was new first. Opening a notification from an OS notification or an in-app alert marks it read the same way, and every open Echo page updates its count straight away.
 
 ### OS notifications and in-app alerts
 

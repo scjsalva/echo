@@ -63,10 +63,22 @@ async function load() {
 }
 
 // Opening the bell counts as seeing what it shows, except what still waits on
-// you to act. The dots stay for this look, so you can tell what was new.
+// you to act. Their dots fade out once they're marked read, so you still see
+// what was new first.
 function markSeen() {
   const ids = rows.value.filter((row) => row.unread && !row.needsAction).map((row) => row.id)
-  if (ids.length) request('POST', '/api/notifications/read_some', { ids }).then(refreshShell, () => null)
+  if (!ids.length) return
+  request('POST', '/api/notifications/read_some', { ids }).then(() => {
+    const seen = new Set(ids)
+    if (data.value) {
+      data.value = {
+        ...data.value,
+        githubNotifications: data.value.githubNotifications?.map((n) => (seen.has(n.id) ? { ...n, unread: false } : n)),
+        jiraNotifications: data.value.jiraNotifications?.map((n) => (seen.has(n.id) ? { ...n, unread: false } : n)),
+      }
+    }
+    refreshShell()
+  }, () => null)
 }
 
 function choose(row: Row) {
@@ -128,12 +140,14 @@ onBeforeUnmount(() => {
           <button type="button" class="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-2.5 px-4 py-2.5 text-left hover:bg-subtle" @click="choose(row)">
             <SourceBadge :tone="row.source === 'jira' ? 'jira' : 'default'">{{ row.source === 'jira' ? 'JIRA' : 'GH' }}</SourceBadge>
             <span class="grid min-w-0 gap-0.5">
-              <span :class="['text-[13px] break-words', row.unread ? 'font-semibold' : 'font-medium text-muted']">{{ row.title }}</span>
+              <span :class="['text-[13px] break-words transition-colors duration-700', row.unread ? 'font-semibold' : 'font-medium text-muted']">{{ row.title }}</span>
               <span class="line-clamp-2 text-[12.5px] break-words text-muted">{{ row.text }}</span>
             </span>
             <span class="flex items-center gap-1.5 text-[11.5px] whitespace-nowrap text-faint">
               {{ timeAgo(row.at, now) }}
-              <span v-if="row.unread" class="size-1.5 rounded-full bg-accent" aria-label="Unread" />
+              <Transition leave-active-class="transition-opacity duration-700" leave-to-class="opacity-0">
+                <span v-if="row.unread" class="size-1.5 rounded-full bg-accent" aria-label="Unread" />
+              </Transition>
             </span>
           </button>
         </li>

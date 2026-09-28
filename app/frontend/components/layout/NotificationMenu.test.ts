@@ -43,7 +43,10 @@ describe('NotificationMenu', () => {
     const reads = fetchMock.mock.calls.filter(([url]) => String(url).endsWith('/read_some'))
     expect(reads).toHaveLength(1)
     expect(JSON.parse(reads[0][1]!.body as string)).toEqual({ ids: ['g-approved'] })
-    expect(menu.find('[role="dialog"]').text()).toContain('Approved one')
+    await flushPromises()
+    const row = (title: string) => menu.findAll('[role="dialog"] li').find((li) => li.text().includes(title))!
+    expect(row('Approved one').find('[aria-label="Unread"]').exists()).toBe(false)
+    expect(row('Review me').find('[aria-label="Unread"]').exists()).toBe(true)
     menu.unmount()
   })
 })
