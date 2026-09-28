@@ -66,8 +66,14 @@ class Github::Sync
     row = GithubNotification.find_or_initialize_by(thread_id: thread["id"])
     return if row.persisted? && row.occurred_at >= occurred_at
 
-    actor, body, activity = latest_comment(thread) || latest_activity(path)
+    actor, body, activity = latest_comment(thread, path) || latest_activity(path)
     return row.update!(reason: thread["reason"], pr_key: "#{path[:repo]}##{path[:number]}", occurred_at:, read_at: Time.current) if activity == :covered
+    # A reply only counts in a thread you're part of, unless it mentions you.
+    if activity == :others_thread
+      return row.update!(reason: thread["reason"], pr_key: "#{path[:repo]}##{path[:number]}", occurred_at:, read_at: Time.current) unless thread["reason"].in?(%w[mention team_mention])
+
+      activity = "reply"
+    end
     # Your own activity and bots' (CI reports and the like) aren't news.
     return row.update!(reason: thread["reason"], pr_key: "#{path[:repo]}##{path[:number]}", occurred_at:, read_at: Time.current) if actor == me || actor.to_s.end_with?("[bot]")
 
@@ -80,14 +86,22 @@ class Github::Sync
       actor:, body:, occurred_at:, read_at: (Time.current if @first_sync), resolved_at: nil, resolution: nil)
   end
 
-  def latest_comment(thread)
+  def latest_comment(thread, path)
     url = thread.dig("subject", "latest_comment_url").presence or return
     return if url == thread.dig("subject", "url") # Points at the PR itself when the activity wasn't a comment.
 
     comment = Github::Cli.run("api", url.delete_prefix("https://api.github.com/"), json: true)
-    [ comment.dig("user", "login"), comment["body"].to_s.squish.truncate(2_000) ]
+    [ comment.dig("user", "login"), comment["body"].to_s.squish.truncate(2_000), (reply(path[:repo], path[:number], comment) if comment["in_reply_to_id"]) ]
   rescue Github::Cli::Error
     nil
+  end
+
+  # "reply" when you started the thread or have commented in it, otherwise :others_thread.
+  def reply(repo, number, comment)
+    root = comment["in_reply_to_id"]
+    comments = Array(Github::Cli.run("api", "--paginate", "--slurp", "repos/#{repo}/pulls/#{number}/comments?per_page=100", json: true)).flatten
+    mine = comments.any? { (it["id"] == root || it["in_reply_to_id"] == root) && it["id"] != comment["id"] && it.dig("user", "login") == me }
+    mine ? "reply" : :others_thread
   end
 
   # A review requested from you waits on you until you're no longer requested.
@@ -124,7 +138,7 @@ class Github::Sync
       # A reply on a comment thread, or a lone comment on the code, arrives as a
       # "review" with no text of its own; what was said is in its comment.
       if review["state"] == "COMMENTED" && review["body"].blank? && (said = review_comment(repo, number, review["id"]))
-        return [ review.dig("user", "login"), said["body"].to_s.squish.truncate(2_000), said["in_reply_to_id"] ? "reply" : "line_comment" ]
+        return [ review.dig("user", "login"), said["body"].to_s.squish.truncate(2_000), said["in_reply_to_id"] ? reply(repo, number, said) : "line_comment" ]
       end
 
       state = { "APPROVED" => "approved", "COMMENTED" => "reviewed", "DISMISSED" => "review_dismissed" }.fetch(review["state"], "reviewed")

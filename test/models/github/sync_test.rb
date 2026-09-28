@@ -64,10 +64,35 @@ class Github::SyncTest < ActiveSupport::TestCase
     sync
     @threads << thread(32, "author", 1.minute.ago, comment: nil)
     @reviews = [ { "id" => 7, "user" => { "login" => "jhon50" }, "state" => "COMMENTED", "submitted_at" => 1.minute.ago.iso8601, "body" => "" } ]
-    @review_comments = [ { "body" => "fixed in 696214f", "in_reply_to_id" => 3 } ]
+    @review_comments = [ { "id" => 4, "body" => "fixed in 696214f", "in_reply_to_id" => 3 } ]
+    @thread_comments = [ { "id" => 3, "user" => { "login" => ME } }, { "id" => 4, "user" => { "login" => "jhon50" }, "in_reply_to_id" => 3 } ]
     sync
 
     assert_equal [ "reply", "jhon50", "fixed in 696214f" ], GithubNotification.find_by(thread_id: "32").slice(:reason, :actor, :body).values
+  end
+
+  test "a reply counts if you've commented in the thread, even if you didn't start it" do
+    sync
+    @threads << thread(34, "author", 1.minute.ago, comment: nil)
+    @reviews = [ { "id" => 7, "user" => { "login" => "jhon50" }, "state" => "COMMENTED", "submitted_at" => 1.minute.ago.iso8601, "body" => "" } ]
+    @review_comments = [ { "id" => 5, "body" => "sure", "in_reply_to_id" => 3 } ]
+    @thread_comments = [ { "id" => 3, "user" => { "login" => "dana" } }, { "id" => 4, "user" => { "login" => ME }, "in_reply_to_id" => 3 },
+                         { "id" => 5, "user" => { "login" => "jhon50" }, "in_reply_to_id" => 3 } ]
+    sync
+
+    assert_equal [ "reply", nil ], GithubNotification.find_by(thread_id: "34").slice(:reason, :read_at).values
+  end
+
+  test "a reply in someone else's thread isn't news, unless it mentions you" do
+    sync
+    @threads.push(thread(35, "author", 1.minute.ago, comment: nil), thread(36, "mention", 1.minute.ago, comment: nil))
+    @reviews = [ { "id" => 7, "user" => { "login" => "jhon50" }, "state" => "COMMENTED", "submitted_at" => 1.minute.ago.iso8601, "body" => "" } ]
+    @review_comments = [ { "id" => 5, "body" => "agreed", "in_reply_to_id" => 3 } ]
+    @thread_comments = [ { "id" => 3, "user" => { "login" => "dana" } }, { "id" => 5, "user" => { "login" => "jhon50" }, "in_reply_to_id" => 3 } ]
+    sync
+
+    assert GithubNotification.find_by(thread_id: "35").read_at
+    assert_equal [ "reply", nil ], GithubNotification.find_by(thread_id: "36").slice(:reason, :read_at).values
   end
 
   test "says what happened when the activity wasn't a comment" do
@@ -138,6 +163,7 @@ class Github::SyncTest < ActiveSupport::TestCase
         { "user" => { "login" => login }, "body" => body }
       when %r{/issues/\d+/comments} then @replies
       when %r{/reviews/\d+/comments} then @review_comments || []
+      when %r{/pulls/\d+/comments} then args.include?("--slurp") ? [ @thread_comments || [] ] : []
       when %r{/pulls/\d+/reviews} then @reviews || []
       when %r{/pulls/\d+\z} then { "state" => "open" }
       else []
