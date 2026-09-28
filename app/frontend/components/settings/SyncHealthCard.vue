@@ -59,6 +59,22 @@ async function syncNow(sync: Sync) {
   }
 }
 
+const ago = (at: string | null) => (at ? `${timeAgo(at, now.value)} ago` : '')
+
+// One line per sync saying where it stands, most pressing first.
+function explain(sync: Sync) {
+  const synced = sync.lastSuccessAt ? `Last synced ${ago(sync.lastSuccessAt)}.` : "Hasn't synced yet."
+  if (sync.status === 'not_starting') {
+    return `${synced} It's queued every minute but hasn't run${sync.lastAttemptAt ? ` since ${ago(sync.lastAttemptAt)}` : ''}. Try Sync now; if that doesn't help, restart Echo.`
+  }
+  if (sync.runningSince) return `${sync.lastSuccessAt ? synced : ''} Syncing now…`.trim()
+  if (sync.failures) {
+    const tries = sync.failures === 1 ? 'The last try failed' : `The last ${sync.failures} tries failed`
+    return `${synced} ${tries}${sync.lastErrorAt ? `, most recently ${ago(sync.lastErrorAt)}` : ''}: ${sync.lastError?.replace(/\.$/, '')}. It keeps retrying every minute.`
+  }
+  return sync.lastSuccessAt ? `Synced ${ago(sync.lastSuccessAt)}.` : "Hasn't synced yet."
+}
+
 let timer: ReturnType<typeof setInterval> | undefined
 onMounted(() => {
   load()
@@ -91,16 +107,7 @@ onBeforeUnmount(() => clearInterval(timer))
         <BasePill :tone="STATUS[sync.status].tone">{{ STATUS[sync.status].label }}</BasePill>
       </template>
       <template #description>
-        {{ sync.lastSuccessAt ? `Last succeeded ${timeAgo(sync.lastSuccessAt, now)} ago.` : "Hasn't succeeded yet." }}
-        <span v-if="sync.runningSince" class="block">Running now, since {{ timeAgo(sync.runningSince, now) }} ago.</span>
-        <span v-if="sync.status === 'not_starting'" class="block text-bad">
-          It's being queued but hasn't started since {{ sync.lastAttemptAt ? `${timeAgo(sync.lastAttemptAt, now)} ago` : 'Echo started' }}, so something is holding the
-          job queue up. Sync now tries it straight away; if that doesn't help, restart Echo.
-        </span>
-        <span v-if="sync.failures" class="block text-bad">
-          Failed {{ sync.failures }} time{{ sync.failures === 1 ? '' : 's' }} in a row, last {{ sync.lastErrorAt ? `${timeAgo(sync.lastErrorAt, now)} ago` : '' }}: {{ sync.lastError }}
-          It retries on its own.
-        </span>
+        <span :class="sync.status === 'failing' || sync.status === 'not_starting' ? 'text-bad' : ''">{{ explain(sync) }}</span>
       </template>
       <BaseButton :disabled="syncing.has(sync.source)" tooltip="Runs it now, on top of the automatic runs" @click="syncNow(sync)">
         <PhArrowClockwise :size="14" /> {{ syncing.has(sync.source) ? 'Syncing…' : 'Sync now' }}

@@ -11,11 +11,14 @@ DesktopNotification.runner = ->(*) { true }
 DesktopNotification.home = Pathname(Dir.mktmpdir("echo-notifier"))
 # Tests keep their own change counter, so running them doesn't nudge a running Echo's pages.
 Changes.path = Pathname(Dir.mktmpdir("echo-changes")).join("changes")
+# Nor share sync locks with it or with each other, which would make a test's sync skip.
+SyncHealth.lock_dir = Pathname(Dir.mktmpdir("echo-sync-locks"))
 
 module ActiveSupport
   class TestCase
     # Run tests in parallel with specified workers
     parallelize(workers: :number_of_processors)
+    parallelize_setup { |_| SyncHealth.lock_dir = Pathname(Dir.mktmpdir("echo-sync-locks")) }
 
     # Setup all fixtures in test/fixtures/*.yml for all tests in alphabetical order.
     fixtures :all

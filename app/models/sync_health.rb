@@ -14,16 +14,19 @@ module SyncHealth
   def self.state(source) = Setting[key(source)] ? JSON.parse(Setting[key(source)]) : {}
 
   # Wraps one run: records it started, then how it ended.
-  LOCKS = Rails.root.join("tmp")
+  mattr_accessor :lock_dir, default: Rails.root.join("tmp")
   # Queued but not started for this long, while the scheduler runs, means something is holding it back.
   NOT_STARTING_AFTER = 5.minutes
+  # A run takes well under a minute; one "running" longer was cut off (a restart,
+  # the Mac sleeping) before it could record that it ended.
+  RUNNING_AT_MOST = 5.minutes
 
   # Wraps one run: one at a time per sync, then records how it ended. The lock
   # is a file lock, which the system drops the moment its process dies, so a
   # worker that crashes or is replaced (e.g. after the Mac sleeps) can't leave
   # the next runs waiting behind it.
   def self.track(source)
-    File.open(LOCKS.join("sync-#{source}.lock"), File::RDWR | File::CREAT) do |lock|
+    File.open(lock_dir.join("sync-#{source}.lock"), File::RDWR | File::CREAT) do |lock|
       unless lock.flock(File::LOCK_EX | File::LOCK_NB)
         record(source, "last_skipped_at" => Time.current.iso8601)
         return
@@ -78,7 +81,8 @@ module SyncHealth
         end
         { source:, label: info[:label], status:, connected: connected?(source), last_success_at: s["last_success_at"], last_attempt_at: s["last_attempt_at"],
           last_error: s["last_error"], last_error_at: s["last_error_at"], failures: s["failures"].to_i,
-          running_since: s["running_since"], last_skipped_at: s["last_skipped_at"] }
+          running_since: (s["running_since"] if s["running_since"] && Time.zone.parse(s["running_since"]) > RUNNING_AT_MOST.ago),
+          last_skipped_at: s["last_skipped_at"] }
       end
     }
   end

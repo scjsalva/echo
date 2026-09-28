@@ -1,6 +1,14 @@
 require "test_helper"
 
 class SyncHealthTest < ActiveSupport::TestCase
+  test "a run cut off long ago doesn't show as running" do
+    SyncHealth.record("github", "running_since" => 40.minutes.ago.iso8601)
+    assert_nil SyncHealth.props[:syncs].find { it[:source] == "github" }[:running_since]
+
+    SyncHealth.record("github", "running_since" => 20.seconds.ago.iso8601)
+    assert SyncHealth.props[:syncs].find { it[:source] == "github" }[:running_since]
+  end
+
   test "skips a run while another of the same sync is still going" do
     ran = false
     SyncHealth.track("jira") do
