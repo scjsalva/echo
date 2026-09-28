@@ -42,7 +42,7 @@ async function rename() {
   try {
     await request('POST', `/api/agents/${props.agent.id}/rename`, { name: newName.value })
     renaming.value = false
-    toast.show('Renaming. If the agent is busy, it takes the name when it finishes this turn.')
+    toast.show('Renamed. It shows here in a moment.')
     setTimeout(() => dashboard.refresh(), 2500)
   } catch (error) {
     toast.show(error instanceof Error ? error.message : "Couldn't rename the agent")
@@ -115,8 +115,12 @@ const tiles = computed(() => [
           class="min-w-0 flex-1 rounded-md border border-line bg-surface px-2.5 py-1 text-base font-semibold"
           @keydown.esc.stop="renaming = false"
         />
-        <BaseButton variant="primary" size="sm" :disabled="!newName.trim()" @click="rename">Save</BaseButton>
+        <BaseButton variant="primary" size="sm" :disabled="!newName.trim() || agent.status !== 'idle'" @click="rename">Save</BaseButton>
         <BaseButton size="sm" @click="renaming = false">Cancel</BaseButton>
+        <p class="basis-full text-[12px] font-normal text-muted">
+          <template v-if="agent.status !== 'idle'">It's in the middle of something. Rename it once it's idle.</template>
+          <template v-else>Echo types /rename into the session, so clear anything you've half-typed there first.</template>
+        </p>
       </form>
       <span v-else class="inline-flex items-start gap-2">
         {{ agent.renamed ? agent.name : (agent.title ?? agent.name) }}

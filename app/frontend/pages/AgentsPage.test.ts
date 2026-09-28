@@ -84,7 +84,7 @@ describe('Show terminal', () => {
 
 describe('renaming', () => {
   it('sends the new name to the session and shows the model', async () => {
-    const agent = { ...props.agents.find((a) => a.kind === 'yours')!, terminalUnavailable: null }
+    const agent = { ...props.agents.find((a) => a.kind === 'yours')!, terminalUnavailable: null, status: 'idle' as const }
     const page = mount(AgentsPage, { props: { ...props, agents: [agent] }, attachTo: document.body })
     await page.findAll('tbody tr').find((r) => r.text().includes(agent.name))!.trigger('click')
     const dialog = () => page.find('[role="dialog"]')
@@ -96,6 +96,17 @@ describe('renaming', () => {
     await flushPromises()
 
     expect(fetchMock).toHaveBeenCalledWith(`/api/agents/${agent.id}/rename`, expect.objectContaining({ method: 'POST', body: JSON.stringify({ name: 'Payments work' }) }))
+    page.unmount()
+  })
+
+  it("won't rename a busy agent, since typing into it could send what you're writing", async () => {
+    const agent = { ...props.agents.find((a) => a.kind === 'yours')!, terminalUnavailable: null, status: 'busy' as const }
+    const page = mount(AgentsPage, { props: { ...props, agents: [agent] }, attachTo: document.body })
+    await page.findAll('tbody tr').find((r) => r.text().includes(agent.name))!.trigger('click')
+    await page.find('[role="dialog"] button[aria-label="Rename agent"]').trigger('click')
+
+    expect(page.find('[role="dialog"]').findAll('button').find((b) => b.text() === 'Save')!.attributes('disabled')).toBeDefined()
+    expect(page.find('[role="dialog"]').text()).toContain('Rename it once it\'s idle')
     page.unmount()
   })
 })

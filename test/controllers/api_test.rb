@@ -302,4 +302,16 @@ class ApiTest < ActionDispatch::IntegrationTest
     assert_enqueued_with(job: GithubSyncJob) { patch "/api/health", params: { source: "github" } }
     assert_response :accepted
   end
+
+  test "won't rename a session that's busy, since typing into it could send what you're writing" do
+    busy = Struct.new(:to_agent).new({ status: "busy" })
+    typed = false
+
+    ClaudeCode::Session.stub(:find, busy) do
+      ClaudeCode::Focus.stub(:type, ->(*) { typed = true }) { post "/api/agents/abc/rename", params: { name: "New" }, as: :json }
+    end
+
+    assert_response :conflict
+    assert_not typed
+  end
 end

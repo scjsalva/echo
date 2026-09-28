@@ -114,7 +114,7 @@ Every live Claude Code session on your machine, read from Claude Code's own file
 - **Filters:** all, waiting on you, with loops, background, and started by Echo.
 - **The agent drawer:**
   - **Show terminal** brings the session's Terminal or iTerm2 tab to the front. It isn't available for tmux or background jobs.
-  - **Rename** names the session with Claude Code's own `/rename`, so the name stays with it.
+  - **Rename** names the session with Claude Code's own `/rename`, so the name stays with it. Echo types the command into the session, so it only renames an idle session (typing into a busy one could land in, and send, what you're writing there); clear anything half-typed there first.
   - **Summarise** gives a short summary of where the session has got to. It uses Haiku, costs a few thousand tokens, and you can change which skill it uses.
   - **Transcript** shows the conversation.
   - **End session** quits a live session after you confirm.
