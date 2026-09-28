@@ -17,7 +17,7 @@ const props = {
     types: [], enabledTypes: [], reminderMinutes: 30, reminderOptions: [0, 30],
     workingHours: { enabled: false, days: [1, 2, 3, 4, 5], start: '09:00', end: '17:00', timeZone: 'UTC' },
   },
-  github: { repos: [], reposChosen: false, team: [], knownRepos: [], knownPeople: [], localRepos: [] },
+  github: { repos: [], reposChosen: false, team: [], knownRepos: [], knownPeople: [], knownTeams: [], localRepos: [] },
   claude: { reviewLimit: 3, reviewLimitOptions: [1, 2, 3], skills: [], context: { global: [], repos: [], extras: [] } },
 }
 

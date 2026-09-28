@@ -17,7 +17,7 @@ class Dashboard
     new(data: {
       connected: { jira: jira[:connected], github: github[:connected] },
       me: { github_login: github[:login] },
-      repos: Github::Preferences.repos, team: Github::Preferences.team,
+      repos: Github::Preferences.repos, team: Github::Preferences.team_logins,
       pull_requests: github[:connected] ? Github::DashboardData.pull_requests : [],
       github_notifications: github[:connected] ? Github::DashboardData.notifications : [],
       agents: ClaudeCode::Session.live.map(&:to_agent) + ClaudeCode::Job.recent,

@@ -68,11 +68,13 @@ async function removeCopy(repo: string) {
   </div>
   <div class="grid gap-1.5 py-2.5">
     <p class="font-medium">My team</p>
-    <p class="text-[12.5px] text-muted">GitHub usernames for the review queue's "My team" filter.</p>
+    <p class="text-[12.5px] text-muted">
+      People and GitHub teams for the review queue's "My team" filter. A team, written org/team, counts everyone in it.
+    </p>
     <ChipListEditor
       :items="prefs.team"
-      :suggestions="prefs.knownPeople.map((p) => ({ value: p.login, label: p.name }))"
-      placeholder="GitHub username or name"
+      :suggestions="[...prefs.knownTeams, ...prefs.knownPeople.map((p) => ({ value: p.login, label: p.name }))]"
+      placeholder="GitHub username, name or team"
       label="team"
       @change="setTeam"
     />

@@ -148,7 +148,7 @@ class Github::Sync
   def track_team_ready
     return if @first_sync
 
-    team = Github::Preferences.team
+    team = Github::Preferences.team_logins
     @pull_requests.each_value.select { !it[:mine] && !it[:draft] && team.include?(it[:author]) && it[:ready_at] }.each do |pr|
       at = Time.zone.parse(pr[:ready_at])
       next unless at > @previous_sync

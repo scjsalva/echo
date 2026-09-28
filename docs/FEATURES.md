@@ -270,7 +270,7 @@ Changes wait for **Save**, section by section. As soon as something changes in a
   - **After sending a review:** Echo syncs GitHub straight away, so an approval shows at once. Echo never asks for tokens: logging in opens Terminal with the CLI's own login command.
 - **GitHub:**
   - the repos the review queue watches
-  - your team (with suggestions from your organisation)
+  - your team: people, and GitHub teams written `org/team` (suggested from your organisations), where a team counts everyone in it; members are looked up on GitHub and refreshed every 10 minutes
   - **Code for AI reviews:** point each repo at a clone you already have, or Echo keeps its own copy, downloaded on the first review. Once you use your own clone, you can remove Echo's copy.
 - **Claude:** how many AI reviews run at once, the skills for each action and repo, and what Echo's Claude runs can see, including extra context.
 - **Notifications:**

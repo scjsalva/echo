@@ -292,6 +292,8 @@ export interface GithubPreferences {
   team: string[]
   knownRepos: string[]
   knownPeople: { login: string; name: string | null }[]
+  /** Teams to suggest, written org/team-slug. */
+  knownTeams: { value: string; label: string }[]
   /** Where AI reviews read each repo's code from. */
   localRepos: { repo: string; path: string | null; suggestions: string[]; echoCopyBytes: number | null }[]
 }

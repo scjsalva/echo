@@ -7,7 +7,13 @@ module Github::Preferences
 
   def self.repos = Setting[REPOS] ? JSON.parse(Setting[REPOS]) : suggested_repos
   def self.repos_chosen? = Setting[REPOS].present?
+  # What you added: usernames, and teams written org/team-slug.
   def self.team = Setting[TEAM] ? JSON.parse(Setting[TEAM]) : []
+
+  # Everyone that counts as your team: the people you added and each team's members.
+  def self.team_logins
+    team.flat_map { Github::Teams.team?(it) ? Github::Teams.members(it) : [ it ] }.uniq
+  end
 
   def self.update(repos: nil, team: nil)
     if repos
@@ -25,6 +31,6 @@ module Github::Preferences
   def self.props
     { repos:, repos_chosen: repos_chosen?, team:,
       known_repos: GithubPullRequest.pluck(:data).map { it["full_name"] }.uniq.sort,
-      known_people: Github::People.suggestions(repos:), local_repos: Github::LocalRepos.props(repos) }
+      known_people: Github::People.suggestions(repos:), known_teams: Github::Teams.suggestions(repos:), local_repos: Github::LocalRepos.props(repos) }
   end
 end
