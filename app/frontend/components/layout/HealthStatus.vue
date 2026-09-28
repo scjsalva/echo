@@ -74,13 +74,10 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="relative" @mouseenter="show" @mouseleave="hide" @focusin="show" @focusout="hide" @keydown.esc="open = false">
-    <a href="/settings#health" class="flex items-center rounded-md hover:bg-subtle" :aria-expanded="open" :aria-label="`Sync health: ${summary}`">
-      <span class="relative ml-2 flex size-2" aria-hidden="true">
+    <a href="/settings#health" class="flex size-7 items-center justify-center rounded-md hover:bg-subtle" :aria-expanded="open" :aria-label="`Sync health: ${summary}`">
+      <span class="relative flex size-2" aria-hidden="true">
         <span v-if="tone === 'ok'" class="absolute inset-0 rounded-full bg-ok opacity-60 motion-safe:animate-ping" />
         <span :class="['relative size-2 rounded-full', DOT[tone]]" />
-      </span>
-      <span class="px-2 py-1 text-[12.5px] whitespace-nowrap text-muted tabular-nums" aria-live="polite">
-        {{ refreshFailed ? "Couldn't refresh" : `Updated ${timeAgo(updatedAt, now)} ago` }}
       </span>
     </a>
 
@@ -93,6 +90,7 @@ onBeforeUnmount(() => {
       <div class="grid gap-0.5 border-b border-line-soft px-4 py-3">
         <p class="text-[13px] font-semibold">Sync health</p>
         <p :class="['text-[12.5px]', WORD[tone]]">{{ health ? summary : 'Checking…' }}</p>
+        <p class="text-[11.5px] text-faint">{{ refreshFailed ? "This page couldn't refresh just now" : `This page updated ${timeAgo(updatedAt, now)} ago` }}</p>
       </div>
       <p v-if="health?.scheduler?.stalled" class="border-b border-line-soft bg-bad-soft px-4 py-2 text-[12.5px] text-bad">
         Syncs aren't being started on schedule, so Echo is running them itself for now.

@@ -57,7 +57,6 @@ async function load() {
   try {
     data.value = await request('GET', '/api/notifications')
     failed.value = false
-    markSeen()
   } catch {
     failed.value = true
   }
@@ -75,34 +74,44 @@ function choose(row: Row) {
   openLink(row.link)
 }
 
-const onKey = (e: KeyboardEvent) => e.key === 'Escape' && (open.value = false)
-const onPointer = (e: PointerEvent) => !root.value?.contains(e.target as Node) && (open.value = false)
-watch(open, (isOpen) => {
-  if (isOpen) {
-    load()
-    document.addEventListener('keydown', onKey)
-    document.addEventListener('pointerdown', onPointer)
-  } else {
-    document.removeEventListener('keydown', onKey)
-    document.removeEventListener('pointerdown', onPointer)
-  }
+// Opens on hover, like the sync light beside it, and stays while the pointer
+// moves onto the panel. What it shows counts as seen once it's stayed open a
+// moment, so passing over the bell doesn't mark everything read.
+const CLOSE_DELAY_MS = 150
+const SEEN_AFTER_MS = 1_500
+let closing: ReturnType<typeof setTimeout> | undefined
+let seeing: ReturnType<typeof setTimeout> | undefined
+function show() {
+  clearTimeout(closing)
+  open.value = true
+}
+function hide() {
+  closing = setTimeout(() => (open.value = false), CLOSE_DELAY_MS)
+}
+watch(open, async (isOpen) => {
+  clearTimeout(seeing)
+  if (!isOpen) return
+  await load()
+  seeing = setTimeout(() => open.value && markSeen(), SEEN_AFTER_MS)
 })
-onBeforeUnmount(() => (open.value = false))
+onBeforeUnmount(() => {
+  clearTimeout(closing)
+  clearTimeout(seeing)
+})
 </script>
 
 <template>
-  <div ref="root" class="relative">
-    <button
-      type="button"
+  <div ref="root" class="relative" @mouseenter="show" @mouseleave="hide" @focusin="show" @focusout="hide" @keydown.esc="open = false">
+    <a
+      href="/inbox"
       :class="linkClass"
       :aria-expanded="open"
       :aria-label="`Notifications: ${props.shell.waitingCount} waiting, ${props.shell.unreadCount} unread`"
-      @click="open = !open"
     >
       <PhBell :size="15" :weight="shell.unreadCount || shell.waitingCount ? 'fill' : 'regular'" />
       <span v-if="shell.waitingCount" class="rounded-full bg-warn px-1.5 font-mono text-[10.5px] font-semibold text-on-accent">{{ shell.waitingCount }}</span>
       <span v-if="shell.unreadCount" class="rounded-full bg-accent px-1.5 font-mono text-[10.5px] font-semibold text-on-accent">{{ shell.unreadCount }}</span>
-    </button>
+    </a>
 
     <div
       v-if="open"

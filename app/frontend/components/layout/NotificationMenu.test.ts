@@ -16,7 +16,7 @@ describe('NotificationMenu', () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ ...overview, githubNotifications: many, jiraNotifications: [], pullRequests: [] }), { status: 200 })))
     const menu = mount(NotificationMenu, { props: { shell: overview.shell, linkClass: '' }, attachTo: document.body })
 
-    await menu.find('button[aria-label^="Notifications"]').trigger('click')
+    await menu.trigger('mouseenter')
     await flushPromises()
 
     const rows = menu.findAll('[role="dialog"] li')
@@ -33,8 +33,12 @@ describe('NotificationMenu', () => {
     vi.stubGlobal('fetch', fetchMock)
     vi.stubGlobal('location', { ...location, assign: vi.fn(), origin: 'http://localhost' })
     const menu = mount(NotificationMenu, { props: { shell: overview.shell, linkClass: '' }, attachTo: document.body })
-    await menu.find('button[aria-label^="Notifications"]').trigger('click')
+    vi.useFakeTimers()
+    await menu.trigger('mouseenter')
     await flushPromises()
+    expect(fetchMock.mock.calls.some(([url]) => String(url).endsWith('/read_some'))).toBe(false)
+    await vi.advanceTimersByTimeAsync(1_500)
+    vi.useRealTimers()
 
     const reads = fetchMock.mock.calls.filter(([url]) => String(url).endsWith('/read_some'))
     expect(reads).toHaveLength(1)

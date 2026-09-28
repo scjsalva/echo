@@ -62,7 +62,7 @@ One list of everything blocked on you. Each item clears itself when its source s
 
 ### The bell
 
-The bell in the top right shows the count waiting on you and the unread count. Clicking it opens the 10 latest notifications, with a link to the inbox at the bottom. Opening the bell marks what it shows as read, except what's still waiting on you to act (a review request, a mention you haven't replied to, changes requested on your PR, or a Jira assignment still in To Do). The dots stay for that look, so you can tell what was new. Opening a notification from an OS notification or an in-app alert marks it read the same way, and every open Echo page updates its count straight away.
+The bell in the top right shows the count waiting on you and the unread count. Hovering it opens the 10 latest notifications, with a link to the inbox at the bottom; clicking it goes to the inbox. Once it's been open a moment, it marks what it shows as read, except what's still waiting on you to act (a review request, a mention you haven't replied to, changes requested on your PR, or a Jira assignment still in To Do). The dots stay for that look, so you can tell what was new. Opening a notification from an OS notification or an in-app alert marks it read the same way, and every open Echo page updates its count straight away.
 
 ### OS notifications and in-app alerts
 
@@ -266,7 +266,7 @@ Changes wait for **Save**, section by section. As soon as something changes in a
 - **Health** (under Connections): how each background sync is doing (GitHub, Jira and the notification check). It shows when each last succeeded, any failures in a row with the last error, and a **Sync now** button, on top of the automatic runs. Failed syncs retry on their own every minute.
   - **Scheduler:** Health also shows the background scheduler that starts the syncs. If it stops for 3 minutes, Echo runs the syncs itself until it picks up again, and it clears out jobs left behind by a worker that died.
   - **Stuck runs:** each sync runs one at a time using a lock the system releases if its process dies, so a crash or the Mac sleeping can't leave the next runs waiting. A sync that's being queued but not starting shows as **Not starting**.
-  - **The status light** at the top right (Updated … ago) turns amber or red when a sync is behind or failing. Hover it for each connected sync's status, or click it to open Health.
+  - **The status light** at the top right is green when every connected sync is up to date, amber when one is behind, and red when one is failing or not starting. Hover it for a summary, each sync's status and when it last synced, and when the page last updated. Click it to open Health.
   - **After sending a review:** Echo syncs GitHub straight away, so an approval shows at once. Echo never asks for tokens: logging in opens Terminal with the CLI's own login command.
 - **GitHub:**
   - the repos the review queue watches
