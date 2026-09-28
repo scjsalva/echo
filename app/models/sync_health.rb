@@ -14,15 +14,32 @@ module SyncHealth
   def self.state(source) = Setting[key(source)] ? JSON.parse(Setting[key(source)]) : {}
 
   # Wraps one run: records it started, then how it ended.
+  LOCKS = Rails.root.join("tmp")
+  # Queued but not started for this long, while the scheduler runs, means something is holding it back.
+  NOT_STARTING_AFTER = 5.minutes
+
+  # Wraps one run: one at a time per sync, then records how it ended. The lock
+  # is a file lock, which the system drops the moment its process dies, so a
+  # worker that crashes or is replaced (e.g. after the Mac sleeps) can't leave
+  # the next runs waiting behind it.
   def self.track(source)
-    record(source, "last_attempt_at" => Time.current.iso8601)
-    result = yield
-    record(source, "last_success_at" => Time.current.iso8601, "failures" => 0)
-    result
-  rescue StandardError => e
-    failures = state(source)["failures"].to_i + 1
-    record(source, "last_error" => e.message.truncate(300), "last_error_at" => Time.current.iso8601, "failures" => failures)
-    raise
+    File.open(LOCKS.join("sync-#{source}.lock"), File::RDWR | File::CREAT) do |lock|
+      unless lock.flock(File::LOCK_EX | File::LOCK_NB)
+        record(source, "last_skipped_at" => Time.current.iso8601)
+        return
+      end
+
+      record(source, "last_attempt_at" => Time.current.iso8601, "running_since" => Time.current.iso8601)
+      begin
+        result = yield
+        record(source, "last_success_at" => Time.current.iso8601, "failures" => 0, "running_since" => nil)
+        result
+      rescue StandardError => e
+        failures = state(source)["failures"].to_i + 1
+        record(source, "last_error" => e.message.truncate(300), "last_error_at" => Time.current.iso8601, "failures" => failures, "running_since" => nil)
+        raise
+      end
+    end
   end
 
   def self.record(source, changes) = Setting[key(source)] = state(source).merge(changes).to_json
@@ -34,19 +51,34 @@ module SyncHealth
     nil
   end
 
+  # A sync for something that isn't connected doesn't run, so it isn't worth showing as a problem.
+  def self.connected?(source)
+    case source
+    when "github" then Github::Connection.connected?
+    when "jira" then Jira::Connection.connected?
+    else true
+    end
+  rescue StandardError
+    false
+  end
+
   def self.props
     scheduled = last_scheduled_at
     {
       scheduler: { last_run_at: scheduled, stalled: SyncWatchdog.stalled?(scheduled), covering_since: Setting[SyncWatchdog::COVERING] },
       syncs: SOURCES.map do |source, info|
         s = state(source)
+        attempted = s["last_attempt_at"] && Time.zone.parse(s["last_attempt_at"])
+        not_starting = !SyncWatchdog.stalled?(scheduled) && connected?(source) && (attempted.nil? || attempted < NOT_STARTING_AFTER.ago)
         status = if s["failures"].to_i >= FAILING_AFTER then "failing"
+        elsif not_starting then "not_starting"
         elsif s["last_success_at"].nil? then "unknown"
         elsif Time.zone.parse(s["last_success_at"]) < (info[:every] * 5).ago then "stale"
         else "ok"
         end
-        { source:, label: info[:label], status:, last_success_at: s["last_success_at"], last_attempt_at: s["last_attempt_at"],
-          last_error: s["last_error"], last_error_at: s["last_error_at"], failures: s["failures"].to_i }
+        { source:, label: info[:label], status:, connected: connected?(source), last_success_at: s["last_success_at"], last_attempt_at: s["last_attempt_at"],
+          last_error: s["last_error"], last_error_at: s["last_error_at"], failures: s["failures"].to_i,
+          running_since: s["running_since"], last_skipped_at: s["last_skipped_at"] }
       end
     }
   end

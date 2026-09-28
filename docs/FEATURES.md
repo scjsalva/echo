@@ -264,7 +264,9 @@ Changes wait for **Save**, section by section. As soon as something changes in a
 
 - **Connections:** GitHub, Jira, Claude Code hooks, and Echo in Claude Code.
 - **Health** (under Connections): how each background sync is doing (GitHub, Jira and the notification check). It shows when each last succeeded, any failures in a row with the last error, and a **Sync now** button, on top of the automatic runs. Failed syncs retry on their own every minute.
-  - **Scheduler:** Health also shows the background scheduler that starts the syncs. If it stops for 3 minutes, Echo runs the syncs itself; if it's still stuck after 5, Echo restarts it.
+  - **Scheduler:** Health also shows the background scheduler that starts the syncs. If it stops for 3 minutes, Echo runs the syncs itself until it picks up again, and it clears out jobs left behind by a worker that died.
+  - **Stuck runs:** each sync runs one at a time using a lock the system releases if its process dies, so a crash or the Mac sleeping can't leave the next runs waiting. A sync that's being queued but not starting shows as **Not starting**.
+  - **The status light** at the top right (Updated … ago) turns amber or red when a sync is behind or failing. Hover it for each connected sync's status, or click it to open Health.
   - **After sending a review:** Echo syncs GitHub straight away, so an approval shows at once. Echo never asks for tokens: logging in opens Terminal with the CLI's own login command.
 - **GitHub:**
   - the repos the review queue watches

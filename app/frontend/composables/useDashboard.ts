@@ -49,12 +49,16 @@ function createDashboard<T extends PageData>(initial: T, endpoint: string) {
     await request('POST', '/api/notifications/read_all').catch(refresh)
   }
 
-  const timer = setInterval(refresh, REFRESH_MS)
+  // A tab in the background doesn't poll; it catches up the moment it's shown again.
+  const visible = () => document.visibilityState === 'visible'
+  const timer = setInterval(() => visible() && refresh(), REFRESH_MS)
+  const onVisible = () => visible() && refresh()
+  document.addEventListener('visibilitychange', onVisible)
 
   // With hooks installed, a cheap check every few seconds catches changes as they happen.
   let seenVersion: number | null = null
   const liveTimer = setInterval(async () => {
-    if (!data.value.shell.live) return
+    if (!data.value.shell.live || !visible()) return
     const { version } = await request<{ version: number }>('GET', '/api/changes').catch(() => ({ version: seenVersion ?? 0 }))
     if (seenVersion !== null && version !== seenVersion) refresh()
     seenVersion = version
@@ -63,6 +67,7 @@ function createDashboard<T extends PageData>(initial: T, endpoint: string) {
   onScopeDispose(() => {
     clearInterval(timer)
     clearInterval(liveTimer)
+    document.removeEventListener('visibilitychange', onVisible)
   })
 
   return {

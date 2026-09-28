@@ -4,14 +4,13 @@ import { PhGear } from '@phosphor-icons/vue'
 import AlertStack from './AlertStack.vue'
 import LinkedDrawer from './LinkedDrawer.vue'
 import NotificationMenu from './NotificationMenu.vue'
+import HealthStatus from './HealthStatus.vue'
 import EchoLogo from './EchoLogo.vue'
 import FirstRunBanner from './FirstRunBanner.vue'
 import ToastHost from './ToastHost.vue'
 import { useOptionalDashboard } from '@/composables/useDashboard'
 import { useNotificationLink } from '@/composables/useNotificationLink'
 import { request } from '@/lib/api'
-import { useNow } from '@/composables/useNow'
-import { timeAgo } from '@/lib/format'
 import type { ShellProps } from '@/types/dashboard'
 
 const props = withDefaults(defineProps<{
@@ -26,7 +25,6 @@ const props = withDefaults(defineProps<{
   showFirstRun: true,
 })
 
-const now = useNow()
 
 // The header's counts. Pages with a dashboard keep them fresh; the others
 // (Settings, a review) follow changes here, so the bell never needs a reload.
@@ -91,13 +89,7 @@ const iconLink = 'inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[12
       </nav>
 
       <div class="flex items-center gap-0.5 rounded-lg border border-line bg-surface p-[3px]">
-        <span class="relative ml-2 flex size-2" aria-hidden="true">
-          <span v-if="!refreshFailed" class="absolute inset-0 rounded-full bg-ok opacity-60 motion-safe:animate-ping" />
-          <span :class="['relative size-2 rounded-full', refreshFailed ? 'bg-bad' : 'bg-ok']" />
-        </span>
-        <span class="px-2 text-[12.5px] whitespace-nowrap text-muted tabular-nums" aria-live="polite">
-          {{ refreshFailed ? "Couldn't refresh" : `Updated ${timeAgo(shell.updatedAt, now)} ago` }}
-        </span>
+        <HealthStatus :updated-at="shell.updatedAt" :refresh-failed="refreshFailed" />
         <span class="mx-0.5 h-4 w-px bg-line" aria-hidden="true" />
         <NotificationMenu :shell="shell" :link-class="iconLink" />
         <a href="/settings" :class="iconLink" aria-label="Settings">

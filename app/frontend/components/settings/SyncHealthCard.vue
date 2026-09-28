@@ -13,12 +13,14 @@ import type { Tone } from '@/lib/labels'
 interface Sync {
   source: string
   label: string
-  status: 'ok' | 'stale' | 'failing' | 'unknown'
+  status: 'ok' | 'stale' | 'failing' | 'not_starting' | 'unknown'
   lastSuccessAt: string | null
   lastAttemptAt: string | null
   lastError: string | null
   lastErrorAt: string | null
   failures: number
+  runningSince: string | null
+  lastSkippedAt: string | null
 }
 interface Health {
   scheduler: { lastRunAt: string | null; stalled: boolean; coveringSince: string | null }
@@ -30,6 +32,7 @@ const STATUS: Record<Sync['status'], { label: string; tone: Tone }> = {
   ok: { label: 'Healthy', tone: 'ok' },
   stale: { label: 'Behind', tone: 'warn' },
   failing: { label: 'Failing', tone: 'bad' },
+  not_starting: { label: 'Not starting', tone: 'bad' },
   unknown: { label: 'Not run yet', tone: 'neutral' },
 }
 
@@ -75,8 +78,8 @@ onBeforeUnmount(() => clearInterval(timer))
       <template #description>
         <template v-if="health.scheduler.stalled">
           It stopped starting the syncs<template v-if="health.scheduler.lastRunAt"> {{ timeAgo(health.scheduler.lastRunAt, now) }} ago</template>. Echo is running them
-          itself<template v-if="health.scheduler.coveringSince"> since {{ timeAgo(health.scheduler.coveringSince, now) }} ago</template>, and restarts
-          the scheduler if it stays stuck.
+          itself<template v-if="health.scheduler.coveringSince"> since {{ timeAgo(health.scheduler.coveringSince, now) }} ago</template> until it
+          picks up again.
         </template>
         <template v-else>Starts the syncs below on schedule. Last started one {{ health.scheduler.lastRunAt ? `${timeAgo(health.scheduler.lastRunAt, now)} ago` : 'never' }}.</template>
       </template>
@@ -89,7 +92,12 @@ onBeforeUnmount(() => clearInterval(timer))
       </template>
       <template #description>
         {{ sync.lastSuccessAt ? `Last succeeded ${timeAgo(sync.lastSuccessAt, now)} ago.` : "Hasn't succeeded yet." }}
-        <span v-if="sync.failures" class="text-bad">
+        <span v-if="sync.runningSince" class="block">Running now, since {{ timeAgo(sync.runningSince, now) }} ago.</span>
+        <span v-if="sync.status === 'not_starting'" class="block text-bad">
+          It's being queued but hasn't started since {{ sync.lastAttemptAt ? `${timeAgo(sync.lastAttemptAt, now)} ago` : 'Echo started' }}, so something is holding the
+          job queue up. Sync now tries it straight away; if that doesn't help, restart Echo.
+        </span>
+        <span v-if="sync.failures" class="block text-bad">
           Failed {{ sync.failures }} time{{ sync.failures === 1 ? '' : 's' }} in a row, last {{ sync.lastErrorAt ? `${timeAgo(sync.lastErrorAt, now)} ago` : '' }}: {{ sync.lastError }}
           It retries on its own.
         </span>

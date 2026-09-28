@@ -38,6 +38,10 @@ plugin :tmp_restart
 # Run the Solid Queue supervisor inside of Puma for single-server deployments.
 # Runs background jobs (see config/recurring.yml) inside the server, so Echo is one process.
 plugin :solid_queue unless ENV["RAILS_ENV"] == "test"
+# The job queue runs as threads inside this server rather than as separate
+# processes: less memory, and no worker processes to be replaced (and leave
+# jobs behind) when the Mac sleeps.
+solid_queue_mode :async
 
 # Specify the PID file. Defaults to tmp/pids/server.pid in development.
 # In other environments, only set the PID file if requested.

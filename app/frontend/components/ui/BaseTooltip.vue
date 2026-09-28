@@ -51,10 +51,10 @@ onBeforeUnmount(hide)
       :id="id"
       role="tooltip"
       :class="[
-        'pointer-events-none fixed z-50 w-max max-w-64 -translate-x-1/2 rounded-md bg-ink px-2.5 py-1.5 text-xs leading-snug font-normal tracking-normal text-canvas normal-case shadow-lg',
+        'pointer-events-none fixed z-50 w-max max-w-64 -translate-x-1/2 rounded-md bg-ink px-2.5 py-1.5 text-xs leading-snug font-normal tracking-normal whitespace-pre-line text-canvas normal-case shadow-lg',
         placement === 'top' && '-translate-y-full',
       ]"
       :style="{ left: `${position.x}px`, top: `${position.y}px` }"
-    >{{ text }}</span>
+    ><slot name="tip">{{ text }}</slot></span>
   </Teleport>
 </template>

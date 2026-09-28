@@ -72,7 +72,8 @@ export function useAlerts() {
   }
 
   check()
-  const timer = setInterval(check, CHECK_MS)
+  // Alerts only show in the tab you're looking at, so a background tab doesn't ask.
+  const timer = setInterval(() => document.visibilityState === 'visible' && check(), CHECK_MS)
   onScopeDispose(() => {
     clearInterval(timer)
     tabs?.close()

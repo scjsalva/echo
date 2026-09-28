@@ -1,13 +1,14 @@
 default: &default
+  # Every 5 seconds is plenty for syncs that run each minute.
   dispatchers:
-    - polling_interval: 1
+    - polling_interval: 5
       batch_size: 500
   workers:
     - queues: "*"
       # AI reviews can each hold a thread for minutes; the rest stay free for the syncs.
       threads: 8
       processes: <%= ENV.fetch("JOB_CONCURRENCY", 1) %>
-      polling_interval: 1
+      polling_interval: 5
 
 development:
   <<: *default

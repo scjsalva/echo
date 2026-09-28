@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { PhBell, PhGithubLogo, PhPlugs, PhSlidersHorizontal, PhSparkle } from '@phosphor-icons/vue'
 import AppShell from '@/components/layout/AppShell.vue'
 import ConnectionRow from '@/components/settings/ConnectionRow.vue'
@@ -35,7 +35,7 @@ const sections = computed(() => [
   { id: 'general' as const, label: 'General', icon: PhSlidersHorizontal, attention: false },
 ])
 // Older links still work, e.g. the skill picker's /settings#skills.
-const ALIASES: Record<string, Section> = { skills: 'claude', time: 'general', appearance: 'general' }
+const ALIASES: Record<string, Section> = { skills: 'claude', time: 'general', appearance: 'general', health: 'connections' }
 const section = ref<Section>('connections')
 
 // The tab title follows the breadcrumb, e.g. "Claude · Settings · Echo".
@@ -43,6 +43,8 @@ watch(section, (id) => (document.title = `${sections.value.find((s) => s.id === 
 
 function fromHash() {
   const id = location.hash.slice(1)
+  // #health opens Connections and scrolls to its Health card.
+  if (id === 'health') nextTick(() => document.getElementById('health')?.scrollIntoView({ block: 'start' }))
   const match = ALIASES[id] ?? sections.value.find((s) => s.id === id)?.id
   if (!match || match === section.value) return
   if (canLeave(section.value)) section.value = match
@@ -116,7 +118,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', warnBeforeLeavi
           <SettingsCard title="Connections" description="Claude Code sessions work out of the box. These connect the rest, through tools you already use.">
             <ConnectionRow v-for="connection in connections" :key="connection.key" :connection="connection" @change="connections = $event" />
           </SettingsCard>
-          <SettingsCard title="Health" description="How Echo's background syncs are doing. Each retries on its own; Sync now runs one straight away.">
+          <SettingsCard id="health" class="scroll-mt-4" title="Health" description="How Echo's background syncs are doing. Each retries on its own; Sync now runs one straight away.">
             <SyncHealthCard />
           </SettingsCard>
         </SettingsSection>

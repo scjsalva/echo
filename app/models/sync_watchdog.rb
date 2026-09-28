@@ -1,13 +1,11 @@
-require "open3"
-
-# Keeps the syncs going if Solid Queue's scheduler stops starting them (it once
-# hung after its worker was restarted). Runs in the web server: when the
-# scheduler has been quiet for a few minutes it starts the syncs itself, and if
-# it stays quiet it restarts the scheduler so it can pick up again.
+# Keeps the syncs going if Solid Queue's scheduler stops starting them. Runs in
+# the web server: when the scheduler has been quiet for a few minutes it starts
+# the syncs itself, and it clears out jobs left behind by a worker that died.
+# It doesn't restart anything: after the Mac sleeps everything looks quiet for a
+# moment, and restarting then only interrupted a scheduler about to catch up.
 module SyncWatchdog
   CHECK_EVERY = 60
   STALLED_AFTER = 3.minutes
-  RESTART_AFTER = 5.minutes
   COVERING = "sync_watchdog_covering_since".freeze
   JOBS = [ GithubSyncJob, JiraSyncJob, NotifyJob ].freeze
 
@@ -25,6 +23,7 @@ module SyncWatchdog
   def self.stalled?(last = SyncHealth.last_scheduled_at) = last.nil? || last < STALLED_AFTER.ago
 
   def self.check
+    release_orphans
     last = SyncHealth.last_scheduled_at
     unless stalled?(last)
       Setting.find_by(key: COVERING)&.destroy
@@ -33,25 +32,17 @@ module SyncWatchdog
 
     Setting[COVERING] ||= Time.current.iso8601
     JOBS.each(&:perform_later)
-    restart_scheduler if last.nil? || last < RESTART_AFTER.ago
   end
 
-  # Only Echo's own scheduler: the one its Solid Queue supervisor started.
-  def self.restart_scheduler
-    supervisor = SolidQueue::Process.where(kind: "Supervisor(fork)").pluck(:pid).find { alive?(it) } or return
-    output, = Open3.capture2("pgrep", "-P", supervisor.to_s, "-f", "solid-queue-scheduler")
-    output.split.map(&:to_i).each do |pid|
-      Rails.logger.warn("Sync watchdog: restarting the stuck scheduler (pid #{pid})")
-      Process.kill("KILL", pid)
-    end
+  # Jobs claimed by a worker that has since died (e.g. replaced after the Mac
+  # slept) would otherwise sit "in progress" for good.
+  def self.release_orphans
+    orphans = SolidQueue::ClaimedExecution.orphaned
+    return if orphans.none?
+
+    Rails.logger.warn("Sync watchdog: failing #{orphans.count} job(s) left by a worker that died")
+    orphans.fail_all_with(SolidQueue::Processes::ProcessMissingError.new)
   end
 
-  def self.alive?(pid)
-    Process.kill(0, pid)
-    true
-  rescue Errno::ESRCH, Errno::EPERM
-    false
-  end
-
-  private_class_method :restart_scheduler, :alive?
+  private_class_method :release_orphans
 end
