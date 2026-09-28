@@ -101,7 +101,9 @@ const tiles = computed(() => [
       <StatusDot :status="agent.status" />
       <BasePill :tone="agent.status === 'blocked' ? 'warn' : agent.status === 'idle' ? 'neutral' : 'ok'">{{ STATUS_LABEL[agent.status] }}</BasePill>
       <BasePill tone="accent">{{ agent.model }}</BasePill>
-      <span class="font-mono text-xs text-faint">{{ agent.handle ?? agent.name }} · {{ agent.cwd }} · up {{ timeAgo(agent.started, now) }}</span>
+      <span class="font-mono text-xs text-faint">
+        <template v-if="!agent.renamed || (agent.handle && agent.handle !== agent.name)">{{ agent.handle ?? agent.name }} · </template>{{ agent.cwd }} · up {{ timeAgo(agent.started, now) }}
+      </span>
     </template>
     <template #title>
       <form v-if="renaming" class="flex flex-wrap items-center gap-2" @submit.prevent="rename">
