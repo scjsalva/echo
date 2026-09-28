@@ -325,4 +325,15 @@ class ApiTest < ActionDispatch::IntegrationTest
     assert_equal "Focus on app/models/order.rb", review.reload.ai_guidance
     assert_equal "Focus on app/models/order.rb", response.parsed_body["aiGuidance"]
   end
+
+  test "dismissing a waiting item marks its notification read too" do
+    jira = JiraNotification.create!(external_id: "assigned-APP-1-1", kind: "assigned", ticket_key: "APP-1", occurred_at: Time.current)
+    github = GithubNotification.create!(thread_id: "42", reason: "mention", pr_key: "acme/app#1", occurred_at: Time.current)
+
+    post "/api/dismissals", params: { item_key: "jira-assigned-APP-1-1" }, as: :json
+    post "/api/dismissals", params: { item_key: "github-github-42" }, as: :json
+
+    assert jira.reload.read_at
+    assert github.reload.read_at
+  end
 end
