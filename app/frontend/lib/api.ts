@@ -16,5 +16,7 @@ export async function request<T = void>(method: 'GET' | 'POST' | 'PATCH' | 'DELE
     const body = await response.json().catch(() => null)
     throw new Error(body?.error ?? `${method} ${path} failed with ${response.status}`)
   }
-  return (response.status === 204 ? undefined : await response.json()) as T
+  // Some replies have no body (204 No Content, 202 Accepted), so only parse when there is one.
+  const text = await response.text()
+  return (text ? JSON.parse(text) : undefined) as T
 }
