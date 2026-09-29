@@ -17,14 +17,16 @@ module Github::Cli
   def self.run(*args, json: false, input: nil, timeout: TIMEOUT)
     raise ArgumentError, "Echo doesn't run `gh #{args.first(3).join(' ')}`; it only reads from GitHub" unless allowed?(args)
 
-    output, error, status = Timeout.timeout(timeout) { Open3.capture3(executable.to_s, *args, stdin_data: input.to_s) }
+    output, error, status = CommandRunner.capture(executable.to_s, *args, timeout:, stdin_data: input)
     raise Error, (error.presence || output).strip.truncate(300) unless status.success?
 
     json ? JSON.parse(output.presence || "null") : output
   rescue Errno::ENOENT
     raise NotInstalled, "The GitHub CLI (gh) isn't installed"
-  rescue Timeout::Error
+  rescue CommandRunner::TimedOut
     raise Error, "gh took longer than #{timeout}s"
+  rescue CommandRunner::Stopped
+    raise Error, "gh was stopped when the computer woke up"
   end
 
   # `gh auth status`, GET requests through `gh api`, GraphQL queries (never

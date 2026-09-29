@@ -1,10 +1,14 @@
 # Keeps the syncs going if Solid Queue's scheduler stops starting them. Runs in
 # the web server: when the scheduler has been quiet for a few minutes it starts
 # the syncs itself, and it clears out jobs left behind by a worker that died.
-# When no sync has even started for half an hour (the Mac slept, or the queue
-# is stuck) it restarts Echo, so everything starts fresh without you.
+# When no sync has even started for half an hour (the computer slept, or the
+# queue is stuck) it restarts Echo, so everything starts fresh without you.
 module SyncWatchdog
   CHECK_EVERY = 60
+  # Wakes are spotted by the wall clock jumping between these short ticks, the
+  # same on macOS, Linux and Windows: the process doesn't run while asleep.
+  TICK = 5
+  WOKE_AFTER_GAP = 60
   STALLED_AFTER = 3.minutes
   RESTART_AFTER = 30.minutes
   COVERING = "sync_watchdog_covering_since".freeze
@@ -17,13 +21,32 @@ module SyncWatchdog
       # Sync straight away on boot, e.g. after restarting from a long pause,
       # rather than waiting for the scheduler's next minute.
       Rails.application.executor.wrap { JOBS.each(&:perform_later) }
+      ticked = checked = Time.now
       loop do
-        sleep CHECK_EVERY
-        Rails.application.executor.wrap { check }
+        sleep TICK
+        now = Time.now
+        if now - ticked > WOKE_AFTER_GAP
+          Rails.application.executor.wrap { SyncWatchdog.woke(now - ticked) }
+          checked = now
+        elsif now - checked >= CHECK_EVERY
+          Rails.application.executor.wrap { SyncWatchdog.check }
+          checked = now
+        end
+        ticked = now
       rescue StandardError => e
         Rails.logger.warn("Sync watchdog: #{e.class}: #{e.message}")
       end
     end
+  end
+
+  # Runs that were going when the computer slept are stuck on dead network
+  # connections, and would hold up the next ones until their time limit. End
+  # them and sync straight away.
+  def self.woke(asleep_for)
+    Rails.logger.warn("Sync watchdog: woke after #{asleep_for.round}s; stopping stuck runs and syncing now")
+    CommandRunner.stop_all
+    # A moment for the stopped runs to let go of their sync's lock, or these would skip.
+    JOBS.each { it.set(wait: 3.seconds).perform_later }
   end
 
   def self.stalled?(last = SyncHealth.last_scheduled_at) = last.nil? || last < STALLED_AFTER.ago

@@ -63,6 +63,14 @@ class SyncWatchdogTest < ActiveJob::TestCase
     end
   end
 
+  test "on waking, stops runs stuck since before the sleep and syncs straight away" do
+    stopped = false
+    CommandRunner.stub(:stop_all, -> { stopped = true }) do
+      assert_enqueued_jobs(3) { SyncWatchdog.woke(40.minutes) }
+    end
+    assert stopped
+  end
+
   test "doesn't restart a server that's only just started" do
     quietly(booted: 1.minute.ago) do |restart_file|
       SyncHealth.record("github", "last_attempt_at" => 2.hours.ago.iso8601)

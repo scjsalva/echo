@@ -55,18 +55,45 @@ class Github::Sync
   def key_of(node) = "#{node.dig('repository', 'nameWithOwner')}##{node['number']}"
 
   # GitHub's inbox: one thread per PR, updated whenever there's new activity on it.
+  # Finding out what happened on each takes a few calls to GitHub, so after a
+  # pause (lots of threads) those run a few at a time.
   def sync_notifications
     threads = Github::Cli.run("api", "notifications?per_page=50", json: true)
-    threads.select { NOTIFICATION_TYPES.include?(it.dig("subject", "type")) }.each { record_thread(it) }
+    changed = threads.select { NOTIFICATION_TYPES.include?(it.dig("subject", "type")) }.filter_map do |thread|
+      path = thread.dig("subject", "url").to_s.match(PR_PATH) or next
+      occurred_at = Time.zone.parse(thread["updated_at"])
+      row = GithubNotification.find_or_initialize_by(thread_id: thread["id"])
+      [ thread, path, occurred_at, row ] unless row.persisted? && row.occurred_at >= occurred_at
+    end
+    me # Looked up once, before the lookups run side by side.
+    found = in_parallel(changed) { |thread, path| latest_comment(thread, path) || latest_activity(path) }
+    changed.zip(found).each { |(thread, path, occurred_at, row), activity| record_thread(thread, path, occurred_at, row, activity) }
   end
 
-  def record_thread(thread)
-    path = thread.dig("subject", "url").to_s.match(PR_PATH) or return
-    occurred_at = Time.zone.parse(thread["updated_at"])
-    row = GithubNotification.find_or_initialize_by(thread_id: thread["id"])
-    return if row.persisted? && row.occurred_at >= occurred_at
+  LOOKUPS_AT_ONCE = 4
 
-    actor, body, activity = latest_comment(thread, path) || latest_activity(path)
+  # The lookups only ask GitHub, never the database, so they're safe side by side.
+  def in_parallel(items, &lookup)
+    queue = Queue.new
+    items.each_with_index { |item, i| queue << [ item, i ] }
+    queue.close
+    results = Array.new(items.size)
+    workers = Array.new([ LOOKUPS_AT_ONCE, items.size ].min) do
+      Thread.new do
+        Rails.application.executor.wrap do
+          while (job = queue.pop)
+            item, i = job
+            results[i] = lookup.call(*item)
+          end
+        end
+      end
+    end
+    ActiveSupport::Dependencies.interlock.permit_concurrent_loads { workers.each(&:join) }
+    results
+  end
+
+  def record_thread(thread, path, occurred_at, row, found)
+    actor, body, activity = found
     return row.update!(reason: thread["reason"], pr_key: "#{path[:repo]}##{path[:number]}", occurred_at:, read_at: Time.current) if activity == :covered
     # A reply only counts in a thread you're part of, unless it mentions you.
     if activity == :others_thread

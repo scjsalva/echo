@@ -22,13 +22,15 @@ module Jira::Cli
       raise ArgumentError, "Echo doesn't run `acli jira #{args.first(3).join(' ')}`; it only reads from Jira"
     end
 
-    output, error, status = Timeout.timeout(TIMEOUT) { Open3.capture3(executable.to_s, "jira", *args, *([ "--json" ] if json)) }
+    output, error, status = CommandRunner.capture(executable.to_s, "jira", *args, *([ "--json" ] if json), timeout: TIMEOUT)
     raise Error, (error.presence || output).strip.delete_prefix("✗ Error: ").truncate(300) unless status.success?
 
     json ? JSON.parse(output) : output
   rescue Errno::ENOENT
     raise NotInstalled, "The Atlassian CLI (acli) isn't installed"
-  rescue Timeout::Error
+  rescue CommandRunner::TimedOut
     raise Error, "acli took longer than #{TIMEOUT}s"
+  rescue CommandRunner::Stopped
+    raise Error, "acli was stopped when the computer woke up"
   end
 end
