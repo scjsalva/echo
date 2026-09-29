@@ -71,9 +71,16 @@ async function load() {
 // Opening the bell counts as seeing what it shows, except what still waits on
 // you to act. Their dots fade out once they're marked read, so you still see
 // what was new first.
+// The header's count drops at once; the page's own refresh, which can take a
+// couple of seconds, then confirms it.
+const justRead = ref(0)
+const unreadCount = computed(() => Math.max(0, props.shell.unreadCount - justRead.value))
+watch(() => props.shell.unreadCount, () => (justRead.value = 0))
+
 function markSeen() {
   const ids = rows.value.filter((row) => row.unread && !row.needsAction).map((row) => row.id)
   if (!ids.length) return
+  justRead.value = ids.length
   request('POST', '/api/notifications/read_some', { ids }).then(() => {
     const seen = new Set(ids)
     if (data.value) {
@@ -84,7 +91,7 @@ function markSeen() {
       }
     }
     refreshShell()
-  }, () => null)
+  }, () => (justRead.value = 0))
 }
 
 // Unread ones beyond what the bell has room for.
@@ -132,11 +139,11 @@ onBeforeUnmount(() => {
       href="/inbox"
       :class="linkClass"
       :aria-expanded="open"
-      :aria-label="`Notifications: ${props.shell.waitingCount} waiting, ${props.shell.unreadCount} unread`"
+      :aria-label="`Notifications: ${props.shell.waitingCount} waiting, ${unreadCount} unread`"
     >
-      <PhBell :size="15" :weight="shell.unreadCount || shell.waitingCount ? 'fill' : 'regular'" />
+      <PhBell :size="15" :weight="unreadCount || shell.waitingCount ? 'fill' : 'regular'" />
       <span v-if="shell.waitingCount" class="rounded-full bg-warn px-1.5 font-mono text-[10.5px] font-semibold text-on-accent">{{ shell.waitingCount }}</span>
-      <span v-if="shell.unreadCount" class="rounded-full bg-accent px-1.5 font-mono text-[10.5px] font-semibold text-on-accent">{{ shell.unreadCount }}</span>
+      <span v-if="unreadCount" class="rounded-full bg-accent px-1.5 font-mono text-[10.5px] font-semibold text-on-accent">{{ unreadCount }}</span>
     </a>
 
     <div

@@ -70,6 +70,7 @@ describe('NotificationMenu', () => {
     await vi.advanceTimersByTimeAsync(200)
     vi.useRealTimers()
     expect(reads(), 'looked, then moved away').toBe(1)
+    expect(menu.find('a[href="/inbox"]').attributes('aria-label'), 'the count drops without waiting for the page').toContain(`${overview.shell.unreadCount - 1} unread`)
     menu.unmount()
   })
 
