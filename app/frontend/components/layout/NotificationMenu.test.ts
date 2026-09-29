@@ -27,7 +27,7 @@ describe('NotificationMenu', () => {
     menu.unmount()
   })
 
-  it('marks what it shows read when opened, but leaves what still waits on you unread', async () => {
+  it('marks what it shows read once you move away, but leaves what still waits on you unread', async () => {
     const approval = { ...many[0], id: 'g-approved', reason: 'approved' as const, unread: true, resolution: null, title: 'Approved one' }
     const request = { ...many[0], id: 'g-request', reason: 'review_requested' as const, unread: true, resolution: null, title: 'Review me', at: new Date(Date.now() - 3_600_000).toISOString() }
     const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => new Response(JSON.stringify({ ...overview, githubNotifications: [approval, request], jiraNotifications: [], pullRequests: [] }), { status: 200 }))
@@ -38,18 +38,15 @@ describe('NotificationMenu', () => {
     await menu.trigger('mouseenter')
     await flushPromises()
     expect(fetchMock.mock.calls.some(([url]) => String(url).endsWith('/read_some'))).toBe(false)
-    await vi.advanceTimersByTimeAsync(9_000)
-    expect(fetchMock.mock.calls.some(([url]) => String(url).endsWith('/read_some')), 'dots stay while you look').toBe(false)
-    await vi.advanceTimersByTimeAsync(1_000)
+    await vi.advanceTimersByTimeAsync(30_000)
+    expect(fetchMock.mock.calls.some(([url]) => String(url).endsWith('/read_some')), 'dots stay while it is open').toBe(false)
+    await menu.trigger('mouseleave')
+    await vi.advanceTimersByTimeAsync(200)
     vi.useRealTimers()
 
     const reads = fetchMock.mock.calls.filter(([url]) => String(url).endsWith('/read_some'))
     expect(reads).toHaveLength(1)
     expect(JSON.parse(reads[0][1]!.body as string)).toEqual({ ids: ['g-approved'] })
-    await flushPromises()
-    const row = (title: string) => menu.findAll('[role="dialog"] li').find((li) => li.text().includes(title))!
-    expect(row('Approved one').find('[aria-label="Unread"]').exists()).toBe(false)
-    expect(row('Review me').find('[aria-label="Unread"]').exists()).toBe(true)
     menu.unmount()
   })
 
@@ -62,7 +59,7 @@ describe('NotificationMenu', () => {
     vi.useFakeTimers()
 
     await menu.trigger('mouseenter')
-    await vi.advanceTimersByTimeAsync(500)
+    await vi.advanceTimersByTimeAsync(1_500)
     await menu.trigger('mouseleave')
     await vi.advanceTimersByTimeAsync(200)
     expect(reads(), 'passing over').toBe(0)

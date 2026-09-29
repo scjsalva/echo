@@ -99,16 +99,13 @@ function choose(row: Row) {
 }
 
 // Opens on hover, like the sync light beside it, and stays while the pointer
-// moves onto the panel. The dots on what's new stay while you look: what it
-// shows counts as seen after 10 seconds open, or when you move away. Passing
-// over the bell (open under a moment and a half) marks nothing.
+// moves onto the panel. The dots on what's new stay for as long as it's open;
+// what it shows counts as seen when you move away. Passing over the bell (open
+// under 2 seconds) marks nothing.
 const CLOSE_DELAY_MS = 150
-const SEEN_AFTER_MS = 10_000
-const GLANCE_MS = 1_500
+const GLANCE_MS = 2_000
 let closing: ReturnType<typeof setTimeout> | undefined
-let seeing: ReturnType<typeof setTimeout> | undefined
 let openedAt = 0
-let seen = false
 function show() {
   clearTimeout(closing)
   open.value = true
@@ -116,25 +113,16 @@ function show() {
 function hide() {
   closing = setTimeout(() => (open.value = false), CLOSE_DELAY_MS)
 }
-function see() {
-  if (seen) return
-  seen = true
-  markSeen()
-}
 watch(open, async (isOpen) => {
-  clearTimeout(seeing)
   if (!isOpen) {
-    if (data.value && Date.now() - openedAt >= GLANCE_MS) see()
+    if (data.value && Date.now() - openedAt >= GLANCE_MS) markSeen()
     return
   }
   openedAt = Date.now()
-  seen = false
   await load()
-  seeing = setTimeout(() => open.value && see(), SEEN_AFTER_MS)
 })
 onBeforeUnmount(() => {
   clearTimeout(closing)
-  clearTimeout(seeing)
 })
 </script>
 
