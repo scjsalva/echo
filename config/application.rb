@@ -38,5 +38,10 @@ module Echo
 
     # Don't generate system test files.
     config.generators.system_tests = nil
+
+    # The job queue runs inside the web server for as long as it's up, so its
+    # classes must survive code reloads: a reloaded copy can't replace a worker
+    # the old copy started (e.g. after the Mac sleeps), and syncs stop.
+    SolidQueue::Engine.config.autoload_once_paths += %w[app/models app/jobs].map { SolidQueue::Engine.root.join(it).to_s }
   end
 end

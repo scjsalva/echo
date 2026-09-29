@@ -46,4 +46,40 @@ class SyncWatchdogTest < ActiveJob::TestCase
       assert_nil Setting[SyncWatchdog::COVERING]
     end
   end
+
+  test "restarts Echo once when no sync has started for half an hour, as after the Mac sleeps" do
+    quietly(booted: 2.hours.ago) do |restart_file|
+      SyncHealth.record("github", "last_attempt_at" => 10.minutes.ago.iso8601)
+      SyncWatchdog.check
+      assert_not restart_file.exist?
+
+      SyncHealth.record("github", "last_attempt_at" => 40.minutes.ago.iso8601)
+      SyncWatchdog.check
+      assert restart_file.exist?
+
+      restart_file.delete
+      SyncWatchdog.check
+      assert_not restart_file.exist?, "only once for the same pause"
+    end
+  end
+
+  test "doesn't restart a server that's only just started" do
+    quietly(booted: 1.minute.ago) do |restart_file|
+      SyncHealth.record("github", "last_attempt_at" => 2.hours.ago.iso8601)
+      SyncWatchdog.check
+      assert_not restart_file.exist?
+    end
+  end
+
+  # The scheduler is running, so only the restart check has anything to do.
+  def quietly(booted:)
+    restart_file = Pathname(Dir.mktmpdir).join("restart.txt")
+    SyncWatchdog.stub(:restart_file, restart_file) do
+      SyncWatchdog.stub(:release_orphans, nil) do
+        SyncHealth.stub(:last_scheduled_at, 10.seconds.ago) do
+          Rails.application.config.x.stub(:booted_at, booted) { yield restart_file }
+        end
+      end
+    end
+  end
 end

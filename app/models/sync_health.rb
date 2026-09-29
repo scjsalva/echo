@@ -68,7 +68,8 @@ module SyncHealth
   def self.props
     scheduled = last_scheduled_at
     {
-      scheduler: { last_run_at: scheduled, stalled: SyncWatchdog.stalled?(scheduled), covering_since: Setting[SyncWatchdog::COVERING] },
+      scheduler: { last_run_at: scheduled, stalled: SyncWatchdog.stalled?(scheduled), covering_since: Setting[SyncWatchdog::COVERING],
+                   booted_at: Rails.application.config.x.booted_at, restarted_at: Setting[SyncWatchdog::RESTARTED] },
       syncs: SOURCES.map do |source, info|
         s = state(source)
         attempted = s["last_attempt_at"] && Time.zone.parse(s["last_attempt_at"])

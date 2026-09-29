@@ -8,6 +8,7 @@ import HealthStatus from './HealthStatus.vue'
 import EchoLogo from './EchoLogo.vue'
 import FirstRunBanner from './FirstRunBanner.vue'
 import ToastHost from './ToastHost.vue'
+import WakeOverlay from './WakeOverlay.vue'
 import { useOptionalDashboard } from '@/composables/useDashboard'
 import { useNotificationLink } from '@/composables/useNotificationLink'
 import { request } from '@/lib/api'
@@ -103,6 +104,7 @@ const iconLink = 'inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[12
     <slot />
     <ToastHost />
     <AlertStack />
+    <WakeOverlay />
     <LinkedDrawer v-if="linked" :key="JSON.stringify(linked)" :target="linked" :fallback="fallback(linked)" @closed="close" />
   </div>
 </template>
