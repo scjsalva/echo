@@ -284,7 +284,7 @@ Changes wait for **Save**, section by section. Once something in a section chang
   - OS notifications on or off
   - sound, with Send test
 - **General:** your time zone (automatic or chosen), keeping the computer awake, and appearance (system, light or dark).
-  - **Keep the computer awake:** off by default. *While agents are working* stops idle sleep while a Claude Code session is busy and for 5 minutes after; *During working hours* stops it for all of your working hours (or all the time, if working hours are off), even with nothing running, which drains a battery noticeably faster. The screen still turns off and locks on its usual timer, and closing a laptop's lid still sleeps it. A coffee cup in the header shows while it's holding, with why. It uses `caffeinate` on macOS, `systemd-inhibit` on Linux and `SetThreadExecutionState` on Windows, through a helper that ends if Echo does. (Claude Code itself already stops idle sleep on macOS while a session works.)
+  - **Keep the computer awake:** off by default. *While agents are working* stops idle sleep while a Claude Code session is busy and for 2 minutes after; *During working hours* stops it for all of your working hours (or all the time, if working hours are off), even with nothing running, which drains a battery noticeably faster. The screen still turns off and locks on its usual timer, and closing a laptop's lid still sleeps it. A coffee cup in the header shows while it's holding, with why. It uses `caffeinate` on macOS, `systemd-inhibit` on Linux and `SetThreadExecutionState` on Windows, through a helper that ends if Echo does. (Claude Code itself already stops idle sleep on macOS while a session works.)
 
 ## Privacy and safety
 

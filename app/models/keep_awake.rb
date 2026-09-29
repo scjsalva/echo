@@ -6,7 +6,7 @@ module KeepAwake
   SETTING = "keep_awake".freeze
   MODES = %w[off agents working_hours].freeze
   # After the last agent goes idle, in case another turn follows straight on.
-  GRACE = 5.minutes
+  GRACE = 2.minutes
   BUSY_AT = "keep-awake-busy-at".freeze
   REASON = "keep-awake-reason".freeze
 
