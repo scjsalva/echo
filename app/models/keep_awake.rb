@@ -23,7 +23,8 @@ module KeepAwake
   def self.reason
     case mode
     when "agents"
-      working = ClaudeCode::Session.live.count(&:working?)
+      # Your sessions, plus Echo's own runs (AI reviews, questions), counted by pid once each.
+      working = (ClaudeCode::Session.live.select(&:working?).map(&:pid) | echo_runs).size
       if working.positive?
         Rails.cache.write(BUSY_AT, Time.current)
         "#{working} #{'agent'.pluralize(working)} working"
@@ -35,6 +36,16 @@ module KeepAwake
     end
   end
 
+  def self.echo_runs
+    SpawnedAgent.running.pluck(:pid).select do |pid|
+      Process.kill(0, pid)
+    rescue Errno::ESRCH
+      false
+    rescue Errno::EPERM
+      true
+    end
+  end
+
   def self.update
     now = reason
     Rails.cache.write(REASON, now)
@@ -43,6 +54,8 @@ module KeepAwake
 
   # What the header shows: the reason while it's holding, else nil.
   def self.current = (Rails.cache.read(REASON) if SleepBlocker.held?)
+
+  private_class_method :echo_runs
 
   def self.props = { mode:, available: SleepBlocker.available?, current:, working_hours_on: WorkingHours.preferences["enabled"] }
 end

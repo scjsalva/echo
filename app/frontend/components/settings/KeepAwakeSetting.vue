@@ -21,7 +21,7 @@ const options = computed(() => [
 const description = computed(() => {
   switch (mode.value) {
     case 'agents':
-      return 'Your computer stays awake while a Claude Code session is working, and for 2 minutes after, so a long task isn\'t cut short by sleep. It sleeps as usual once they\'re idle or waiting on you.'
+      return 'Your computer stays awake while a Claude Code session or one of Echo's AI reviews is working, and for 2 minutes after, so a long task isn\'t cut short by sleep. It sleeps as usual once they\'re idle or waiting on you.'
     case 'working_hours':
       return props.workingHoursOn
         ? 'Your computer never goes to sleep by itself during your working hours (set in Notifications), even with nothing running. On battery this drains it noticeably faster.'
