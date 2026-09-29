@@ -1,5 +1,9 @@
+<script lang="ts">
+let currentTitleOwner: symbol | null = null
+</script>
+
 <script setup lang="ts">
-import { computed, inject, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, inject, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { PhBell } from '@phosphor-icons/vue'
 import SourceBadge from '@/components/ui/SourceBadge.vue'
 import { useNotificationLink } from '@/composables/useNotificationLink'
@@ -77,6 +81,28 @@ const justRead = ref(0)
 const unreadCount = computed(() => Math.max(0, props.shell.unreadCount - justRead.value))
 watch(() => props.shell.unreadCount, () => (justRead.value = 0))
 
+// The same count leads the tab's title, e.g. "(3) GitHub · Echo", so it shows in the tab bar.
+// One bell owns the title (the latest mounted), so two can never undo each other.
+const COUNT_PREFIX = /^\(\d+\) /
+const titleOwner = Symbol('title')
+function titleWithCount() {
+  if (currentTitleOwner !== titleOwner) return
+  const base = document.title.replace(COUNT_PREFIX, '')
+  const wanted = unreadCount.value ? `(${unreadCount.value}) ${base}` : base
+  if (document.title !== wanted) document.title = wanted
+}
+watch(unreadCount, titleWithCount)
+// Pages retitle themselves (e.g. each Settings section), so the count is put back on the new title.
+let titleObserver: MutationObserver | undefined
+onMounted(() => {
+  currentTitleOwner = titleOwner
+  titleWithCount()
+  const title = document.querySelector('title')
+  if (!title) return
+  titleObserver = new MutationObserver(titleWithCount)
+  titleObserver.observe(title, { childList: true, characterData: true, subtree: true })
+})
+
 const seenIds = () => rows.value.filter((row) => row.unread && !row.needsAction).map((row) => row.id)
 const lookedLongEnough = () => Boolean(data.value) && Date.now() - openedAt >= GLANCE_MS
 
@@ -141,6 +167,8 @@ watch(open, async (isOpen) => {
 })
 onBeforeUnmount(() => {
   clearTimeout(closing)
+  titleObserver?.disconnect()
+  if (currentTitleOwner === titleOwner) currentTitleOwner = null
 })
 </script>
 

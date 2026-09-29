@@ -94,4 +94,26 @@ describe('NotificationMenu', () => {
     expect(rows.at(-1)!.text()).toContain('Old but unread')
     menu.unmount()
   })
+
+  it('puts the unread count on the tab title, and keeps it there when the page retitles itself', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ ...overview, githubNotifications: [], jiraNotifications: [], pullRequests: [] }), { status: 200 })))
+    document.head.innerHTML = '<title>GitHub · Echo</title>'
+    const menu = mount(NotificationMenu, { props: { shell: overview.shell, linkClass: '' }, attachTo: document.body })
+    expect(document.title).toBe(`(${overview.shell.unreadCount}) GitHub · Echo`)
+
+    document.title = 'Notifications · Settings · Echo'
+    await flushPromises()
+    expect(document.title).toBe(`(${overview.shell.unreadCount}) Notifications · Settings · Echo`)
+
+    await menu.setProps({ shell: { ...overview.shell, unreadCount: 0 } })
+    expect(document.title).toBe('Notifications · Settings · Echo')
+
+    // A second bell with another count takes over rather than fighting the first.
+    const other = mount(NotificationMenu, { props: { shell: { ...overview.shell, unreadCount: 2 } , linkClass: '' }, attachTo: document.body })
+    document.title = 'GitHub · Echo'
+    await flushPromises()
+    expect(document.title).toBe('(2) GitHub · Echo')
+    other.unmount()
+    menu.unmount()
+  })
 })
