@@ -72,7 +72,10 @@ class Github::Sync
 
   LOOKUPS_AT_ONCE = 4
 
-  # The lookups only ask GitHub, never the database, so they're safe side by side.
+  # The lookups only ask GitHub, never the database, so they're safe side by
+  # side. They stay clear of Rails' code-reload lock on purpose (no executor,
+  # no permit_concurrent_loads): either one deadlocks against a reload that's
+  # waiting for this sync to finish, and the whole server stops answering.
   def in_parallel(items, &lookup)
     queue = Queue.new
     items.each_with_index { |item, i| queue << [ item, i ] }
@@ -80,15 +83,13 @@ class Github::Sync
     results = Array.new(items.size)
     workers = Array.new([ LOOKUPS_AT_ONCE, items.size ].min) do
       Thread.new do
-        Rails.application.executor.wrap do
-          while (job = queue.pop)
-            item, i = job
-            results[i] = lookup.call(*item)
-          end
+        while (job = queue.pop)
+          item, i = job
+          results[i] = lookup.call(*item)
         end
       end
     end
-    ActiveSupport::Dependencies.interlock.permit_concurrent_loads { workers.each(&:join) }
+    workers.each(&:join)
     results
   end
 
