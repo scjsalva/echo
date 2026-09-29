@@ -1,6 +1,8 @@
+require "open3"
+
 # The zone that "today" and every day-based figure use. Automatic by default:
-# it follows the Mac's timezone, read on each request so it tracks changes
-# (travel, a new setting) without restarting Echo.
+# it follows the computer's time zone, read on each request so it tracks
+# changes (travel, a new setting) without restarting Echo.
 module LocalTimeZone
   AUTOMATIC = "auto"
   SETTING = "time_zone"
@@ -18,9 +20,23 @@ module LocalTimeZone
   end
 
   def self.detected
+    return windows_zone || ENV["TZ"].presence || "UTC" if Platform.windows?
+
     File.readlink("/etc/localtime")[%r{zoneinfo/(.+)\z}, 1] || ENV["TZ"].presence || "UTC"
   rescue SystemCallError
     ENV["TZ"].presence || "UTC"
+  end
+
+  # Windows names zones its own way ("Singapore Standard Time"); most match a
+  # Rails name once " Standard Time" is dropped. Failing that, the zone with
+  # the computer's current UTC offset.
+  def self.windows_zone
+    output, status = Open3.capture2("tzutil", "/g")
+    name = output.strip.delete_suffix(" Standard Time") if status.success?
+    zone = (ActiveSupport::TimeZone[name] if name.present?) || ActiveSupport::TimeZone.all.find { it.now.utc_offset == Time.now.utc_offset }
+    zone&.tzinfo&.name
+  rescue SystemCallError
+    nil
   end
 
   def self.options

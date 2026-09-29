@@ -5,9 +5,12 @@ require "shellwords"
 module ClaudeCode::Resume
   class Error < StandardError; end
 
+  # For the shell the terminal runs: a POSIX shell, or cmd on Windows.
   def self.command(session_id, cwd)
     resume = "claude --resume #{Shellwords.escape(session_id)}"
-    cwd.present? ? "cd #{Shellwords.escape(cwd)} && #{resume}" : resume
+    return resume if cwd.blank?
+
+    Platform.windows? ? %(cd /d "#{cwd.delete('"')}" && #{resume}) : "cd #{Shellwords.escape(cwd)} && #{resume}"
   end
 
   def self.open_in_terminal(session_id)

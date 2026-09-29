@@ -2,7 +2,7 @@
 
 A local console for everything that needs you while you work with Claude Code. One page shows your live Claude Code sessions, loops and subagents, your GitHub review queue and PRs, and your Jira tickets. It tells you when something is waiting on you.
 
-Echo runs on your Mac and nothing is hosted. It reads Claude Code's own files and talks to GitHub and Jira through the CLIs you're already logged in to, so it never asks for a token.
+Echo runs on your computer and nothing is hosted. It reads Claude Code's own files and talks to GitHub and Jira through the CLIs you're already logged in to, so it never asks for a token.
 
 **[See everything Echo does →](docs/FEATURES.md)**
 
@@ -21,7 +21,7 @@ The full list, page by page, is in [docs/FEATURES.md](docs/FEATURES.md).
 
 ## Requirements
 
-- macOS (Linux and Windows notifications work too; Terminal focus is macOS only)
+- macOS or Linux. On Windows, run it in WSL; Echo's Ruby code handles native Windows too, but `bin/dev` and `bin/service` are shell scripts. Bringing a terminal tab forward (and renaming a session) works with Terminal and iTerm2 on macOS, and with tmux anywhere.
 - Ruby 3.4.2 and Node 20
 - [Claude Code](https://claude.com/claude-code), logged in
 - Optional: the [GitHub CLI](https://cli.github.com) (`gh auth login`) for GitHub

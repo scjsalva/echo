@@ -80,7 +80,7 @@ module SyncWatchdog
     FileUtils.touch(restart_file)
   end
 
-  # Jobs claimed by a worker that has since died (e.g. replaced after the Mac
+  # Jobs claimed by a worker that has since died (e.g. replaced after the computer
   # slept) would otherwise sit "in progress" for good.
   def self.release_orphans
     orphans = SolidQueue::ClaimedExecution.orphaned

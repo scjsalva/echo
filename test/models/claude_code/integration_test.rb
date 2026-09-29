@@ -36,6 +36,7 @@ class ClaudeCode::IntegrationTest < ActiveSupport::TestCase
     ClaudeCode::Integration.install("http://localhost:4848")
     output = IO.popen([ ClaudeCode::Integration.script.to_s ], "r+") { |io| io.close_write; io.read }
     assert_match(/\Amine/, output)
+    assert_not_includes ClaudeCode::Integration.script.read, "python", "runs where there's no python, e.g. Windows"
 
     ClaudeCode::Integration.uninstall
     assert_equal "echo mine", settings.dig("statusLine", "command")

@@ -49,11 +49,31 @@ class ClaudeCode::FocusTest < ActiveSupport::TestCase
     end
   end
 
-  test "refuses tmux and unknown hosts with a reason" do
+  test "brings a tmux pane forward, and types into it, found by the session's tty" do
+    tmux = []
     with_process_tree(tty: "ttys005", host: "tmux") do
-      error = assert_raises(ClaudeCode::Focus::Error) { ClaudeCode::Focus.focus(SESSION_ID) }
-      assert_match "tmux", error.message
+      Open3.stub(:capture2e, ->(*args) { tmux << args; [ "", Status.new(true) ] }) do
+        ClaudeCode::Focus.focus(SESSION_ID)
+        ClaudeCode::Focus.type(SESSION_ID, "/rename Payments work")
+      end
     end
+
+    assert_equal [ %w[tmux switch-client -t %3], %w[tmux select-window -t %3], %w[tmux select-pane -t %3],
+      [ "tmux", "send-keys", "-t", "%3", "-l", "/rename Payments work" ], %w[tmux send-keys -t %3 Enter] ], tmux
+  end
+
+  test "refuses unknown hosts with a reason" do
+    with_process_tree(tty: "ttys005", host: "Alacritty") do
+      error = assert_raises(ClaudeCode::Focus::Error) { ClaudeCode::Focus.focus(SESSION_ID) }
+      assert_match "iTerm2 and tmux tabs forward, not this app", error.message
+    end
+  end
+
+  test "outside macOS only tmux can be reached, and on Windows nothing" do
+    with_process_tree(tty: "pts/2", host: "Terminal") do
+      Platform.stub(:mac?, false) { assert_match "only bring tmux panes forward", ClaudeCode::Focus.unavailable_reason(4242) }
+    end
+    Platform.stub(:windows?, true) { assert_match "Windows", ClaudeCode::Focus.unavailable_reason(4343) }
   end
 
   test "refuses sessions that aren't running" do
@@ -67,7 +87,10 @@ class ClaudeCode::FocusTest < ActiveSupport::TestCase
   def with_process_tree(tty:, host:, &)
     shell_pid = 101
     host_pid = 100
-    ps = lambda do |_ps, _o, field, _p, pid|
+    ps = lambda do |command, *args|
+      next [ "/dev/ttys004 %2\n/dev/#{tty} %3\n", Status.new(true) ] if command == "tmux"
+
+      _o, field, _p, pid = args
       value = case [ field, pid.to_i ]
       in [ "tty=", _ ] then tty
       in [ "ppid=", ^shell_pid ] then host_pid

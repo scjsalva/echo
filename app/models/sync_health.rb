@@ -18,12 +18,12 @@ module SyncHealth
   # Queued but not started for this long, while the scheduler runs, means something is holding it back.
   NOT_STARTING_AFTER = 5.minutes
   # A run takes well under a minute; one "running" longer was cut off (a restart,
-  # the Mac sleeping) before it could record that it ended.
+  # the computer sleeping) before it could record that it ended.
   RUNNING_AT_MOST = 5.minutes
 
   # Wraps one run: one at a time per sync, then records how it ended. The lock
   # is a file lock, which the system drops the moment its process dies, so a
-  # worker that crashes or is replaced (e.g. after the Mac sleeps) can't leave
+  # worker that crashes or is replaced (e.g. after the computer sleeps) can't leave
   # the next runs waiting behind it.
   def self.track(source)
     File.open(lock_dir.join("sync-#{source}.lock"), File::RDWR | File::CREAT) do |lock|

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Runs Echo in the background with launchd: it starts when you log in, restarts
-# if it crashes, and keeps syncing with no terminal or browser open.
+# Runs Echo in the background: it starts when you log in, restarts if it
+# crashes, and keeps syncing with no terminal or browser open. Uses launchd on
+# macOS and a systemd user service on Linux. On Windows, run it inside WSL.
 #
 #   bin/service install    build and start Echo at http://localhost:4747
 #   bin/service uninstall  stop it and remove it from login items
@@ -12,6 +13,7 @@ LABEL="com.echo.console"
 PORT="${ECHO_PORT:-4747}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
+UNIT="$HOME/.config/systemd/user/echo-console.service"
 LOG="$ROOT/log/service.log"
 DOMAIN="gui/$(id -u)"
 
@@ -58,6 +60,66 @@ PLIST
 
 stop() { launchctl bootout "$DOMAIN/$LABEL" 2>/dev/null || true; }
 
+write_unit() {
+  mkdir -p "$(dirname "$UNIT")" "$ROOT/log"
+  cat > "$UNIT" <<UNIT
+[Unit]
+Description=Echo
+
+[Service]
+WorkingDirectory=$ROOT
+ExecStart=$ROOT/bin/rails server --port $PORT --binding 127.0.0.1 --pid $ROOT/tmp/pids/service.pid
+Environment=RAILS_ENV=production
+Environment=PATH=$SERVICE_PATH
+${CLAUDE_CONFIG_DIR:+Environment=CLAUDE_CONFIG_DIR=$CLAUDE_CONFIG_DIR}
+Restart=always
+StandardOutput=append:$LOG
+StandardError=append:$LOG
+
+[Install]
+WantedBy=default.target
+UNIT
+}
+
+linux() {
+  case "${1:-}" in
+    install)
+      build
+      write_unit
+      systemctl --user daemon-reload
+      systemctl --user enable --now echo-console.service
+      echo "Echo is running at http://localhost:$PORT and will start when you log in."
+      ;;
+    uninstall)
+      systemctl --user disable --now echo-console.service 2>/dev/null || true
+      rm -f "$UNIT"
+      systemctl --user daemon-reload
+      echo "Echo's background service is removed."
+      ;;
+    restart)
+      build
+      systemctl --user restart echo-console.service
+      echo "Restarted Echo at http://localhost:$PORT"
+      ;;
+    status)
+      systemctl --user status echo-console.service --no-pager 2>/dev/null | head -n 5 || echo "Not installed. Run bin/service install."
+      ;;
+    logs)
+      tail -n 50 -f "$LOG"
+      ;;
+    *)
+      sed -n '2,9p' "$0" | sed 's/^# \{0,1\}//'
+      exit 1
+      ;;
+  esac
+}
+
+case "$(uname -s)" in
+  Darwin) ;;
+  Linux) linux "${1:-}"; exit ;;
+  *) echo "bin/service runs on macOS and Linux. On Windows, run Echo inside WSL, or start it with bin/dev."; exit 1 ;;
+esac
+
 case "${1:-}" in
   install)
     build
@@ -83,7 +145,7 @@ case "${1:-}" in
     tail -n 50 -f "$LOG"
     ;;
   *)
-    sed -n '2,8p' "$0" | sed 's/^# \{0,1\}//'
+    sed -n '2,9p' "$0" | sed 's/^# \{0,1\}//'
     exit 1
     ;;
 esac

@@ -10,13 +10,7 @@ module DesktopNotification
     RbConfig::CONFIG["host_os"].match?(/darwin/) ? "Library/Application Support/Echo" : ".local/share/echo"
   )
 
-  def self.platform
-    case RbConfig::CONFIG["host_os"]
-    when /darwin/ then :mac
-    when /mswin|mingw|cygwin/ then :windows
-    when /linux/ then :linux
-    end
-  end
+  def self.platform = Platform.current
 
   def self.adapter = { mac: Mac, linux: Linux, windows: Windows }[platform]
 

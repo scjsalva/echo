@@ -13,7 +13,7 @@ class ClaudeCode::Session
   # Ends the session's process, and with an Echo run everything it started.
   def self.end_session(id)
     session = find(id) or return false
-    SpawnedAgent.tag_for(session.pid) ? ClaudeCode::Headless.stop(session.pid) : Process.kill("TERM", session.pid)
+    SpawnedAgent.tag_for(session.pid) ? ClaudeCode::Headless.stop(session.pid) : Platform.terminate(session.pid)
     true
   rescue Errno::ESRCH
     true

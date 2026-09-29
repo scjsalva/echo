@@ -5,14 +5,14 @@ import { request } from '@/lib/api'
 import { wakeProgress, type WakeState, type WakeSync } from '@/lib/wakeProgress'
 
 /**
- * After the Mac sleeps a while, covers the page until Echo has caught up:
+ * After the computer sleeps a while, covers the page until Echo has caught up:
  * while it restarts (if it needs to), then as each sync runs again.
  */
 interface Health { scheduler: { restartedAt: string | null }; syncs: WakeSync[] }
 
 const TICK_MS = 5_000
 const POLL_MS = 3_000
-// A gap this long between ticks means the Mac slept (or the tab was frozen).
+// A gap this long between ticks means the computer slept (or the tab was frozen).
 const PAUSE_MS = 10 * 60_000
 // Echo restarting itself this recently, with syncs still to run, is shown too.
 const RECENT_RESTART_MS = 5 * 60_000

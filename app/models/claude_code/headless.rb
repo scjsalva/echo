@@ -10,7 +10,8 @@ module ClaudeCode::Headless
 
   def self.run(command, input:, chdir:, timeout:, purpose:, ref: nil)
     reap
-    Open3.popen2e(*command, chdir: chdir.to_s, pgroup: true) do |stdin, out, wait|
+    group = Platform.windows? ? { new_pgroup: true } : { pgroup: true }
+    Open3.popen2e(*command, chdir: chdir.to_s, **group) do |stdin, out, wait|
       agent = SpawnedAgent.create!(pid: wait.pid, purpose:, ref:)
       reader = Thread.new { out.read }
       begin
@@ -26,8 +27,11 @@ module ClaudeCode::Headless
     end
   end
 
-  # Ends a run's whole process group: politely, then for sure.
+  # Ends a run's whole process group: politely, then for sure. Windows has no
+  # process groups to signal, so there taskkill ends the process and its children.
   def self.stop(pid)
+    return system("taskkill", "/T", "/F", "/PID", pid.to_s, out: File::NULL, err: File::NULL, exception: false) if Platform.windows?
+
     Process.kill("TERM", -pid)
     (GRACE * 10).times { Process.kill(0, pid) && sleep(0.1) }
     Process.kill("KILL", -pid)
@@ -45,6 +49,11 @@ module ClaudeCode::Headless
 
   # Pids get reused, so only stop a process that is still a claude run.
   def self.claude?(pid)
+    if Platform.windows?
+      output, status = Open3.capture2("tasklist", "/FI", "PID eq #{pid}", "/FO", "CSV", "/NH")
+      return status.success? && output.match?(/\A"claude(\.exe)?"/i)
+    end
+
     output, status = Open3.capture2("ps", "-o", "comm=", "-p", pid.to_s)
     status.success? && File.basename(output.strip) == "claude"
   end

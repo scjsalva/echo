@@ -1,5 +1,5 @@
 # A login check (gh or acli) that rides out a moment without network, e.g.
-# just after the Mac wakes: while a check fails, the last good status stands
+# just after the computer wakes: while a check fails, the last good status stands
 # for a few minutes instead of saying you're logged out.
 module ConnectionCheck
   CHECK_EVERY = 30.seconds

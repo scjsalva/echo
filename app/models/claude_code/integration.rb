@@ -10,6 +10,8 @@ module ClaudeCode::Integration
   def self.skill_names = SKILLS.children.select(&:directory?).map { it.basename.to_s }.sort
   def self.script = DesktopNotification.home.join("statusline.sh")
   def self.previous_file = DesktopNotification.home.join("statusline-previous.json")
+  # The same command as plain text, so the script needs nothing to read it.
+  def self.previous_command_file = DesktopNotification.home.join("statusline-previous-command")
 
   BASE_URL_SETTING = "claude_integration_base_url".freeze
 
@@ -19,6 +21,8 @@ module ClaudeCode::Integration
   # after an update adds a command. Runs when Echo starts.
   def self.refresh
     return unless installed? && (base_url = Setting[BASE_URL_SETTING] || installed_base_url)
+
+    write_script(base_url)
 
     skill_names.each do |name|
       file = skills_root.join(name, "SKILL.md")
@@ -61,19 +65,21 @@ module ClaudeCode::Integration
       previous ? settings["statusLine"] = previous : settings.delete("statusLine")
       ClaudeCode::Hooks.write_settings(settings)
     end
-    FileUtils.rm_f([ script, previous_file ])
+    FileUtils.rm_f([ script, previous_file, previous_command_file ])
   end
 
   # Runs the status line you had (if any), then adds Echo's counts. It gives up
   # on Echo after a second, so a stopped Echo never slows Claude Code down.
   def self.write_script(base_url)
     FileUtils.mkdir_p(script.dirname)
+    previous = previous_file.exist? ? JSON.parse(previous_file.read)["command"].to_s : ""
+    previous.empty? ? FileUtils.rm_f(previous_command_file) : File.write(previous_command_file, previous)
     File.write(script, <<~SH)
       #!/bin/bash
       input=$(cat)
       previous=""
-      if [ -f #{Shellwords.escape(previous_file.to_s)} ]; then
-        command=$(/usr/bin/python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("command", ""))' #{Shellwords.escape(previous_file.to_s)} 2>/dev/null)
+      if [ -f #{Shellwords.escape(previous_command_file.to_s)} ]; then
+        command=$(cat #{Shellwords.escape(previous_command_file.to_s)})
         [ -n "$command" ] && previous=$(printf '%s' "$input" | sh -c "$command" 2>/dev/null)
       fi
       echo_status=$(curl -s -m 1 #{Shellwords.escape("#{base_url}/api/cli/status")} 2>/dev/null)

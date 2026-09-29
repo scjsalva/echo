@@ -23,4 +23,12 @@ class LocalTimeZoneTest < ActiveSupport::TestCase
       assert_equal "Etc/UTC", LocalTimeZone.current.tzinfo.name
     end
   end
+
+  test "on Windows, reads the zone from tzutil" do
+    Platform.stub(:windows?, true) do
+      Open3.stub(:capture2, [ "Singapore Standard Time\r\n", Struct.new(:success?).new(true) ]) do
+        assert_equal "Asia/Singapore", LocalTimeZone.detected
+      end
+    end
+  end
 end

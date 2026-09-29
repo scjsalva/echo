@@ -114,13 +114,13 @@ Every live Claude Code session on your machine, read from Claude Code's own file
 - **Status:** busy, idle or waiting on you, plus model, branch, working folder, tokens today, context use, loops and subagents.
 - **Filters:** all, waiting on you, with loops, background, and started by Echo.
 - **The agent drawer:**
-  - **Show terminal** brings the session's Terminal or iTerm2 tab to the front. It isn't available for tmux or background jobs.
+  - **Show terminal** brings the session's tab to the front: Terminal or iTerm2 on macOS, or its tmux pane on macOS or Linux. Other terminals (and Windows) give Echo no way in, so it isn't offered there, nor for background jobs.
   - **Rename** names the session with Claude Code's own `/rename`, so the name stays with it. Echo types the command into the session, so it only renames an idle session (typing into a busy one could land in, and send, what you're writing there); clear anything half-typed there first.
   - **Summarise** gives a short summary of where the session has got to. It uses Haiku, costs a few thousand tokens, and you can change which skill it uses.
   - **Transcript** shows the conversation.
   - **End session** quits a live session after you confirm.
 - **Started by Echo:** runs Echo starts itself, for AI reviews, questions and summaries, are tagged with what they're for and the PR. They end on their own; a run that times out or errors is stopped with anything it started, so no idle agents are left behind.
-- **Ended sessions:** paged, and searchable by title, folder or branch. Resume one in a new Terminal window with `claude --resume`.
+- **Ended sessions:** paged, and searchable by title, folder or branch. Resume one in a new terminal window with `claude --resume` (Terminal on macOS, your desktop's terminal on Linux, Windows Terminal or a command prompt on Windows).
 
 ## Loops
 
@@ -268,11 +268,11 @@ Changes wait for **Save**, section by section. Once something in a section chang
 - **Health** (under Connections): how each background sync is doing (GitHub, Jira and the notification check). It shows when each last succeeded, any failures in a row with the last error, and a **Sync now** button, on top of the automatic runs. Failed syncs retry on their own every minute.
   - **Scheduler:** Health also shows the background scheduler that starts the syncs. If it stops for 3 minutes, Echo runs the syncs itself until it picks up again, and it clears out jobs left behind by a worker that died.
   - **On waking:** Echo notices the computer slept (on macOS, Linux or Windows), ends any sync that was stuck mid-run since before the sleep, and syncs straight away.
-  - **After a long pause:** if no sync has started for 30 minutes (the Mac slept, or the queue got stuck), Echo restarts itself and everything starts fresh; there's nothing to do. Pages cover themselves while Echo catches up after 10 minutes or more asleep: "Echo is restarting" while it's down, then each connection's sync as it runs again, closing once they're all up to date. **Continue anyway** appears if it takes a while.
+  - **After a long pause:** if no sync has started for 30 minutes (the computer slept, or the queue got stuck), Echo restarts itself and everything starts fresh; there's nothing to do. Pages cover themselves while Echo catches up after 10 minutes or more asleep: "Echo is restarting" while it's down, then each connection's sync as it runs again, closing once they're all up to date. **Continue anyway** appears if it takes a while.
   - **Logins:** a login check that fails just after waking (no network yet) doesn't count as logged out; the last good status stands for up to 10 minutes.
-  - **Stuck runs:** each sync runs one at a time using a lock the system releases if its process dies, so a crash or the Mac sleeping can't leave the next runs waiting. A sync that's being queued but not starting shows as **Not starting**.
+  - **Stuck runs:** each sync runs one at a time using a lock the system releases if its process dies, so a crash or the computer sleeping can't leave the next runs waiting. A sync that's being queued but not starting shows as **Not starting**.
   - **The status light** at the top right is green when every connected sync is up to date, amber when one is behind, and red when one is failing or not starting. Hover it for a summary, each sync's status and when it last synced, and when the page last updated. Click it to open Health.
-  - **After sending a review:** Echo syncs GitHub straight away, so an approval shows at once. Echo never asks for tokens: logging in opens Terminal with the CLI's own login command.
+  - **After sending a review:** Echo syncs GitHub straight away, so an approval shows at once. Echo never asks for tokens: logging in opens a terminal with the CLI's own login command.
 - **GitHub:**
   - the repos the review queue watches
   - your team: people, and GitHub teams written `org/team` (suggested from your organisations), where a team counts everyone in it; members are looked up on GitHub and refreshed every 10 minutes
@@ -319,4 +319,4 @@ PRs and Jira tickets are replaced on every sync, and your settings are kept unti
 | Notifier app, notifier log, copies of repos | `~/Library/Application Support/Echo` (macOS) or `~/.local/share/echo` |
 | Claude Code sessions and transcripts (read only) | `~/.claude` |
 | Hooks (only if you install them) | `~/.claude/settings.json`, backed up first |
-| The background service (`bin/service`) | a launchd agent at http://localhost:4747 |
+| The background service (`bin/service`) | a launchd agent (macOS) or systemd user service (Linux) at http://localhost:4747 |

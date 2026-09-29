@@ -1,7 +1,9 @@
 require "open3"
 
 # Brings the terminal tab a live session runs in to the front. Tabs are matched
-# by the session process's tty, which Terminal and iTerm2 both expose.
+# by the session process's tty, which Terminal, iTerm2 and tmux all expose.
+# Terminal and iTerm2 are driven through AppleScript, so macOS only; tmux works
+# wherever tmux does (macOS, Linux). Other terminals offer no way in.
 module ClaudeCode::Focus
   class Error < StandardError; end
 
@@ -96,6 +98,8 @@ module ClaudeCode::Focus
     raise Error, target[:unavailable] if target[:unavailable]
 
     host = target[:host]
+    return tmux(target[:pane], scripts.equal?(SCRIPTS) ? :focus : :type, *extra) if host == "tmux"
+
     output, status = Open3.capture2e("osascript", "-e", scripts.fetch(host), "/dev/#{target[:tty]}", *extra)
     raise Error, "Couldn't reach #{host}: #{output.strip.truncate(200)}" unless status.success?
     raise Error, "Couldn't find the #{host} tab for this session" unless output.strip == "found"
@@ -106,14 +110,41 @@ module ClaudeCode::Focus
   def self.unavailable_reason(pid) = Rails.cache.fetch([ "focus-target", pid ], expires_in: 1.hour) { target(pid) }[:unavailable]
 
   def self.target(pid)
+    return { unavailable: "Windows gives Echo no way to bring a terminal tab forward" } if Platform.windows?
+
     tty = ps("tty", pid)
     return { unavailable: "This session isn't running in a terminal window" } if tty.blank? || tty == "??"
 
     host = host_app(pid)
-    return { unavailable: "This session runs inside tmux, so there's no single tab to bring forward" } if host == "tmux"
-    return { unavailable: "Echo can bring Terminal and iTerm2 tabs forward, not #{host || 'this app'}" } unless SCRIPTS.key?(host)
+    if host == "tmux"
+      pane = tmux_pane(tty) or return { unavailable: "Couldn't find this session's tmux pane" }
+      return { tty:, host:, pane: }
+    end
+    return { unavailable: "Echo can bring Terminal, iTerm2 and tmux tabs forward, not #{host || 'this app'}" } if Platform.mac? && !SCRIPTS.key?(host)
+    return { unavailable: "Outside macOS, Echo can only bring tmux panes forward. Run Claude Code in tmux to use this" } unless SCRIPTS.key?(host) && Platform.mac?
 
     { tty:, host: }
+  end
+
+  def self.tmux_pane(tty)
+    output, status = Open3.capture2("tmux", "list-panes", "-a", "-F", "\#{pane_tty} \#{pane_id}")
+    return unless status.success?
+
+    output.lines.map(&:split).find { |pane_tty, _| pane_tty == "/dev/#{tty}" }&.last
+  rescue SystemCallError
+    nil
+  end
+
+  # Focus switches your tmux client to the pane; typing sends the text, then return.
+  def self.tmux(pane, action, text = nil)
+    commands = if action == :focus
+      [ [ "switch-client", "-t", pane ], [ "select-window", "-t", pane ], [ "select-pane", "-t", pane ] ]
+    else
+      [ [ "send-keys", "-t", pane, "-l", text ], [ "send-keys", "-t", pane, "Enter" ] ]
+    end
+    # switch-client fails when no client is attached; the rest still apply.
+    results = commands.map { |args| Open3.capture2e("tmux", *args) }
+    raise Error, "Couldn't reach tmux: #{results.last.first.strip.truncate(200)}" unless results.last.last.success?
   end
 
   # Walks up the process tree to the first process that owns terminal tabs.
@@ -133,5 +164,5 @@ module ClaudeCode::Focus
     status.success? ? output.strip : ""
   end
 
-  private_class_method :run_in_tab, :target, :host_app, :ps
+  private_class_method :run_in_tab, :target, :host_app, :ps, :tmux_pane, :tmux
 end
