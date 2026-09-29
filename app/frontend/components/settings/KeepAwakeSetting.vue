@@ -6,7 +6,7 @@ import { useDraftValue, useSettingsDraft } from '@/composables/useSettingsDraft'
 import { request } from '@/lib/api'
 import type { KeepAwakeSettings } from '@/types/dashboard'
 
-const props = defineProps<{ keepAwake: KeepAwakeSettings }>()
+const props = defineProps<{ keepAwake: KeepAwakeSettings; workingHoursOn: boolean }>()
 
 const draft = useSettingsDraft()
 const mode = useDraftValue(props.keepAwake.mode)
@@ -14,7 +14,7 @@ const mode = useDraftValue(props.keepAwake.mode)
 const options = computed(() => [
   { value: 'off', label: 'Off' },
   { value: 'agents', label: 'While agents are working' },
-  { value: 'working_hours', label: props.keepAwake.workingHoursOn ? 'During working hours' : 'All the time (working hours are off)' },
+  { value: 'working_hours', label: props.workingHoursOn ? 'During working hours' : 'All the time (working hours are off)' },
 ])
 
 // Plain about the cost, so a draining battery is never a mystery.
@@ -23,7 +23,7 @@ const description = computed(() => {
     case 'agents':
       return 'Your computer stays awake while a Claude Code session is working, and for 2 minutes after, so a long task isn\'t cut short by sleep. It sleeps as usual once they\'re idle or waiting on you.'
     case 'working_hours':
-      return props.keepAwake.workingHoursOn
+      return props.workingHoursOn
         ? 'Your computer never goes to sleep by itself during your working hours (set in Notifications), even with nothing running. On battery this drains it noticeably faster.'
         : "Your computer never goes to sleep by itself while Echo runs, even with nothing running, because working hours are off. On battery this drains it noticeably faster; set working hours in Notifications to limit it."
     default:

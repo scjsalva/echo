@@ -25,6 +25,7 @@ const props = defineProps<{
 }>()
 
 const connections = ref(props.connections)
+const workingHoursOn = ref(props.keepAwake.workingHoursOn)
 
 // One section at a time, picked from the list on the left. The address follows
 // it (/settings#claude), so links from elsewhere land on the right one.
@@ -145,7 +146,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', warnBeforeLeavi
 
         <SettingsSection v-show="section === 'notifications'" :ref="setSectionRef('notifications')" label="Notifications" @dirty="dirty.notifications = $event">
           <SettingsCard title="Notifications">
-            <NotificationSettings :settings="notifications" />
+            <NotificationSettings :settings="notifications" @working-hours-saved="workingHoursOn = $event" />
           </SettingsCard>
         </SettingsSection>
 
@@ -154,7 +155,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', warnBeforeLeavi
             <TimeZoneSetting :time-zone="timeZone" />
           </SettingsCard>
           <SettingsCard title="Power">
-            <KeepAwakeSetting :keep-awake="keepAwake" />
+            <KeepAwakeSetting :keep-awake="keepAwake" :working-hours-on="workingHoursOn" />
           </SettingsCard>
           <SettingsCard title="Appearance">
             <ThemeSetting />

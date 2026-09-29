@@ -55,4 +55,21 @@ describe('SettingsPage', () => {
     expect(page.find('[aria-label^="Unsaved changes in"]').exists()).toBe(false)
     page.unmount()
   })
+
+  it('tells General when working hours are turned on in Notifications', async () => {
+    const health = { scheduler: { lastRunAt: null, stalled: false, coveringSince: null }, syncs: [] }
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => new Response(JSON.stringify(url === '/api/health' ? health : { alerts: [], version: 0 }), { status: 200 })))
+    history.replaceState(null, '', '/settings#notifications')
+    const page = mount(SettingsPage, { props: props as never, attachTo: document.body })
+    await flushPromises()
+    const keepAwakeLabel = () => page.findAll('select[aria-label="Keep the computer awake"] option').map((o) => o.text())[2]
+    expect(keepAwakeLabel()).toBe('All the time (working hours are off)')
+
+    await page.find('button[aria-label="Working hours"]').trigger('click')
+    await page.findAll('button').find((b) => b.text() === 'Save')!.trigger('click')
+    await flushPromises()
+
+    expect(keepAwakeLabel()).toBe('During working hours')
+    page.unmount()
+  })
 })

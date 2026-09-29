@@ -12,6 +12,8 @@ import { request } from '@/lib/api'
 import type { NotificationSettings } from '@/types/dashboard'
 
 const props = defineProps<{ settings: NotificationSettings }>()
+// Other sections (keep awake) depend on whether working hours are on.
+const emit = defineEmits<{ workingHoursSaved: [enabled: boolean] }>()
 
 const toast = useToast()
 const draft = useSettingsDraft()
@@ -31,7 +33,10 @@ const dayOrder = [1, 2, 3, 4, 5, 6, 0]
 const overnight = computed(() => hours.value.end <= hours.value.start && hours.value.end !== hours.value.start)
 function stageHours() {
   const { enabled: on, days, start, end } = hours.value
-  stage('working_hours', { working_hours: { enabled: on, days, start, end } })
+  draft.stage('working_hours', async () => {
+    await request('PATCH', '/api/settings', { working_hours: { enabled: on, days, start, end } })
+    emit('workingHoursSaved', on)
+  })
 }
 function toggleDay(day: number) {
   const days = new Set(hours.value.days)
