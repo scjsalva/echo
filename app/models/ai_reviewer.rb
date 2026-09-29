@@ -85,7 +85,7 @@ module AiReviewer
   end
 
   def self.ask(input, checkout, repo:, ref:)
-    command = [ "claude", "-p", "--model", MODEL, "--output-format", "json", "--json-schema", SCHEMA.to_json, *TOOLS,
+    command = [ "claude", "-p", "-n", "Echo review for #{short(ref)}", "--model", MODEL, "--output-format", "json", "--json-schema", SCHEMA.to_json, *TOOLS,
       "--system-prompt", system_prompt("ai_review", RULES, repo:) ]
     output, status = ClaudeCode::Headless.run(command, input:, chdir: checkout, timeout: TIMEOUT, purpose: "ai_review", ref:)
     raise Error, output.strip.truncate(300) unless status.success?
@@ -112,7 +112,8 @@ module AiReviewer
             "#{history.presence && "Earlier discussion:\n#{history}\n\n"}Question: #{question}"
 
     checkout = Github::Checkout.for_pull_request(comment.review.repo, comment.review.number)
-    command = [ "claude", "-p", "--model", MODEL, *TOOLS, "--system-prompt", system_prompt("review_question", QUESTION_RULES, repo: comment.review.repo) ]
+    command = [ "claude", "-p", "-n", "Echo question on #{short(comment.review.pr_key)} #{comment.path.split('/').last}:#{comment.line}", "--model", MODEL, *TOOLS,
+      "--system-prompt", system_prompt("review_question", QUESTION_RULES, repo: comment.review.repo) ]
     output, status = ClaudeCode::Headless.run(command, input:, chdir: checkout, timeout: 10.minutes, purpose: "review_question", ref: comment.review.pr_key)
     raise Error, output.strip.truncate(300) unless status.success?
 
@@ -126,5 +127,8 @@ module AiReviewer
     [ Skills.for(action, repo:).instructions, "## Echo's rules\n\n#{rules}", ClaudeCode::Context.prompt(repo:) ].compact_blank.join("\n\n")
   end
 
-  private_class_method :prompt, :ask
+  # "app#12" from "acme/app#12": the session list has little room.
+  def self.short(pr_key) = pr_key.split("/").last
+
+  private_class_method :prompt, :ask, :short
 end

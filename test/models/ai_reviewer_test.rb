@@ -40,6 +40,7 @@ class AiReviewerTest < ActiveSupport::TestCase
     assert_equal [ "Claude couldn't confirm it in the code", "Not on a line in this diff" ], report["left_out"].pluck("reason")
     assert_equal Pathname("/tmp/checkout"), folder
     assert_includes command, "--restricted"
+    assert_equal "Echo review for app#7", command[command.index("-n") + 1]
     system_prompt = command[command.index("--system-prompt") + 1]
     assert_includes system_prompt, "Find real problems"
     assert_includes system_prompt, "## Echo's rules"
