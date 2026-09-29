@@ -11,12 +11,14 @@ import ClaudeSettings from '@/components/settings/ClaudeSettings.vue'
 import GithubSettings from '@/components/settings/GithubSettings.vue'
 import NotificationSettings from '@/components/settings/NotificationSettings.vue'
 import TimeZoneSetting from '@/components/settings/TimeZoneSetting.vue'
-import type { ClaudeSettings as ClaudePreferences, Connection, GithubPreferences, NotificationSettings as NotificationPreferences, ShellProps, TimeZoneSettings } from '@/types/dashboard'
+import KeepAwakeSetting from '@/components/settings/KeepAwakeSetting.vue'
+import type { ClaudeSettings as ClaudePreferences, Connection, GithubPreferences, NotificationSettings as NotificationPreferences, ShellProps, TimeZoneSettings, KeepAwakeSettings } from '@/types/dashboard'
 
 const props = defineProps<{
   shell: ShellProps
   connections: Connection[]
   timeZone: TimeZoneSettings
+  keepAwake: KeepAwakeSettings
   notifications: NotificationPreferences
   github: GithubPreferences
   claude: ClaudePreferences
@@ -150,6 +152,9 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', warnBeforeLeavi
         <SettingsSection v-show="section === 'general'" :ref="setSectionRef('general')" label="General" @dirty="dirty.general = $event">
           <SettingsCard title="Time">
             <TimeZoneSetting :time-zone="timeZone" />
+          </SettingsCard>
+          <SettingsCard title="Power">
+            <KeepAwakeSetting :keep-awake="keepAwake" />
           </SettingsCard>
           <SettingsCard title="Appearance">
             <ThemeSetting />

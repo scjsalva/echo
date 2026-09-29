@@ -8,6 +8,7 @@ module SyncWatchdog
   # Wakes are spotted by the wall clock jumping between these short ticks, the
   # same on macOS, Linux and Windows: the process doesn't run while asleep.
   TICK = 5
+  KEEP_AWAKE_EVERY = 15
   WOKE_AFTER_GAP = 60
   STALLED_AFTER = 3.minutes
   RESTART_AFTER = 30.minutes
@@ -21,10 +22,14 @@ module SyncWatchdog
       # Sync straight away on boot, e.g. after restarting from a long pause,
       # rather than waiting for the scheduler's next minute.
       Rails.application.executor.wrap { JOBS.each(&:perform_later) }
-      ticked = checked = Time.now
+      ticked = checked = awake_checked = Time.now
       loop do
         sleep TICK
         now = Time.now
+        if now - awake_checked >= KEEP_AWAKE_EVERY
+          Rails.application.executor.wrap { KeepAwake.update }
+          awake_checked = now
+        end
         if now - ticked > WOKE_AFTER_GAP
           Rails.application.executor.wrap { SyncWatchdog.woke(now - ticked) }
           checked = now

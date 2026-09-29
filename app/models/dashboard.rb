@@ -38,6 +38,7 @@ class Dashboard
       unread_count: (github_notifications + jira_notifications).count { it[:unread] },
       missing_connections: connections.reject { it[:connected] || it[:optional] }.map { it[:name] },
       live: ClaudeCode::Hooks.installed?,
+      keep_awake: KeepAwake.current,
       updated_at: Time.current
     }
   end
@@ -81,7 +82,7 @@ class Dashboard
 
   def settings_props
     repos = Github::Preferences.repos
-    { shell: shell_props, connections:, time_zone: LocalTimeZone.props, notifications: Notifier.preferences, github: Github::Preferences.props,
+    { shell: shell_props, connections:, time_zone: LocalTimeZone.props, keep_awake: KeepAwake.props, notifications: Notifier.preferences, github: Github::Preferences.props,
       claude: { skills: Skills.props(repos), context: ClaudeCode::Context.settings_props(repos),
         review_limit: Review.limit, review_limit_options: Review::LIMIT_OPTIONS } }
   end

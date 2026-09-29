@@ -217,6 +217,8 @@ export interface ShellProps {
   missingConnections: string[]
   /** Hooks are installed, so pages can refresh the moment something happens. */
   live?: boolean
+  /** Why Echo is keeping the computer awake right now, if it is. */
+  keepAwake?: string | null
   updatedAt: string
 }
 
@@ -269,6 +271,13 @@ export interface NotificationSettings {
   workingHours: { enabled: boolean; days: number[]; start: string; end: string; timeZone: string }
   sound: string
   sounds: string[]
+}
+
+export interface KeepAwakeSettings {
+  mode: 'off' | 'agents' | 'working_hours'
+  available: boolean
+  current: string | null
+  workingHoursOn: boolean
 }
 
 export interface TimeZoneSettings {

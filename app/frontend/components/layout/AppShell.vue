@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, provide, ref } from 'vue'
-import { PhGear } from '@phosphor-icons/vue'
+import { PhCoffee, PhGear } from '@phosphor-icons/vue'
+import BaseTooltip from '@/components/ui/BaseTooltip.vue'
 import AlertStack from './AlertStack.vue'
 import LinkedDrawer from './LinkedDrawer.vue'
 import NotificationMenu from './NotificationMenu.vue'
@@ -90,6 +91,11 @@ const iconLink = 'inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[12
       </nav>
 
       <div class="flex items-center gap-0.5 rounded-lg border border-line bg-surface p-[3px]">
+        <BaseTooltip v-if="shell.keepAwake" :text="`Keeping the computer awake: ${shell.keepAwake}. Change it in Settings → General.`" placement="bottom">
+          <a href="/settings#general" class="flex size-7 items-center justify-center rounded-md text-accent hover:bg-subtle" aria-label="Keeping the computer awake">
+            <PhCoffee :size="15" />
+          </a>
+        </BaseTooltip>
         <HealthStatus :updated-at="shell.updatedAt" :refresh-failed="refreshFailed" />
         <span class="mx-0.5 h-4 w-px bg-line" aria-hidden="true" />
         <NotificationMenu :shell="shell" :link-class="iconLink" />

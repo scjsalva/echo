@@ -1,4 +1,5 @@
 require "command_runner"
+require "sleep_blocker"
 
 # Watches the scheduler from the web server only (not the job processes,
 # consoles, runners or tests).

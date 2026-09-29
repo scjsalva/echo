@@ -12,6 +12,7 @@ const props = {
   shell: fixture.shell,
   connections: [],
   timeZone: { preference: 'auto', detected: 'UTC', current: 'UTC', options: [] },
+  keepAwake: { mode: 'off', available: true, current: null, workingHoursOn: false },
   notifications: {
     desktop: true, settingsHint: 'System Settings', available: true, scope: 'waiting', sound: 'Ping', sounds: ['Ping', 'Pop'],
     types: [], enabledTypes: [], reminderMinutes: 30, reminderOptions: [0, 30],

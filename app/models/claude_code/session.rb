@@ -52,6 +52,9 @@ class ClaudeCode::Session
     @transcript = transcript_path&.then { ClaudeCode::Transcript.for(it) }
   end
 
+  # Busy with a turn, not waiting on you. Cheap: no transcript read.
+  def working? = STATUSES[@registry["status"]] == "busy" && SessionSignal.find_by(session_id: id)&.needs.nil?
+
   def to_agent
     # Hooks know when a session is blocked on you; the registry doesn't.
     signal = SessionSignal.find_by(session_id: id)

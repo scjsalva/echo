@@ -2,6 +2,7 @@ class Api::SettingsController < ApplicationController
   def update
     LocalTimeZone.preference = params[:time_zone] if params.key?(:time_zone)
     Review.limit = params[:ai_review_limit] if params.key?(:ai_review_limit)
+    KeepAwake.mode = params[:keep_awake] if params.key?(:keep_awake)
     if params.key?(:working_hours)
       hours = params.require(:working_hours).permit(:enabled, :start, :end, days: [])
       WorkingHours.update(enabled: hours[:enabled], days: hours[:days], start: hours[:start], finish: hours[:end])
