@@ -14,6 +14,9 @@ module SyncWatchdog
 
   def self.start
     Thread.new do
+      # Sync straight away on boot, e.g. after restarting from a long pause,
+      # rather than waiting for the scheduler's next minute.
+      Rails.application.executor.wrap { JOBS.each(&:perform_later) }
       loop do
         sleep CHECK_EVERY
         Rails.application.executor.wrap { check }
