@@ -59,7 +59,7 @@ describe('NotificationMenu', () => {
     vi.useFakeTimers()
 
     await menu.trigger('mouseenter')
-    await vi.advanceTimersByTimeAsync(500)
+    await vi.advanceTimersByTimeAsync(400)
     await menu.trigger('mouseleave')
     await vi.advanceTimersByTimeAsync(200)
     expect(reads(), 'passing over').toBe(0)
