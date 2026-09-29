@@ -38,7 +38,9 @@ describe('NotificationMenu', () => {
     await menu.trigger('mouseenter')
     await flushPromises()
     expect(fetchMock.mock.calls.some(([url]) => String(url).endsWith('/read_some'))).toBe(false)
-    await vi.advanceTimersByTimeAsync(1_500)
+    await vi.advanceTimersByTimeAsync(9_000)
+    expect(fetchMock.mock.calls.some(([url]) => String(url).endsWith('/read_some')), 'dots stay while you look').toBe(false)
+    await vi.advanceTimersByTimeAsync(1_000)
     vi.useRealTimers()
 
     const reads = fetchMock.mock.calls.filter(([url]) => String(url).endsWith('/read_some'))
@@ -48,6 +50,29 @@ describe('NotificationMenu', () => {
     const row = (title: string) => menu.findAll('[role="dialog"] li').find((li) => li.text().includes(title))!
     expect(row('Approved one').find('[aria-label="Unread"]').exists()).toBe(false)
     expect(row('Review me').find('[aria-label="Unread"]').exists()).toBe(true)
+    menu.unmount()
+  })
+
+  it('marks them read when you move away after a look, but not after just passing over', async () => {
+    const approval = { ...many[0], id: 'g-approved', reason: 'approved' as const, unread: true, resolution: null }
+    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => new Response(JSON.stringify({ ...overview, githubNotifications: [approval], jiraNotifications: [], pullRequests: [] }), { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+    const menu = mount(NotificationMenu, { props: { shell: overview.shell, linkClass: '' }, attachTo: document.body })
+    const reads = () => fetchMock.mock.calls.filter(([url]) => String(url).endsWith('/read_some')).length
+    vi.useFakeTimers()
+
+    await menu.trigger('mouseenter')
+    await vi.advanceTimersByTimeAsync(500)
+    await menu.trigger('mouseleave')
+    await vi.advanceTimersByTimeAsync(200)
+    expect(reads(), 'passing over').toBe(0)
+
+    await menu.trigger('mouseenter')
+    await vi.advanceTimersByTimeAsync(3_000)
+    await menu.trigger('mouseleave')
+    await vi.advanceTimersByTimeAsync(200)
+    vi.useRealTimers()
+    expect(reads(), 'looked, then moved away').toBe(1)
     menu.unmount()
   })
 
