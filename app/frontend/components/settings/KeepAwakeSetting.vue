@@ -41,7 +41,7 @@ function stage() {
     <template #title>
       Keep the computer awake
       <InfoHint
-        text="Stops your computer going to sleep when idle, the way a video player does. The screen still turns off and locks on its usual timer, and closing a laptop's lid still puts it to sleep. The more it stays awake, the more battery it uses."
+        text="Stops your computer going to sleep when idle, the way music playing or a big download does: it keeps working, but the screen still turns off and locks on its usual timer, and closing a laptop's lid still puts it to sleep. The more it stays awake, the more battery it uses."
       />
     </template>
     <template #description>

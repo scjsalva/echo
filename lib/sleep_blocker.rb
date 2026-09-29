@@ -1,4 +1,4 @@
-# Asks the OS not to go to sleep when idle, the way video players and backups
+# Asks the OS not to go to sleep when idle, the way music players and downloads
 # do. The display still turns off and the screen still locks on their usual
 # timers; only system sleep waits (and closing a laptop's lid still sleeps it).
 # A small helper process holds the request and ends by itself if Echo does,
