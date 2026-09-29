@@ -77,8 +77,11 @@ const justRead = ref(0)
 const unreadCount = computed(() => Math.max(0, props.shell.unreadCount - justRead.value))
 watch(() => props.shell.unreadCount, () => (justRead.value = 0))
 
+const seenIds = () => rows.value.filter((row) => row.unread && !row.needsAction).map((row) => row.id)
+const lookedLongEnough = () => Boolean(data.value) && Date.now() - openedAt >= GLANCE_MS
+
 function markSeen() {
-  const ids = rows.value.filter((row) => row.unread && !row.needsAction).map((row) => row.id)
+  const ids = seenIds()
   if (!ids.length) return
   justRead.value = ids.length
   request('POST', '/api/notifications/read_some', { ids }).then(() => {
@@ -114,15 +117,23 @@ const GLANCE_MS = 2_000
 let closing: ReturnType<typeof setTimeout> | undefined
 let openedAt = 0
 function show() {
+  // Back within the close delay (e.g. crossing onto the panel): nothing's read yet.
+  if (closing) justRead.value = 0
   clearTimeout(closing)
+  closing = undefined
   open.value = true
 }
 function hide() {
-  closing = setTimeout(() => (open.value = false), CLOSE_DELAY_MS)
+  // The count drops the moment you move away, not after the close delay.
+  if (open.value && lookedLongEnough()) justRead.value = seenIds().length
+  closing = setTimeout(() => {
+    closing = undefined
+    open.value = false
+  }, CLOSE_DELAY_MS)
 }
 watch(open, async (isOpen) => {
   if (!isOpen) {
-    if (data.value && Date.now() - openedAt >= GLANCE_MS) markSeen()
+    if (lookedLongEnough()) markSeen()
     return
   }
   openedAt = Date.now()

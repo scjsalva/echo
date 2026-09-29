@@ -64,13 +64,19 @@ describe('NotificationMenu', () => {
     await vi.advanceTimersByTimeAsync(200)
     expect(reads(), 'passing over').toBe(0)
 
+    const label = () => menu.find('a[href="/inbox"]').attributes('aria-label')
     await menu.trigger('mouseenter')
     await vi.advanceTimersByTimeAsync(3_000)
     await menu.trigger('mouseleave')
+    expect(label(), 'crossing onto the panel').toContain(`${overview.shell.unreadCount - 1} unread`)
+    await menu.trigger('mouseenter')
+    expect(label(), 'came straight back, so nothing is read yet').toContain(`${overview.shell.unreadCount} unread`)
+
+    await menu.trigger('mouseleave')
+    expect(label(), 'the count drops the moment you move away').toContain(`${overview.shell.unreadCount - 1} unread`)
     await vi.advanceTimersByTimeAsync(200)
     vi.useRealTimers()
     expect(reads(), 'looked, then moved away').toBe(1)
-    expect(menu.find('a[href="/inbox"]').attributes('aria-label'), 'the count drops without waiting for the page').toContain(`${overview.shell.unreadCount - 1} unread`)
     menu.unmount()
   })
 
