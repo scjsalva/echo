@@ -111,9 +111,9 @@ function choose(row: Row) {
 // Opens on hover, like the sync light beside it, and stays while the pointer
 // moves onto the panel. The dots on what's new stay for as long as it's open;
 // what it shows counts as seen when you move away. Passing over the bell (open
-// under 2 seconds) marks nothing.
+// under a second) marks nothing.
 const CLOSE_DELAY_MS = 150
-const GLANCE_MS = 2_000
+const GLANCE_MS = 1_000
 let closing: ReturnType<typeof setTimeout> | undefined
 let openedAt = 0
 function show() {
