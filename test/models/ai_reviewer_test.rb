@@ -44,6 +44,7 @@ class AiReviewerTest < ActiveSupport::TestCase
     system_prompt = command[command.index("--system-prompt") + 1]
     assert_includes system_prompt, "Find real problems"
     assert_includes system_prompt, "## Echo's rules"
+    assert_includes system_prompt, "never hold the PR's author to them", "your own PR conventions aren't the author's"
     assert_equal "Read,Grep,Glob", command[command.index("--tools") + 1]
   end
 

@@ -226,6 +226,8 @@ Every Claude run Echo starts includes, the same way Claude Code would load them:
 
 Repo instructions come from your clone, or the default branch of Echo's copy, and never from the PR being reviewed. **Settings → Claude** lists every file that's sent and its size.
 
+In a review they guide how Claude reviews the code, but the PR's author is never held to them: your own conventions for writing PRs (descriptions, commit messages, attribution lines) aren't theirs, so Claude doesn't comment on those.
+
 **Extra context:** in the same place you can add your own files or skills, for every run or for one repo:
 - A path starting with `~` or `/` is used as it is. For a repo, any other path is inside your clone, e.g. `docs/architecture.md`.
 - A skill added this way is reference only; it doesn't change the skill an action uses.

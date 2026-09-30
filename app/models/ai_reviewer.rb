@@ -37,6 +37,10 @@ module AiReviewer
     guess, or on something the repo can't show, is left out.
     The summary is required and never empty: give your overall verdict in one or two sentences and say what
     you checked. When there's nothing to raise, say that it looks good to approve and why.
+    Your user's own instructions below describe how they work: use them to understand the codebase and what
+    matters in its code, but never hold the PR's author to them. The author has their own habits and tools,
+    so don't comment on the PR description, title, commit messages, attribution or co-author lines, or any
+    other convention for how a PR is written, in findings or in the summary. Review the code.
   RULES
   QUESTION_RULES = <<~RULES.squish.freeze
     You're in a checkout of the PR's latest commit and can only read it. Only state what you have verified by
