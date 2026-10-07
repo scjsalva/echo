@@ -27,17 +27,20 @@ The home page. It refreshes on its own, instantly when Claude Code hooks are ins
   | Agents | Agents | the Agents page |
   | Agents | Busy | the Agents page |
   | Agents | Used (tokens today) | your Claude usage page |
-  | Jira | Open | the Jira page |
-  | Jira | Done | the Jira page's Done list |
-  | GitHub | Team | the review queue, filtered to your team |
+  | Jira | Unassigned (open on your board, nobody's, leaving out the Backlog) | the Jira page, filtered to Unassigned |
+  | Jira | To Do (yours and not started, your Backlog tickets included) | the Jira page, Assigned to me on |
+  | Jira | Done (yours, finished in the last 14 days) | the Jira page, Assigned to me on |
+  | GitHub | Team | Team, with Ready for review selected |
   | GitHub | Mine | your PRs |
   | GitHub | Watching | GitHub notifications in the inbox |
 
 - **Waiting on you**: the latest items blocked on you. It's hidden when there's nothing, and "See all" opens the inbox on that tab.
 - **Review queue**: the latest PRs ready for review, with a link to the full list.
-- **Side panels** for agents, Jira and GitHub activity.
+- **Side panels** for agents, Jira and GitHub activity. Jira's lists your open tickets, To do included.
 
 Clicking any item opens it in a drawer on the right. Drawers keep a Back history as you move from one item to another.
+
+Every page's tabs, filters and search live in the address bar (e.g. `/github?tab=team&status=ready`, `/inbox?tab=waiting`), so a reload, a bookmark or a shared link shows the same view. Defaults are left out, so a plain link opens the page as normal. Links that open one item (e.g. `?ticket=` or `?pr=`) are tidied away once it's open; the filters stay.
 
 ## Waiting on you
 
@@ -47,10 +50,13 @@ One list of everything blocked on you. Each item clears itself when its source s
 |---|---|
 | An agent waiting for permission or an answer | the agent is no longer blocked |
 | A review requested from you | you submit a review |
+| Asked to review again (the author re-requested your review) | you submit a review |
 | You or your team are mentioned on a PR | you comment on or review the PR |
 | Changes requested on your PR | you push new commits or re-request review |
 | You're mentioned on a Jira ticket | you comment on the ticket |
 | A Jira ticket is assigned to you | you move it out of To Do |
+
+Clicking an item opens its PR, ticket or agent straight away, with a **Dismiss** button right under its notification message. Opening a notification that's waiting on you from the bell, the inbox or an OS notification shows it too. Only something Echo can't open (e.g. a ticket it doesn't sync) opens a summary of the item instead.
 
 ## Notifications
 
@@ -62,26 +68,33 @@ One list of everything blocked on you. Each item clears itself when its source s
 
 ### The bell
 
-The bell in the top right shows the count waiting on you and the unread count; the unread count also leads the tab's title, e.g. "(3) GitHub · Echo". Hovering it opens the 10 latest notifications (every unread one shows too, however old, so the count always matches the dots), with a link to the inbox at the bottom; clicking it goes to the inbox. The dots on what's new stay for as long as it's open; it marks what it shows as read when you move away (passing over the bell, open under half a second, marks nothing), except what's still waiting on you to act (a review request, a mention you haven't replied to, changes requested on your PR, or a Jira assignment still in To Do). Their dots then fade out, so you see what was new first. Opening a notification (from the bell, an OS notification or an in-app alert) marks it read, even one still waiting on you: that stays in Waiting on you until it's done or dismissed. Dismissing a waiting item marks its notification read too. Every open Echo page updates its count straight away.
+The bell in the top right shows the count waiting on you and the unread count; the unread count also leads the tab's title, e.g. "(3) GitHub · Echo". Hovering it opens the 10 latest notifications (every unread one shows too, however old, so the count always matches the dots), what's waiting on you first under Waiting on you (only when there's something, and not repeated below), then unread ones under Unread and the rest under Earlier, so one that reached Echo late isn't buried among those you've read, with a link to the inbox at the bottom; clicking it goes to the inbox. The dots on what's new stay for as long as it's open; it marks what it shows as read when you move away (passing over the bell, open under half a second, marks nothing), except what's still waiting on you to act (a review request, a mention you haven't replied to, changes requested on your PR, or a Jira assignment still in To Do). Their dots then fade out, so you see what was new first. Opening a notification (from the bell, an OS notification or an in-app alert) marks it read, even one still waiting on you: that stays in Waiting on you until it's done or dismissed. Dismissing a waiting item marks its notification read too. Every open Echo page updates its count straight away.
+
+### Open on your phone
+
+Hovering the phone button in the top right shows a QR code for the page you're on, at the Mac's local network address. Scan it with a phone on the same Wi-Fi to open that page there. The button only shows on the Mac itself (Echo opened at localhost), not on a phone or other device, and only when the Mac has a local network address, and the page only loads if Echo is listening on the network rather than just on this Mac (`bin/rails server -b 0.0.0.0`, with `VITE_RUBY_SKIP_PROXY=false` so the phone gets its scripts through Rails).
 
 ### OS notifications and in-app alerts
 
 - **OS notifications:** macOS, Linux (`notify-send`) or Windows. They work with no Echo page open and clear after 30 seconds.
-- **In-app alerts:** shown on any open Echo page when OS notifications are off.
+- **In-app alerts:** shown on any open Echo page when OS notifications are off, each with Echo's logo in its source's colour: orange for agents, purple for GitHub, blue for Jira.
+- **Colour-coded icons (Mac, off by default):** OS notifications show Echo's icon in the same colours. macOS ties a notification's icon to the app that sends it, so this uses three small helper apps, one per source; macOS asks you to allow each once. Off, every notification comes from Echo, with one icon and one permission.
 - **Clicking either:** it opens the item (PR, ticket or agent) in a drawer over the page you're on, without leaving it. If no Echo tab is open, a new one opens straight to the item.
 - **Sound:** optional, with a Send test button in Settings.
 - **Layout:** every notification, OS or in-app, is two lines: what it's about, then the message, e.g. "GitHub · web · dana approved your PR".
 
 ### What gets sent
 
-- **Simple:** only what's waiting on you (the items above), plus the review reminder if it's on.
+- **Simple:** only what's waiting on you (the items above), plus the review reminder if it's on, and when an AI review you started finishes or fails.
 - **Custom:** pick from everything Echo can send:
   - An agent is waiting on you
+  - An AI review of a PR finishes (or fails); clicking it opens the review
   - For System: the review reminder, and a teammate's PR becoming ready for review
   - Review requested from you
   - You or your team are mentioned
   - Changes requested on your PR
   - New commits after your review
+  - Asked to review again: the author re-requested your review after you'd reviewed (a waiting item, like a review request)
   - Someone approves a PR
   - Someone reviews a PR, or a review is dismissed
   - Comments
@@ -94,6 +107,10 @@ The bell in the top right shows the count waiting on you and the unread count; t
 - **Kinds added later** start ticked.
 - **Your own activity,** and bots' comments, never notify you.
 - **Replies on review threads** notify you only in threads you started or have commented in, or when they mention you.
+
+### Looks ready for another look
+
+Off until you turn it on in Settings → Notifications. A guess, for authors who don't re-request your review: on a PR you reviewed, the author (a person, not a bot) has pushed new commits since your review, answered or resolved every thread you started, CI passes, and they've been quiet for 30 minutes. Sent once per round of review, whatever the scope; a re-request says it better, so it's skipped when one is open.
 
 ### Working hours
 
@@ -130,10 +147,13 @@ Everything running on a schedule inside your sessions: `/loop`, scheduled wake-u
 
 Uses the GitHub CLI (`gh`) and its login.
 
-- **Review queue:** open, non-draft PRs by other people in the repos you watch, newest first.
-  - **Filters:** everyone, requested from you, or your team; filter by repo, and search by title, number or author.
-  - **Each PR shows:** its CI state and review status (Approved, Changes requested or Review required), and whether it's requested from you.
-- **My PRs:** your open PRs and drafts, newest first.
+- **Tabs,** newest first:
+  - **All:** every open PR in the repos you watch, drafts and yours included.
+  - **Team:** the All PRs by your team (people and teams set in Settings → GitHub), not yours.
+  - **My PRs:** your open PRs and drafts, in any repo.
+- **Filters:** a Filters button (hover or tap) with pill groups for **Status** (Ready for review, Draft), **Reviews** (Review required, Approved, Changes requested, Requested from me), **Author** and **Repo**. Choices in one group match any of them; groups combine. The button counts how many are on. Search by title, number or author too.
+- **Each PR shows:** its CI state and review status (Approved, Changes requested or Review required), and whether it's requested from you.
+- **The review queue** on the Overview is your team's ready-for-review PRs in the repos you watch. Its link, and the Team stat, open Team with Ready for review selected.
 - **Load more** shows 20 at a time and keeps what you've loaded when the page refreshes.
 - **The PR drawer:**
   - the description, files, lines and commits changed, and reviews
@@ -143,13 +163,18 @@ Uses the GitHub CLI (`gh`) and its login.
 
 ## Jira
 
-Uses the Atlassian CLI (`acli`) and its login. It only ever reads.
+Uses the Atlassian CLI (`acli`) and its login. It only reads, except for one change you make yourself: assigning a ticket to you, or taking you off it.
 
-- **Your tickets,** grouped as To do, In progress, Code review, Post development and Done. Filter to assigned to you, watching, reported by you, or all, and by issue type.
-- **Done:** loaded page by page.
-- **Search:** your synced tickets instantly, or all of Jira by text or ticket key.
+- **Your board:** choose the one board you follow in Settings → Jira (search by name); to switch, remove it and choose another. Its tickets come from its saved filter: what's open, plus anything done in the last 14 days. The Atlassian CLI can't read a board's columns, so its statuses are the ones its tickets use, in Jira's category order until you reorder them; hide the ones you don't want. The Backlog starts hidden, as Jira keeps it off a board, on its own page.
+- **The board,** like Jira's: a **To Do** column gathering every to-do status (e.g. Ready to Start) plus your own Backlog tickets, then a column per shown status in the board's order. Each card shows the title, its sprint, type and key, priority and the assignee's avatar. A child sits right under its parent when both are in the same column, and a subtask has a line down its left, wherever its parent is. Searches can't return a ticket's parent, so the sync finds which tickets have one and looks each up, up to 40 a sync, remembering it for 6 hours. The board fills the screen below it and scrolls itself, up and down and sideways, with each column's name staying in view.
+- **Filters:** **Assigned to me** as a quick filter, and a Filters button with **Status** (hidden statuses too), **Ticket type**, **Assignee** (including Unassigned) and, on a scrum board, **Sprint**. Assigned to me and your name under Assignee are the same choice. A scrum board opens on its active sprint. The button counts what's on. The filters and search live in the address bar (e.g. `/jira?assignee=me&type=Bug`), so a reload, a bookmark or a shared link shows the same board; a link from the Overview's stats sets just its own filter, so the board matches what it counted.
+- **Search:** the board's tickets instantly, or all of Jira by text or ticket key.
 - **The ticket drawer:** status, description, custom text fields (e.g. acceptance criteria), parent and linked tickets, attachments, and comments, newest first.
-- **Syncing:** every minute. Mentions, assignments, comments and status changes become notifications.
+- **Assign to me / Unassign:** in the ticket drawer, an unassigned ticket can be assigned to you, and one of yours unassigned. Echo then reads back who has it, so the board updates at once. Other people's tickets can't be unassigned from Echo.
+- **Ask Claude:** from the ticket drawer, opens Claude Code in a new Terminal tab (a new window if there's no Terminal window, or no Accessibility access for the ⌘T) to talk the ticket through before you pick it up. It starts in the folder holding your local repos (set in Settings → GitHub) and works out with you which of them the change belongs in, since a ticket can span two or turn out to be a bug in a package. It starts from a brief Echo gathers: the whole ticket and its comments, the parent, subtasks and linked tickets read in full, every link in them sorted by kind (GitHub, recordings and bug captures, designs and docs, tickets), the attachments (listed only: the Atlassian CLI can't download them), and PRs in your repos that mention the ticket. The **Ask Claude about a ticket** skill (Echo's echo-ticket, or yours, in Settings → Claude → Skills) then tells Claude to dig further with whatever tools the session has, e.g. `gh` for PRs and MCP servers for recordings, designs or the tracker's attachments, before evaluating it with you. It stays read-only until you ask it to build.
+- **Resume session:** Echo records each session it opens for a ticket, so the drawer can bring the latest one back: **Go to session** brings its Terminal tab forward while it's running, and **Resume session** picks it up again (`claude --resume`) in a new tab once it has ended. Only sessions Echo opened are offered.
+- **Find me work** (`/jira/work`, from the button by the board's filters): the unassigned tickets in your board's To Do column (not the Backlog or a hidden status), each with what it's about, what you'd do, a rough size (a few hours, a day or two, bigger), and whether something needs answering first. The **Top picks** are the best five: summarised, ready to start, then by priority, due date and size; everything else is in a table below, ten at a time with Load more. Choose how to pick (kept in the address bar, e.g. `?pick=quick`): **Best overall**, **Quick wins** (a few hours and ready), **Urgent** (overdue, due within a week, or high priority), **Bugs**, **Needs clarifying** (worth asking about to unblock), and from tags Claude adds with its summary, **Data corrections**, **Frontend**, **Backend**, **Investigations** and **Customer-reported**. Only the tags need Claude, and they come in the same call as the summary. Clicking one opens its ticket drawer. **Find me work** has Claude (Haiku) summarise the ones that need it, eight to a call, from the ticket's trimmed text with no tools; **Refresh** on a ticket reads it from Jira again. To keep it cheap, a summary is kept for 14 days and only redone when the ticket's words change (or Echo changes what it asks Claude for); it goes sooner once someone else has the ticket and it's moved on, or it leaves the board. Claude only runs when you press a button; the ranking itself uses none.
+- **Syncing:** every minute: your own tickets (assigned, watching or reported), which become notifications for mentions, assignments, comments and status changes, and each board's tickets.
 
 ## AI reviews
 
@@ -191,12 +216,24 @@ Open any PR's **Review** button, or go to `/reviews/<owner>/<repo>/<number>`. Yo
 - **Ask AI on a new line comment:** ask about a line before writing anything, and turn the answer into the comment.
 - **Markdown:** a Write / Preview toggle, and GitHub `suggestion` blocks work.
 
+### Rewrite in your words
+
+Off until you choose one of your own skills for it in Settings → Claude → Skills (e.g. one that makes a finding read as if you wrote it). Then a **Rewrite** button shows on every comment and reply that has text (Claude's findings and your own), in the box where you write a comment or reply, and in the Send review dialog for the summary. On a saved comment, the rewrite shows under it like an Ask AI answer, ready to **Use as comment**; in the box you're writing in, and the summary, it's rewritten in place, with **Undo**. Claude gets your skill and the text only, no tools, and the button has no skill picker of its own.
+
+### Earlier threads
+
+- Earlier reviews' threads, by anyone, sit on their lines (or above the diff when the code has since changed), resolved ones marked as such.
+- **Reply:** write a reply, or ask Claude about the thread first. Claude reads the whole thread and the code, and its answer can become the reply. A reply works like a comment: **Commit** it to send with your review, or **Send now** to post it on GitHub straight away.
+- **Resolve / Unresolve** a thread on GitHub in one click.
+- Replies, resolving and unresolving are the only changes Echo makes to existing threads, each one a fixed GitHub mutation.
+
 ### Sending
 
 - **Send review** opens a dropdown, like GitHub's "Finish your review":
   - a summary (Markdown, with preview)
   - **Comment**, **Approve** or **Request changes** (the last two aren't available on your own PR)
 - Your summary and choice are kept if you close and reopen the dropdown.
+- Committed replies go out with the review, each to its thread. Replies alone need no summary.
 - Once sent, the review links to GitHub and can't be changed in Echo.
 - **Merged PRs** can't be reviewed: the page says so, and the server refuses.
 
@@ -311,6 +348,7 @@ An hourly clean-up keeps Echo's data small:
 | Notifications, and the record of which were sent | 30 days, unless still waiting on you |
 | Sent reviews, and drafts you haven't touched | 30 days |
 | Echo's own Claude runs, and hook signals from ended sessions | 1 day after they end |
+| Find me work's ticket summaries | 14 days, or until the ticket's taken and moved on |
 
 PRs and Jira tickets are replaced on every sync, and your settings are kept until you change them.
 

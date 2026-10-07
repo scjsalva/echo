@@ -20,7 +20,7 @@ async function load() {
   const data = await request<SkillChoice | SkillAction>('GET', `/api/skill?${new URLSearchParams({ skill_action: props.action, ...(props.repo ? { repo: props.repo } : {}) })}`)
   current.value = data.current
   options.value = data.options
-  override.value = 'override' in data ? data.override : data.current.id
+  override.value = 'override' in data ? data.override : (data.current?.id ?? null)
 }
 
 async function choose(skill: string | null) {

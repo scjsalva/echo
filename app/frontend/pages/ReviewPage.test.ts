@@ -15,7 +15,7 @@ const file: DiffFile = {
 }
 const comment = (fields: Partial<ReviewComment>): ReviewComment => ({
   id: 1, path: 'app/menu.rb', line: 2, side: 'RIGHT', startLine: null, body: 'fallback can be nil', state: 'staged', author: 'ai',
-  severity: 'high', evidence: null, notes: [], asking: false, ...fields,
+  severity: 'high', evidence: null, notes: [], asking: false, threadId: null, ...fields,
 })
 const draft = (fields: Partial<ReviewDraft> = {}): ReviewDraft => ({
   id: 5, prKey: pr.key, headSha: 'abc', status: 'draft', aiStatus: 'done', aiError: null, sentAt: null, githubUrl: null, comments: [comment({})], ...fields,
@@ -124,7 +124,7 @@ describe('ReviewPage', () => {
 
     await page.find('button[aria-label="Comment on line 1"]').trigger('click')
     await button(page, 'Ask AI').trigger('click')
-    await page.find('input[aria-label="Question for Claude about this line"]').setValue('Can this be nil?')
+    await page.find('textarea[aria-label="Question for Claude about this line"]').setValue('Can this be nil?')
     await page.findAll('button').find((b) => b.text() === 'Ask')!.trigger('click')
     await flushPromises()
 

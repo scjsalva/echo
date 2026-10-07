@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_28_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_07_150000) do
   create_table "deliveries", force: :cascade do |t|
     t.string "item_key", null: false
     t.datetime "created_at", null: false
@@ -51,6 +51,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_120000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["key"], name: "index_github_pull_requests_on_key", unique: true
+  end
+
+  create_table "jira_board_tickets", force: :cascade do |t|
+    t.integer "board_id", null: false
+    t.string "key", null: false
+    t.integer "position", default: 0, null: false
+    t.json "data", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["board_id", "key"], name: "index_jira_board_tickets_on_board_id_and_key", unique: true
   end
 
   create_table "jira_notifications", force: :cascade do |t|
@@ -106,6 +116,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_120000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.text "evidence"
+    t.string "thread_id"
     t.index ["review_id"], name: "index_review_comments_on_review_id"
   end
 
@@ -123,6 +134,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_120000) do
     t.datetime "updated_at", null: false
     t.json "ai_report"
     t.text "ai_guidance"
+    t.datetime "ai_finished_at"
     t.index ["pr_key"], name: "index_reviews_on_pr_key"
   end
 
@@ -153,6 +165,31 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_120000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["pid"], name: "index_spawned_agents_on_pid"
+  end
+
+  create_table "ticket_sessions", force: :cascade do |t|
+    t.string "ticket_key", null: false
+    t.string "session_id", null: false
+    t.string "path", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["ticket_key"], name: "index_ticket_sessions_on_ticket_key"
+  end
+
+  create_table "work_summaries", force: :cascade do |t|
+    t.string "ticket_key", null: false
+    t.text "summary"
+    t.text "expected"
+    t.string "size"
+    t.boolean "ready", default: true, null: false
+    t.text "question"
+    t.string "fingerprint", null: false
+    t.date "due"
+    t.datetime "generated_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.json "tags", default: [], null: false
+    t.index ["ticket_key"], name: "index_work_summaries_on_ticket_key", unique: true
   end
 
   add_foreign_key "review_comments", "reviews"

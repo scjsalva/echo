@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import WaitingDismiss from './WaitingDismiss.vue'
+import type { WaitingItem } from '@/types/dashboard'
 import { computed, ref } from 'vue'
 import { PhArrowSquareOut, PhGitDiff } from '@phosphor-icons/vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
@@ -19,7 +21,7 @@ import { useToast } from '@/composables/useToast'
 import { request } from '@/lib/api'
 import type { JiraTicket, PullRequest } from '@/types/dashboard'
 
-const props = defineProps<{ pr: PullRequest; notificationId?: string }>()
+const props = defineProps<{ pr: PullRequest; notificationId?: string; waiting?: WaitingItem }>()
 
 const dashboard = useDashboard()
 const { open } = useDrawer()
@@ -84,6 +86,7 @@ const reviewTone = (state: string) => (state === 'approved' ? 'ok' : state === '
       :href="pr.url"
       href-label="View on GitHub"
     />
+    <WaitingDismiss v-if="waiting" :item="waiting" />
 
     <DetailSection title="Description">
       <MarkdownBlock v-if="pr.description" :source="pr.description" />

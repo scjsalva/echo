@@ -6,13 +6,48 @@ import AppKit
 import UserNotifications
 
 let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("Echo")
-let outbox = base.appendingPathComponent("outbox")
 let showFor: TimeInterval = 30
+
+// Echo's logo in the colour of where a notification came from: agents orange,
+// GitHub purple, Jira blue. Drawn once, when Echo builds each copy's icon.
+let sourceColours: [String: NSColor] = [
+  "agent": NSColor(srgbRed: 0.91, green: 0.44, blue: 0.04, alpha: 1),
+  "github": NSColor(srgbRed: 0.51, green: 0.31, blue: 0.87, alpha: 1),
+  "jira": NSColor(srgbRed: 0.12, green: 0.44, blue: 0.90, alpha: 1),
+]
+
+// Echo builds one copy of this app per source (agents, GitHub, Jira), each with
+// its own coloured icon, because macOS draws the sending app's icon on every
+// banner. A copy knows its source from its bundle id, and reads its own outbox.
+let source = Bundle.main.bundleIdentifier.flatMap { id in sourceColours.keys.first { id.hasSuffix(".\($0)") } }
+let outbox = base.appendingPathComponent(source.map { "outbox-\($0)" } ?? "outbox")
+
+func logoPNG(_ colour: NSColor, size: CGFloat) -> Data? {
+  let unit = size / 32
+  let image = NSImage(size: NSSize(width: size, height: size), flipped: false) { _ in
+    colour.setFill()
+    NSBezierPath(roundedRect: NSRect(x: 0, y: 0, width: size, height: size), xRadius: 8 * unit, yRadius: 8 * unit).fill()
+    NSColor.white.setFill()
+    NSBezierPath(ovalIn: NSRect(x: 8 * unit, y: 13 * unit, width: 6 * unit, height: 6 * unit)).fill()
+    // The two waves around the dot, as in the logo.
+    for (radius, alpha) in [(7.78, 1.0), (12.73, 0.55)] as [(CGFloat, CGFloat)] {
+      let wave = NSBezierPath()
+      wave.appendArc(withCenter: NSPoint(x: 11 * unit, y: 16 * unit), radius: radius * unit, startAngle: -45, endAngle: 45)
+      wave.lineWidth = 2.6 * unit
+      wave.lineCapStyle = .round
+      NSColor.white.withAlphaComponent(alpha).setStroke()
+      wave.stroke()
+    }
+    return true
+  }
+  guard let tiff = image.tiffRepresentation else { return nil }
+  return NSBitmapImageRep(data: tiff)?.representation(using: .png, properties: [:])
+}
 
 // A short log for troubleshooting, next to the outbox.
 func log(_ line: String) {
   let file = base.appendingPathComponent("notifier.log")
-  let entry = "\(ISO8601DateFormatter().string(from: Date())) \(line)\n"
+  let entry = "\(ISO8601DateFormatter().string(from: Date())) [\(source ?? "echo")] \(line)\n"
   if let handle = try? FileHandle(forWritingTo: file) {
     handle.seekToEndOfFile()
     handle.write(entry.data(using: .utf8)!)
@@ -143,6 +178,13 @@ final class Notifier: NSObject, NSApplicationDelegate, UNUserNotificationCenterD
     open(response.notification.request.content.userInfo["url"] as? String ?? echoURL() + "/inbox")
     completionHandler()
   }
+}
+
+// `Echo --icon jira out.png` draws a copy's icon at build time, then exits.
+let args = CommandLine.arguments
+if args.count == 4, args[1] == "--icon", let colour = sourceColours[args[2]] {
+  let written = logoPNG(colour, size: 1024).map { (try? $0.write(to: URL(fileURLWithPath: args[3]))) != nil } ?? false
+  exit(written ? 0 : 1)
 }
 
 let app = NSApplication.shared

@@ -21,6 +21,7 @@ class Github::Sync
     track_changes_requested
     track_new_commits
     track_team_ready
+    track_looks_ready
     resolve_waiting
 
     Setting[SYNCED_AT] = started_at.iso8601
@@ -35,7 +36,8 @@ class Github::Sync
     data = Github::Cli.run("api", "graphql", "-f", "query=#{QUERY}",
       "-f", "mine=is:pr is:open author:@me archived:false",
       "-f", "requested=is:pr is:open review-requested:@me archived:false",
-      "-f", "queue=is:pr is:open draft:false -author:@me archived:false #{repos.map { "repo:#{it}" }.join(' ')}",
+      # Every open PR in the repos you watch, drafts too, for the GitHub page's All tab.
+      "-f", "queue=is:pr is:open -author:@me archived:false #{repos.map { "repo:#{it}" }.join(' ')}",
       # The one big query; GitHub can be slow to answer it.
       "-F", "withQueue=#{repos.any?}", json: true, timeout: 60).fetch("data")
     @me = data.dig("viewer", "login")
@@ -95,15 +97,15 @@ class Github::Sync
 
   def record_thread(thread, path, occurred_at, row, found)
     actor, body, activity = found
-    return row.update!(reason: thread["reason"], pr_key: "#{path[:repo]}##{path[:number]}", occurred_at:, read_at: Time.current) if activity == :covered
+    return row.update!(reason: quiet_reason(thread), pr_key: "#{path[:repo]}##{path[:number]}", occurred_at:, read_at: Time.current) if activity == :covered
     # A reply only counts in a thread you're part of, unless it mentions you.
     if activity == :others_thread
-      return row.update!(reason: thread["reason"], pr_key: "#{path[:repo]}##{path[:number]}", occurred_at:, read_at: Time.current) unless thread["reason"].in?(%w[mention team_mention])
+      return row.update!(reason: quiet_reason(thread), pr_key: "#{path[:repo]}##{path[:number]}", occurred_at:, read_at: Time.current) unless thread["reason"].in?(%w[mention team_mention])
 
       activity = "reply"
     end
     # Your own activity and bots' (CI reports and the like) aren't news.
-    return row.update!(reason: thread["reason"], pr_key: "#{path[:repo]}##{path[:number]}", occurred_at:, read_at: Time.current) if actor == me || actor.to_s.end_with?("[bot]")
+    return row.update!(reason: quiet_reason(thread), pr_key: "#{path[:repo]}##{path[:number]}", occurred_at:, read_at: Time.current) if actor == me || actor.to_s.end_with?("[bot]")
 
     # Review requests are tracked from who's currently requested (track_review_requests),
     # so the thread only counts for what else happened on it.
@@ -113,6 +115,10 @@ class Github::Sync
     row.update!(reason:, pr_key: "#{path[:repo]}##{path[:number]}", title: thread.dig("subject", "title"),
       actor:, body:, occurred_at:, read_at: (Time.current if @first_sync), resolved_at: nil, resolution: nil)
   end
+
+  # What a thread that isn't news is kept as. Review requests are tracked from who's
+  # currently requested (track_review_requests), so one here would wait on you twice.
+  def quiet_reason(thread) = thread["reason"] == "review_requested" ? "comment" : thread["reason"]
 
   def latest_comment(thread, path)
     url = thread.dig("subject", "latest_comment_url").presence or return
@@ -133,11 +139,44 @@ class Github::Sync
   end
 
   # A review requested from you waits on you until you're no longer requested.
+  # A request to review. One that comes after you've reviewed is the author asking
+  # for another look (GitHub's "Re-request review"), so each round is its own.
   def track_review_requests
     @pull_requests.each_value.select { it[:requested_from_me] }.each do |pr|
-      GithubNotification.create_with(reason: "review_requested", pr_key: pr[:key], title: pr[:title], actor: pr[:author],
+      reviewed = my_review(pr)
+      GithubNotification.create_with(reason: reviewed ? "re_review_requested" : "review_requested", pr_key: pr[:key], title: pr[:title], actor: pr[:author],
         occurred_at: Time.zone.parse(pr[:updated]), read_at: (Time.current if @first_sync))
-        .find_or_create_by!(thread_id: "review-#{pr[:key]}")
+        .find_or_create_by!(thread_id: reviewed ? "review-#{pr[:key]}-#{Time.zone.parse(reviewed[:submitted_at]).to_i}" : "review-#{pr[:key]}")
+    end
+  end
+
+  def my_review(pr) = pr[:reviews].to_a.find { it[:login] == me && it[:submitted_at] }
+
+  # A PR you reviewed that looks ready for another look though nobody asked, when
+  # turned on in Settings: since your review, the author (a person, not a bot)
+  # pushed, answered or resolved every thread you started, CI passes, and they've
+  # been quiet for a while. Once per round of review; a re-request says it better.
+  LOOKS_READY_QUIET = 30.minutes
+
+  def track_looks_ready
+    return unless Notifier.looks_ready?
+
+    @pull_requests.each_value.each do |pr|
+      reviewed = my_review(pr) or next
+      next if pr[:mine] || pr[:draft] || pr[:author_bot] || pr[:requested_from_me] || pr[:ci] != "passing"
+
+      since = Time.zone.parse(reviewed[:submitted_at])
+      pushed = pr[:last_commit_at] && Time.zone.parse(pr[:last_commit_at])
+      next unless pushed && pushed > since
+
+      threads = Github::ReviewThreads.all(*pr[:key].split("#")).select { it[:comments].first&.dig(:author) == me }
+      answered = threads.all? { |t| t[:resolved] || t[:comments].drop(1).any? { it[:author] == pr[:author] } }
+      last_said = threads.flat_map { it[:comments] }.select { it[:author] == pr[:author] }.map { Time.zone.parse(it[:at]) }.max
+      next unless answered && [ pushed, last_said ].compact.max < LOOKS_READY_QUIET.ago
+
+      GithubNotification.create_with(reason: "looks_ready", pr_key: pr[:key], title: pr[:title], actor: pr[:author],
+        body: "New commits, your threads answered, CI passing", occurred_at: [ pushed, last_said ].compact.max)
+        .find_or_create_by!(thread_id: "looks-ready-#{pr[:key]}-#{since.to_i}")
     end
   end
 
@@ -228,7 +267,7 @@ class Github::Sync
   def resolve_waiting
     open = GithubNotification.where(resolved_at: nil)
 
-    open.where(reason: "review_requested").find_each do |n|
+    open.where(reason: %w[review_requested re_review_requested]).find_each do |n|
       pr = @pull_requests[n.pr_key]
       resolve(n, pr&.dig(:reviews)&.any? { it[:login] == me } ? "You reviewed it" : "No longer requested from you") unless pr&.dig(:requested_from_me)
     end

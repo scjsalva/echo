@@ -10,8 +10,8 @@ defineEmits<{ select: [] }>()
   >
     <span class="flex min-h-5 items-center"><slot name="lead" /></span>
     <span class="flex min-w-0 flex-col">
-      <span class="text-[13px] font-medium break-words"><slot /></span>
-      <span v-if="$slots.sub" class="line-clamp-3 text-[12.5px] text-muted break-words"><slot name="sub" /></span>
+      <span class="text-[13px] font-medium wrap-anywhere"><slot /></span>
+      <span v-if="$slots.sub" class="line-clamp-3 text-[12.5px] text-muted wrap-anywhere"><slot name="sub" /></span>
     </span>
   </button>
 </template>

@@ -21,7 +21,8 @@ class Jira::TicketDetail
 
   def to_h
     {
-      key: @key, url: url(@key), description: text(@fields["description"]), environment: text(@fields["environment"]),
+      key: @key, url: url(@key), title: @fields["summary"], type: @fields.dig("issuetype", "name"), status: @fields.dig("status", "name"),
+      description: text(@fields["description"]), environment: text(@fields["environment"]),
       creator: name(@fields["creator"]), created: @fields["created"], updated: @fields["updated"], due: @fields["duedate"],
       resolution: @fields.dig("resolution", "name"), resolved: @fields["resolutiondate"],
       labels: Array(@fields["labels"]), components: names(@fields["components"]),

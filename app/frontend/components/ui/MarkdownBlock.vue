@@ -18,5 +18,5 @@ const html = computed(() =>
 
 <template>
   <!-- eslint-disable-next-line vue/no-v-html -->
-  <div class="markdown break-words" v-html="html" />
+  <div class="markdown wrap-anywhere" v-html="html" />
 </template>

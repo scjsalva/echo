@@ -1,9 +1,10 @@
 require "open3"
 
 # Runs the GitHub CLI (gh), which handles GitHub login and API access for Echo.
-# gh's login can do anything you can, so Echo only allows reads, plus two writes
+# gh's login can do anything you can, so Echo only allows reads, plus the writes
 # you ask for yourself: marking a notification read (keeping GitHub's inbox in
-# step with Echo's) and sending a review you wrote.
+# step with Echo's), sending a review you wrote, and replying to, resolving or
+# unresolving a review thread.
 module Github::Cli
   class Error < StandardError; end
   class NotInstalled < Error; end
@@ -38,10 +39,13 @@ module Github::Cli
 
     method = args.each_cons(2).find { |flag, _| flag.in?(%w[-X --method]) }&.last || "GET"
     path = api_path(args)
-    return args.none? { it.to_s.match?(/\bmutation\b/i) } if path == "graphql"
+    return args.none? { it.to_s.match?(/\bmutation\b/i) && !thread_action?(it) } if path == "graphql"
 
     method == "GET" || (method == "PATCH" && path.match?(READ_THREAD)) || (method == "POST" && path.match?(CREATE_REVIEW))
   end
+
+  # Replying to, resolving or unresolving a review thread: exactly these mutations, nothing else.
+  def self.thread_action?(arg) = arg.to_s.delete_prefix("query=").in?(Github::ReviewThreadActions::MUTATIONS)
 
   FLAGS_WITH_VALUES = %w[-X --method -f --raw-field -F --field -H --header -q --jq -t --template --input].freeze
 

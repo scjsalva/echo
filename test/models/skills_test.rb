@@ -23,6 +23,16 @@ class SkillsTest < ActiveSupport::TestCase
     assert_includes Skills.available(repo: "acme/app").map(&:id), "repo:house-rules"
   end
 
+  test "Rewrite in your words has no skill until you choose one of yours" do
+    assert_nil Skills.for("rewrite")
+    rewrite = Skills.props([]).find { it[:action] == "rewrite" }
+    assert_equal [ true, nil ], rewrite.values_at(:optional, :current)
+    assert rewrite[:options].none? { it[:source] == "echo" }, "Echo's own skills aren't offered for it"
+
+    Skills.choose("rewrite", "user:strict-review")
+    assert_equal "strict-review", Skills.for("rewrite").name
+  end
+
   test "a repo override wins, then the action's choice, then Echo's own" do
     assert_equal "echo:echo-review", Skills.for("ai_review", repo: "acme/app").id
 

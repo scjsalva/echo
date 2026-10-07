@@ -26,8 +26,9 @@ module DesktopNotification
   end
 
   # `url` is where clicking it should take you (macOS only, for now).
-  def self.show(title:, message:, subtitle: "", sound: nil, url: nil)
-    adapter.show(title:, message:, subtitle:, sound:, url:) if available?
+  # `source` (agent, github or jira) colours the logo on the banner, where the platform allows it.
+  def self.show(title:, message:, subtitle: "", sound: nil, url: nil, source: nil)
+    adapter.show(title:, message:, subtitle:, sound:, url:, source:) if available?
   end
 
   # Echo's address, for links in notifications. Saved where the macOS helper can read it too.

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { PhChecks } from '@phosphor-icons/vue'
 import AppShell from '@/components/layout/AppShell.vue'
 import DrawerHost from '@/components/drawers/DrawerHost.vue'
@@ -11,27 +11,26 @@ import FilterChips from '@/components/ui/FilterChips.vue'
 import ListRow from '@/components/ui/ListRow.vue'
 import SourceBadge from '@/components/ui/SourceBadge.vue'
 import { provideDashboard } from '@/composables/useDashboard'
-import { useDeepLink } from '@/composables/useDeepLink'
+import { useUrlParam } from '@/composables/useUrlState'
 import { provideDrawer } from '@/composables/useDrawer'
 import { useNow } from '@/composables/useNow'
 import { timeAgo } from '@/lib/format'
-import { sourceBadge, waitingSummary } from '@/lib/waiting'
+import { sourceBadge, waitingSummary, waitingTarget } from '@/lib/waiting'
 import type { Connection, OverviewProps, WaitingItem } from '@/types/dashboard'
 
 const props = defineProps<Omit<OverviewProps, 'stats' | 'reviewQueue'> & { connections: Connection[] }>()
 
-const { data, refreshFailed, markAllRead } = provideDashboard(props, '/api/notifications')
+const dashboard = provideDashboard(props, '/api/notifications')
+const { data, refreshFailed, markAllRead } = dashboard
 const { open } = provideDrawer()
 const now = useNow(30_000)
 
 type Tab = 'waiting' | 'all' | 'jira' | 'github'
-const tab = ref<Tab>('all')
-useDeepLink((params) => {
-  const linked = params.get('tab')
-  if (linked === 'waiting' || linked === 'jira' || linked === 'github') tab.value = linked
-})
-const status = ref<WaitingItem['status']>('open')
-const unreadOnly = ref(false)
+// Kept in the address bar (e.g. ?tab=waiting&status=resolved), so a reload or a link shows the same list.
+const tab = useUrlParam<Tab>('tab', 'all', ['waiting', 'all', 'jira', 'github'])
+const status = useUrlParam<WaitingItem['status']>('status', 'open', ['open', 'resolved', 'dismissed'])
+const show = useUrlParam<'everything' | 'unread'>('show', 'everything', ['everything', 'unread'])
+const unreadOnly = computed({ get: () => show.value === 'unread', set: (on) => (show.value = on ? 'unread' : 'everything') })
 
 const waiting = computed(() => data.value.waiting?.items ?? [])
 const jira = computed(() => data.value.jiraNotifications ?? [])
@@ -74,7 +73,7 @@ const notifications = computed(() =>
         <FilterChips v-model="status" :options="statuses" label="Waiting status" />
         <div class="overflow-hidden rounded-[10px] border border-line bg-surface">
           <p v-if="!waitingItems.length" class="px-4 py-6 text-center text-[13px] text-faint">Nothing here.</p>
-          <ListRow v-for="item in waitingItems" :key="item.key" @select="open({ type: 'waiting', key: item.key })">
+          <ListRow v-for="item in waitingItems" :key="item.key" @select="open(waitingTarget(item, dashboard))">
             <template #lead>
               <SourceBadge :tone="item.source === 'jira' ? 'jira' : 'default'">{{ sourceBadge[item.source] }}</SourceBadge>
             </template>

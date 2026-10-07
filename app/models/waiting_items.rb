@@ -3,6 +3,7 @@
 class WaitingItems
   GITHUB_REASONS = {
     "review_requested" => { label: "Review request", clears: "Clears when you submit a review." },
+    "re_review_requested" => { label: "Review again", clears: "Clears when you submit a review." },
     "mention" => { label: "Mention", clears: "Clears when you comment on or review the PR." },
     "team_mention" => { label: "Team mention", clears: "Clears when you comment on or review the PR." },
     "changes_requested" => { label: "Changes requested", clears: "Clears when you push new commits or re-request review." }

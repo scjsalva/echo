@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import AppShell from '@/components/layout/AppShell.vue'
 import AgentName from '@/components/agents/AgentName.vue'
 import EndedSessions from '@/components/agents/EndedSessions.vue'
@@ -10,6 +10,7 @@ import StatusDot from '@/components/ui/StatusDot.vue'
 import TableCard from '@/components/ui/TableCard.vue'
 import { provideDashboard } from '@/composables/useDashboard'
 import { useDeepLink } from '@/composables/useDeepLink'
+import { useUrlParam } from '@/composables/useUrlState'
 import { provideDrawer } from '@/composables/useDrawer'
 import { useNow } from '@/composables/useNow'
 import { formatTokens, timeAgo } from '@/lib/format'
@@ -27,7 +28,8 @@ useDeepLink((params) => {
 const now = useNow(30_000)
 
 type Filter = 'all' | 'waiting' | 'loops' | 'background' | 'echo'
-const filter = ref<Filter>('all')
+// Kept in the address bar (?filter=waiting), so a reload or a link shows the same list.
+const filter = useUrlParam<Filter>('filter', 'all', ['all', 'waiting', 'loops', 'background', 'echo'])
 
 const matches: Record<Filter, (a: Agent) => boolean> = {
   all: () => true,

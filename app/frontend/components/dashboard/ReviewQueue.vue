@@ -15,11 +15,11 @@ const requested = computed(() => props.items.filter((pr) => pr.requestedFromMe).
   <section>
     <SectionHeader
       title="Review queue"
-      :meta="`${total} ready · ${requested} requested from you`"
-      href="/github"
+      :meta="`${total} from your team · ${requested} requested from you`"
+      href="/github?tab=team&status=ready"
     />
     <div class="overflow-hidden rounded-[10px] border border-line bg-surface">
-      <p v-if="!items.length" class="px-4 py-5 text-[13px] text-faint">Nothing is ready for review.</p>
+      <p v-if="!items.length" class="px-4 py-5 text-[13px] text-faint">Nothing from your team is ready for review.</p>
       <PullRequestRow v-for="pr in items" :key="pr.key" :pr="pr" :now="now" />
     </div>
   </section>

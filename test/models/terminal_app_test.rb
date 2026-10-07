@@ -26,6 +26,14 @@ class TerminalAppTest < ActiveSupport::TestCase
     assert_equal [ [ "wt", "cmd", "/k", "gh auth login" ], [ "cmd", "/c", "start", "", "cmd", "/k", "gh auth login" ] ], spawned
   end
 
+  test "on macOS, opens a tab in Terminal, or a window when the tab can't be opened" do
+    calls = []
+    Platform.stub(:current, :mac) do
+      TerminalApp.stub(:system, ->(*args, **) { calls << args.last; calls.size > 1 }) { TerminalApp.run_in_tab("claude") }
+    end
+    assert_equal [ "claude", "claude" ], calls, "tab first, then a window"
+  end
+
   test "says what to run when no terminal can be opened" do
     error = Platform.stub(:current, :linux) do
       Platform.stub(:command?, false) { assert_raises(TerminalApp::Error) { TerminalApp.run("gh auth login") } }

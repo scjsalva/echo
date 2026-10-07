@@ -350,4 +350,18 @@ class ApiTest < ActionDispatch::IntegrationTest
     assert jira.reload.read_at
     assert github.reload.read_at
   end
+
+  test "find me work starts once, and says so when it's already running" do
+    started = []
+    Jira::FindWork.stub(:list, { tickets: [], top: 5, running: true, summarised: 0, error: nil }) do
+      FindWorkJob.stub(:perform_later, ->(keys) { started << keys }) do
+        post "/api/jira/work", params: { key: "APP-1" }, as: :json
+        assert_response :success
+        assert_equal [ [ "APP-1" ] ], started
+      end
+    end
+
+    Jira::FindWork.stub(:running?, true) { post "/api/jira/work", as: :json }
+    assert_response :conflict
+  end
 end

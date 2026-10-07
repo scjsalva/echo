@@ -21,6 +21,8 @@ const desktop = useDraftValue(props.settings.desktop)
 const scope = useDraftValue(props.settings.scope)
 const enabled = useDraftValue(new Set(props.settings.enabledTypes))
 const sound = useDraftValue(props.settings.sound)
+const looksReady = useDraftValue(props.settings.looksReady)
+const colouredIcons = useDraftValue(props.settings.colouredIcons)
 const reminder = useDraftValue(props.settings.reminderMinutes)
 const hours = useDraftValue({ ...props.settings.workingHours })
 
@@ -96,7 +98,7 @@ async function sendTest() {
       <SegmentedControl v-model="scope" :options="scopes" label="Notify me about" @update:model-value="stage('notify_scope', { notify_scope: $event })" />
     </SettingRow>
 
-    <div v-if="scope === 'custom'" class="grid gap-4 pb-3 sm:grid-cols-3" aria-label="Notifications to send">
+    <div v-if="scope === 'custom'" class="grid grid-cols-[minmax(0,1fr)] gap-4 pb-3 sm:grid-cols-3" aria-label="Notifications to send">
       <div v-for="(column, c) in columns" :key="c" class="grid content-start gap-4">
         <fieldset v-for="[group, types] in column" :key="group" class="grid content-start gap-1.5">
           <legend class="mb-1.5 text-[11px] font-medium tracking-[0.07em] text-faint uppercase">{{ group }}</legend>
@@ -142,7 +144,7 @@ async function sendTest() {
           {{ DAYS[day] }}
         </button>
       </div>
-      <label class="flex items-center gap-2 text-[13px] text-muted">
+      <label class="flex flex-wrap items-center gap-2 text-[13px] text-muted">
         From
         <input v-model="hours.start" type="time" aria-label="Start" class="rounded-md border border-line bg-surface px-2 py-1 text-[13px] text-ink" @change="stageHours" />
         to
@@ -166,6 +168,27 @@ async function sendTest() {
     >
       <option v-for="minutes in settings.reminderOptions" :key="minutes" :value="minutes">{{ every(minutes) }}</option>
     </select>
+  </SettingRow>
+
+  <SettingRow>
+    <template #title>Looks ready for another look</template>
+    <template #description>
+      A guess, for authors who don't re-request your review: on a PR you reviewed, the author (a person, not a bot) pushed new commits,
+      answered or resolved every thread you started, CI passes, and they've been quiet for 30 minutes. Once per round. A re-request
+      always tells you, as "asked you to review again".
+    </template>
+    <ToggleSwitch v-model="looksReady" label="Looks ready for another look" @update:model-value="stage('notify_looks_ready', { notify_looks_ready: $event })" />
+  </SettingRow>
+
+  <SettingRow v-if="settings.colouredIconsAvailable">
+    <template #title>Colour-coded icons</template>
+    <template #description>
+      Each OS notification shows Echo's icon in its source's colour: orange for agents, purple for GitHub, blue for Jira. macOS
+      ties a notification's icon to the app that sends it, so this uses three small helper apps, one per source. macOS asks you
+      to allow each one once, and each gets its own entry in System Settings → Notifications. Off, every notification comes
+      from Echo, with one icon and one permission.
+    </template>
+    <ToggleSwitch v-model="colouredIcons" label="Colour-coded icons" @update:model-value="stage('notify_coloured_icons', { notify_coloured_icons: $event })" />
   </SettingRow>
 
   <SettingRow>

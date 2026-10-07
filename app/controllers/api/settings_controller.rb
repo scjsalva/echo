@@ -8,7 +8,7 @@ class Api::SettingsController < ApplicationController
       WorkingHours.update(enabled: hours[:enabled], days: hours[:days], start: hours[:start], finish: hours[:end])
     end
     Notifier.update(desktop: params[:notify_desktop], scope: params[:notify_scope], sound: params[:notify_sound], types: params[:notify_types],
-      reminder_minutes: params[:review_reminder_minutes])
+      reminder_minutes: params[:review_reminder_minutes], looks_ready: params[:notify_looks_ready], coloured_icons: params[:notify_coloured_icons])
     Github::Preferences.update(repos: params[:github_repos], team: params[:github_team])
     Github::LocalRepos.set(params.dig(:github_local_repo, :repo), params.dig(:github_local_repo, :path)) if params.key?(:github_local_repo)
     render json: camelize(time_zone: LocalTimeZone.props.except(:options), notifications: Notifier.preferences, github: Github::Preferences.props)

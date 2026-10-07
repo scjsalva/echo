@@ -8,7 +8,7 @@ class ReviewsController < ApplicationController
     @props = {
       shell: Dashboard.current.shell_props, agents: [],
       pull_request: GithubPullRequest.find_by(key: review.pr_key)&.data || Github::PullRequest.from_rest(live, me: Github::Connection.login),
-      head_sha: live.dig("head", "sha"), merged_at: (live["merged_at"] if live["merged"]), files: Github::PullRequestFiles.fetch(repo, params[:number]), review: review.to_props
+      rewrite_skill: Rewriter.skill&.name, head_sha: live.dig("head", "sha"), merged_at: (live["merged_at"] if live["merged"]), files: Github::PullRequestFiles.fetch(repo, params[:number]), review: review.to_props
     }
   rescue Github::Cli::Error => e
     @props = { shell: Dashboard.current.shell_props, agents: [], error: e.message }

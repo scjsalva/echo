@@ -2,9 +2,10 @@ import { computed, inject, provide, ref, type ComputedRef, type InjectionKey, ty
 import type { JiraTicket } from '@/types/dashboard'
 
 export type DrawerTarget =
-  | { type: 'agent'; id: string }
-  | { type: 'pullRequest'; key: string; notificationId?: string }
-  | { type: 'ticket'; key: string; notificationId?: string; ticket?: JiraTicket }
+  // `waitingKey`: opened from Waiting on you, so the drawer can dismiss that item.
+  | { type: 'agent'; id: string; waitingKey?: string }
+  | { type: 'pullRequest'; key: string; notificationId?: string; waitingKey?: string }
+  | { type: 'ticket'; key: string; notificationId?: string; ticket?: JiraTicket; waitingKey?: string }
   | { type: 'waiting'; key: string }
   | { type: 'transcript'; id: string; title: string }
 

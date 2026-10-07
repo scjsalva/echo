@@ -53,11 +53,12 @@ function choose(action: SkillAction['action'], skill: string | null, repo?: stri
       const row = entry.repos.find((r) => r.repo === repo)
       if (row) {
         row.override = skill
-        row.current = row.options.find((o) => o.id === skill) ?? entry.current
+        row.current = row.options.find((o) => o.id === skill) ?? entry.current ?? row.current
       }
     } else {
-      entry.current = entry.options.find((o) => o.id === skill) ?? entry.current
-      entry.repos.filter((r) => !r.override).forEach((r) => (r.current = entry.current))
+      // An optional action (Rewrite in your words) can go back to none.
+      entry.current = entry.options.find((o) => o.id === skill) ?? (entry.optional ? null : entry.current)
+      entry.repos.filter((r) => !r.override).forEach((r) => (r.current = entry.current ?? r.current))
     }
   }
   draft.stage(`skill:${action}:${repo ?? ''}`, async () => {
@@ -73,7 +74,7 @@ const size = (files: ContextFile[]) => `${Math.max(1, Math.round(files.reduce((n
     <p class="text-muted">
       Repo instructions come from your clone (or the default branch of Echo's copy), never from the PR being reviewed.
     </p>
-    <div class="grid gap-2 sm:grid-cols-2">
+    <div class="grid grid-cols-[minmax(0,1fr)] gap-2 sm:grid-cols-2">
       <div class="grid content-start gap-1">
         <p class="text-[11px] font-medium tracking-[0.07em] text-faint uppercase">Always · {{ size(context.global) }}</p>
         <p v-if="!context.global.length" class="text-faint">No ~/.claude/CLAUDE.md</p>
@@ -139,13 +140,18 @@ const size = (files: ContextFile[]) => `${Math.max(1, Math.round(files.reduce((n
     <SettingRow>
       <template #title>{{ action.label }}</template>
       <template #description>
-        {{ action.current.description || action.current.name }}
+        <template v-if="action.current">{{ action.current.description || action.current.name }}</template>
+        <template v-else-if="action.action === 'rewrite'">
+          Choose one of your own skills to add a button to review comments and the review summary that rewrites them with it, e.g. so a
+          finding reads as if you wrote it. Off until you do.
+        </template>
         <template v-if="action.perRepo"> You can use a different skill for each repo below.</template>
       </template>
       <SkillSelect
-        :model-value="action.current.id"
+        :model-value="action.current?.id ?? null"
         :options="action.options"
         :label="`Skill for ${action.label}`"
+        :inherit-label="action.optional ? 'None' : undefined"
         @update:model-value="choose(action.action, $event)"
       />
     </SettingRow>

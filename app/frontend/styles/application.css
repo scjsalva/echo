@@ -27,6 +27,9 @@
   --color-bad: #c63d3d;
   --color-bad-soft: #fbe3e3;
   --color-jira: #1f6fe5;
+  /* Each source's colour on notification popups: agents orange, GitHub purple (Jira is blue above). */
+  --color-agent: #e8710a;
+  --color-github: #8250df;
   --color-idle: #9aa1ad;
   --color-ai-from: #4f52c9;
   --color-ai-to: #b24fd1;
@@ -53,6 +56,8 @@
   --color-bad: #ef7272;
   --color-bad-soft: #3a1b1b;
   --color-jira: #5c9dff;
+  --color-agent: #f59e4b;
+  --color-github: #a87ff0;
   --color-idle: #5f6674;
   --color-ai-from: #9497f5;
   --color-ai-to: #d58af7;
@@ -61,6 +66,12 @@
 @layer base {
   body {
     @apply bg-canvas font-sans text-sm text-ink antialiased;
+  }
+  /* A grid with no column template gets an auto column, which grows to its
+     widest content's minimum (a long URL, a select, a table) and pushes the
+     page past a phone's edge. One column that can shrink keeps it inside. */
+  .grid:not([class*="grid-cols"]) {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   button {
@@ -75,7 +86,7 @@
 /* Rendered Markdown, e.g. PR descriptions. */
 @layer components {
   .markdown {
-    @apply grid gap-2.5 text-[13.5px] leading-relaxed;
+    @apply grid grid-cols-[minmax(0,1fr)] gap-2.5 text-[13.5px] leading-relaxed;
   }
   .markdown :is(h1, h2, h3, h4) {
     @apply mt-2 text-[13.5px] font-semibold;

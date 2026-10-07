@@ -2,8 +2,8 @@
 # Times are durations ago (4m, 20h, 3d) or ahead (in 3m).
 
 me:
-  github_login: johnsalva
-  jira_name: John Salva
+  github_login: alexkim
+  jira_name: Alex Kim
 
 github_org: acme
 jira_site: acme.atlassian.net
@@ -118,18 +118,18 @@ agents:
       - { id: c2, kind: cron, description: /jira-watch, cron: "*/5 * * * *", started_at: 26h, next_run_at: in 3m, events: 309 }
 
 pull_requests:
-  - { repo: web, number: 26984, jira_key: APP-41029, author: johnsalva, ci: passing, review_state: review_required, approvals: 1, approvals_required: 2, opened: 2d, updated: 13m, additions: 64, deletions: 18, changed_files: 5, commits: 4,
+  - { repo: web, number: 26984, jira_key: APP-41029, author: alexkim, ci: passing, review_state: review_required, approvals: 1, approvals_required: 2, opened: 2d, updated: 13m, additions: 64, deletions: 18, changed_files: 5, commits: 4,
       title: Label the default-language title and description on item edit,
       summary: Adds visible labels to the default-language title and description fields on the item edit form, so screen readers and translators know which language they are editing.,
       reviews: [{ login: mchen, state: commented }, { login: tsilva, state: approved }] }
-  - { repo: web, number: 26979, jira_key: APP-41207, author: johnsalva, ci: failing, review_state: approved, approvals: 1, approvals_required: 1, opened: 24h, updated: 5h, additions: 6, deletions: 2, changed_files: 2, commits: 1,
+  - { repo: web, number: 26979, jira_key: APP-41207, author: alexkim, ci: failing, review_state: approved, approvals: 1, approvals_required: 1, opened: 24h, updated: 5h, additions: 6, deletions: 2, changed_files: 2, commits: 1,
       title: Pin the internal MCP server to a single uvicorn worker,
       summary: Runs the internal MCP server with one uvicorn worker so sessions stay on the process that created them. CI fails on an unrelated flaky spec.,
       reviews: [{ login: riyer, state: approved }] }
-  - { repo: editor, number: 1418, jira_key: APP-41246, author: johnsalva, draft: true, ci: running, review_state: draft, opened: 3h, updated: 35m, additions: 412, deletions: 37, changed_files: 11, commits: 6,
+  - { repo: editor, number: 1418, jira_key: APP-41246, author: alexkim, draft: true, ci: running, review_state: draft, opened: 3h, updated: 35m, additions: 412, deletions: 37, changed_files: 11, commits: 6,
       title: Upload videos straight from the slash menu,
       summary: Adds a Video item to the slash menu that uploads straight to storage and inserts a player block when the upload finishes. }
-  - { repo: web, number: 26982, jira_key: APP-41238, author: johnsalva, ci: passing, review_state: changes_requested, opened: 26h, updated: 6h, additions: 2, deletions: 44, changed_files: 3, commits: 1,
+  - { repo: web, number: 26982, jira_key: APP-41238, author: alexkim, ci: passing, review_state: changes_requested, opened: 26h, updated: 6h, additions: 2, deletions: 44, changed_files: 3, commits: 1,
       title: Remove the unused yamljs dependency,
       summary: Removes yamljs from package.json and the one dead import that referenced it.,
       reviews: [{ login: dnovak, state: changes_requested }] }
@@ -144,7 +144,7 @@ pull_requests:
   - { repo: web, number: 26952, jira_key: APP-41155, author: tsilva, ci: passing, review_state: review_required, opened: 3d, updated: 2h, additions: 31, deletions: 9, changed_files: 2, commits: 3,
       title: Stop a resumed CSV export downloading itself on page load,
       summary: A resumed CSV export no longer triggers a download when the page loads. The download only starts from the notification link.,
-      reviews: [{ login: johnsalva, state: commented }, { login: dnovak, state: approved }] }
+      reviews: [{ login: alexkim, state: commented }, { login: dnovak, state: approved }] }
   - { repo: web, number: 26988, jira_key: APP-41260, author: mchen, ci: passing, review_state: review_required, opened: 4h, updated: 4h, additions: 310, deletions: 95, changed_files: 8, commits: 2,
       title: Paginate the user activity export,
       summary: Splits the user activity export into pages of 5,000 rows so large tenants stop timing out. }
@@ -160,12 +160,12 @@ pull_requests:
   - { repo: web, number: 26961, jira_key: APP-41190, author: agomez, ci: passing, review_state: approved, opened: 2d, updated: 30h, additions: 12, deletions: 0, changed_files: 2, commits: 1,
       title: Add an index on activity_records.completed_at,
       summary: Adds a concurrent index on activity_records.completed_at to speed up the completions report.,
-      reviews: [{ login: johnsalva, state: approved }] }
+      reviews: [{ login: alexkim, state: approved }] }
 
 github_notifications:
   - { id: g1, reason: review_requested, repo: web, number: 26974, actor: dnovak, at: 9m, unread: true }
   - { id: g2, reason: comment, repo: web, number: 26984, actor: mchen, body: Can we keep the label visually hidden on mobile?, at: 13m, unread: true }
-  - { id: g3, reason: mention, repo: assistant, number: 612, actor: riyer, body: "@johnsalva does this clash with your cursor fix?", at: 52m, unread: true }
+  - { id: g3, reason: mention, repo: assistant, number: 612, actor: riyer, body: "@alexkim does this clash with your cursor fix?", at: 52m, unread: true }
   - { id: g4, reason: follow_up, repo: web, number: 26952, actor: tsilva, body: Pushed 2 commits after your review, at: 2h }
   - { id: g7, reason: review_requested, repo: web, number: 26993, actor: kbauer, at: 3h, unread: true }
   - { id: g8, reason: review_requested, repo: web, number: 26988, actor: mchen, at: 4h }
@@ -173,35 +173,35 @@ github_notifications:
   - { id: g6, reason: ci_activity, repo: web, number: 26979, actor: github-actions, body: "CI failed: spec/models/session_spec.rb", at: 5h }
   - { id: g5, reason: comment, repo: web, number: 26982, actor: dnovak, body: The lockfile still pulls yamljs in through swagger-ui., at: 6h }
   - { id: g9, reason: review_requested, repo: editor, number: 1409, actor: epark, at: 9h }
-  - { id: g10, reason: mention, repo: web, number: 26941, actor: tsilva, body: "@johnsalva is per-request caching enough here or do we need Redis?", at: 20h }
+  - { id: g10, reason: mention, repo: web, number: 26941, actor: tsilva, body: "@alexkim is per-request caching enough here or do we need Redis?", at: 20h }
   - { id: g11, reason: review_requested, repo: web, number: 26961, actor: agomez, at: 30h, resolution: You approved it on GitHub }
 
 jira_tickets:
-  - { key: APP-41029, type: Story, status: Code Review, category: code_review, priority: Medium, assignee: John Salva, reporter: Maya Chen, sprint: Squad Nova · Sprint 42, pr: web#26984, updated: 20m,
+  - { key: APP-41029, type: Story, status: Code Review, category: code_review, priority: Medium, assignee: Alex Kim, reporter: Maya Chen, sprint: Squad Nova · Sprint 42, pr: web#26984, updated: 20m,
       title: Label the default-language title and description on item edit,
       description: Screen reader users can’t tell which language the title and description fields are in. Add a visible label with the default language name. }
-  - { key: APP-41246, type: Story, status: In Progress, category: in_progress, priority: High, assignee: John Salva, reporter: Ellie Park, sprint: Squad Nova · Sprint 42, pr: editor#1418, updated: 35m,
+  - { key: APP-41246, type: Story, status: In Progress, category: in_progress, priority: High, assignee: Alex Kim, reporter: Ellie Park, sprint: Squad Nova · Sprint 42, pr: editor#1418, updated: 35m,
       title: Upload videos straight from the slash menu,
       description: Let authors upload a video from the slash menu and insert a player block when it finishes. }
-  - { key: APP-41155, type: Bug, status: Ready to Release, category: post_development, priority: High, assignee: John Salva, reporter: Ravi Iyer, sprint: Squad Nova · Sprint 42, pr: web#26952, updated: 2h,
+  - { key: APP-41155, type: Bug, status: Ready to Release, category: post_development, priority: High, assignee: Alex Kim, reporter: Ravi Iyer, sprint: Squad Nova · Sprint 42, pr: web#26952, updated: 2h,
       title: Resumed CSV export downloads itself on page load,
       description: Opening the reports page after a CSV export was resumed starts the download again. It should only download from the notification link. }
-  - { key: APP-41301, type: Task, status: To Do, category: todo, priority: Low, assignee: John Salva, reporter: Dana Novak, sprint: Backlog, updated: 4h,
+  - { key: APP-41301, type: Task, status: To Do, category: todo, priority: Low, assignee: Alex Kim, reporter: Dana Novak, sprint: Backlog, updated: 4h,
       title: Retry failed video uploads,
       description: Retry video uploads that fail with a 5xx from storage, up to three times with backoff. }
-  - { key: APP-41207, type: Bug, status: Code Review, category: code_review, priority: Highest, assignee: John Salva, reporter: Tomás Silva, sprint: Squad Nova · Sprint 42, pr: web#26979, updated: 5h,
+  - { key: APP-41207, type: Bug, status: Code Review, category: code_review, priority: Highest, assignee: Alex Kim, reporter: Tomás Silva, sprint: Squad Nova · Sprint 42, pr: web#26979, updated: 5h,
       title: Internal MCP server drops sessions under load,
       description: The internal MCP server loses sessions when a request lands on a different uvicorn worker than the one that created the session. }
   - { key: APP-41188, type: Bug, status: In Progress, category: in_progress, priority: Medium, assignee: Ellie Park, reporter: Ellie Park, sprint: Squad Nova · Sprint 42, updated: 3h,
       title: Product cards overflow in RTL layouts,
       description: Product card titles overflow their container on right-to-left tenants. }
-  - { key: APP-41102, type: Bug, status: Done, category: done, priority: Medium, assignee: John Salva, reporter: Maya Chen, sprint: Squad Nova · Sprint 42, updated: 2d,
+  - { key: APP-41102, type: Bug, status: Done, category: done, priority: Medium, assignee: Alex Kim, reporter: Maya Chen, sprint: Squad Nova · Sprint 42, updated: 2d,
       title: Duplicate toast when saving a draft playlist,
       description: Saving a draft playlist showed the success toast twice. }
-  - { key: APP-41088, type: Story, status: Done, category: done, priority: High, assignee: John Salva, reporter: Ellie Park, sprint: Squad Nova · Sprint 42, updated: 3d,
+  - { key: APP-41088, type: Story, status: Done, category: done, priority: High, assignee: Alex Kim, reporter: Ellie Park, sprint: Squad Nova · Sprint 42, updated: 3d,
       title: Show upload progress for large video files,
       description: Show a progress bar while a video file over 50 MB uploads. }
-  - { key: APP-41061, type: Task, status: Done, category: done, priority: Low, assignee: John Salva, reporter: Dana Novak, sprint: Squad Nova · Sprint 42, updated: 4d,
+  - { key: APP-41061, type: Task, status: Done, category: done, priority: Low, assignee: Alex Kim, reporter: Dana Novak, sprint: Squad Nova · Sprint 42, updated: 4d,
       title: Remove the legacy reports feature flag,
       description: The legacy reports flag has been on for every tenant for three months. }
 

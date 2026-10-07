@@ -8,6 +8,8 @@ module Github::NotificationText
     pr = mine ? "your PR" : "the PR"
     case reason
     when "review_requested" then "#{who} asked you to review"
+    when "re_review_requested" then "#{who} asked you to review again"
+    when "looks_ready" then "#{who}'s PR looks ready for another look"
     when "approved" then "#{who} approved #{pr}#{said}"
     when "reviewed" then "#{who} reviewed #{pr}#{said}"
     when "review_dismissed" then "#{who}'s review was dismissed"

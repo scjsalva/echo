@@ -17,6 +17,10 @@ function describe(n: Pick<GithubNotification, 'reason' | 'actor' | 'body' | 'min
   switch (n.reason) {
     case 'review_requested':
       return `${who} asked you to review`
+    case 're_review_requested':
+      return `${who} asked you to review again`
+    case 'looks_ready':
+      return `${who}'s PR looks ready for another look`
     case 'approved':
       return `${who} approved ${pr}${said}`
     case 'reviewed':

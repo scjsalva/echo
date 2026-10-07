@@ -1,15 +1,17 @@
 <script setup lang="ts">
 import ListRow from '@/components/ui/ListRow.vue'
 import SourceBadge from '@/components/ui/SourceBadge.vue'
+import { useDashboard } from '@/composables/useDashboard'
 import { useDrawer } from '@/composables/useDrawer'
 import { useNow } from '@/composables/useNow'
 import { timeAgo } from '@/lib/format'
-import { sourceBadge, waitingSummary } from '@/lib/waiting'
+import { sourceBadge, waitingSummary, waitingTarget } from '@/lib/waiting'
 import type { WaitingItem } from '@/types/dashboard'
 
 defineProps<{ items: WaitingItem[]; total: number }>()
 
 const { open } = useDrawer()
+const dashboard = useDashboard()
 const now = useNow(30_000)
 </script>
 
@@ -24,7 +26,7 @@ const now = useNow(30_000)
 
     <p v-if="!items.length" class="px-4 py-5 text-[13px] text-faint">Nothing is waiting on you.</p>
     <div class="border-t border-line-soft">
-      <ListRow v-for="item in items" :key="item.key" @select="open({ type: 'waiting', key: item.key })">
+      <ListRow v-for="item in items" :key="item.key" @select="open(waitingTarget(item, dashboard))">
         <template #lead>
           <SourceBadge :tone="item.source === 'jira' ? 'jira' : 'default'">{{ sourceBadge[item.source] }}</SourceBadge>
         </template>

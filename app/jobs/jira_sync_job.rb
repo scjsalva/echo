@@ -3,7 +3,10 @@ class JiraSyncJob < ApplicationJob
   def perform
     return unless Jira::Connection.connected?
 
-    SyncHealth.track("jira") { Jira::Sync.new.run }
+    SyncHealth.track("jira") do
+      Jira::Sync.new.run
+      Jira::BoardSync.new.run
+    end
     Changes.bump
     Notifier.deliver_new
   end

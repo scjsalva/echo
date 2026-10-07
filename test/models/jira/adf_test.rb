@@ -4,7 +4,7 @@ class Jira::AdfTest < ActiveSupport::TestCase
   DOC = {
     "type" => "doc", "content" => [
       { "type" => "paragraph", "content" => [
-        { "type" => "mention", "attrs" => { "id" => "me-1", "text" => "@John Salva" } },
+        { "type" => "mention", "attrs" => { "id" => "me-1", "text" => "@Alex Kim" } },
         { "type" => "text", "text" => " can you check?" }, { "type" => "hardBreak" }, { "type" => "text", "text" => "Thanks" }
       ] },
       { "type" => "bulletList", "content" => [
@@ -14,7 +14,7 @@ class Jira::AdfTest < ActiveSupport::TestCase
   }.freeze
 
   test "renders plain text with mentions, line breaks and list items" do
-    assert_equal "@John Salva can you check?\nThanks\n\n- one", Jira::Adf.to_text(DOC)
+    assert_equal "@Alex Kim can you check?\nThanks\n\n- one", Jira::Adf.to_text(DOC)
   end
 
   test "finds mentions of a given account" do

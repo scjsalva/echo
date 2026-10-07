@@ -2,8 +2,8 @@ require "test_helper"
 
 class Github::NotificationTextTest < ActiveSupport::TestCase
   test "says what happened, matching the in-app wording" do
-    assert_equal "jhon50 approved your PR", Github::NotificationText.for(reason: "approved", actor: "jhon50", body: nil, mine: true)
-    assert_equal "jhon50 approved the PR", Github::NotificationText.for(reason: "approved", actor: "jhon50", body: nil)
+    assert_equal "kwame approved your PR", Github::NotificationText.for(reason: "approved", actor: "kwame", body: nil, mine: true)
+    assert_equal "kwame approved the PR", Github::NotificationText.for(reason: "approved", actor: "kwame", body: nil)
     assert_equal %(dana requested changes: "Rename this"), Github::NotificationText.for(reason: "changes_requested", actor: "dana", body: "Rename this")
     assert_equal "New activity on this PR", Github::NotificationText.for(reason: "author", actor: nil, body: nil)
   end
@@ -16,7 +16,7 @@ class Github::NotificationTextTest < ActiveSupport::TestCase
   end
 
   test "a reply on a thread is a reply, not a review" do
-    assert_equal %(jhon50 replied: "fixed in 696214f"), Github::NotificationText.for(reason: "reply", actor: "jhon50", body: "fixed in 696214f")
+    assert_equal %(kwame replied: "fixed in 696214f"), Github::NotificationText.for(reason: "reply", actor: "kwame", body: "fixed in 696214f")
     assert_equal %(dana commented on the code: "nil here?"), Github::NotificationText.for(reason: "line_comment", actor: "dana", body: "nil here?")
   end
 end

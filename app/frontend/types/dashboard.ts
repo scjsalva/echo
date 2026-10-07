@@ -95,6 +95,7 @@ export type GithubReason =
   | 'review_requested' | 'comment' | 'mention' | 'team_mention' | 'follow_up' | 'changes_requested'
   | 'ci_activity' | 'author' | 'assign' | 'state_change' | 'subscribed' | 'manual'
   | 'approved' | 'reviewed' | 'review_dismissed' | 'merged' | 'closed' | 'ready_for_review' | 'changes_requested_other' | 'reply' | 'line_comment'
+  | 're_review_requested' | 'looks_ready'
 
 export interface GithubNotification {
   id: string
@@ -132,6 +133,38 @@ export interface JiraTicket {
   assignedToMe: boolean
   watching?: boolean
   reportedByMe?: boolean
+  /** The boards it's on, by id, each with its place in that board's order. */
+  boards?: Record<string, number>
+  /** Jira's sub-task type, which gets the line on the board. */
+  subtask?: boolean
+  /** Its parent (e.g. its epic), once the board sync has looked it up. */
+  parent?: { key: string; title: string | null; type: string | null; status: string | null } | null
+}
+
+export interface JiraBoardStatus {
+  name: string
+  /** Jira's status category: new, indeterminate or done. */
+  category: string
+  hidden: boolean
+  /** Which of Echo's groups it falls in; the board gathers every "todo" status into one To Do column. */
+  group?: JiraCategory
+}
+
+export interface JiraBoard {
+  id: number
+  name: string
+  location: string | null
+  filterId: number
+  /** scrum, kanban or simple; unknown until its first sync for boards added before it was recorded. */
+  type?: string
+  statuses: JiraBoardStatus[]
+  /** A scrum board's running sprint and the next few. */
+  sprints: { id: number; name: string; state: 'active' | 'future' }[]
+}
+
+export interface JiraBoards {
+  /** The board you follow; Echo follows one. */
+  boards: JiraBoard[]
 }
 
 export type JiraKind = 'mention' | 'comment' | 'transition' | 'assigned'
@@ -145,6 +178,13 @@ export interface JiraRelatedTicket {
 }
 
 /** Everything readable on a ticket, loaded when its panel opens. */
+export interface TicketSessionOptions {
+  /** Local checkouts set in Settings, which Claude works out the right one of with you. */
+  repos: { repo: string; path: string }[]
+  /** The last session Echo opened for this ticket, if any. */
+  lastSession: { openedAt: string; live: boolean; resumable: boolean } | null
+}
+
 export interface JiraTicketDetail {
   key: string
   url: string
@@ -219,13 +259,16 @@ export interface ShellProps {
   live?: boolean
   /** Why Echo is keeping the computer awake right now, if it is. */
   keepAwake?: string | null
+  /** The Mac's local network address, for opening Echo on a phone. */
+  lanIp?: string | null
   updatedAt: string
 }
 
 export interface Stats {
   agents: { agents: number; busy: number; tokensUsed: number }
   github: { team: number; mine: number; watching: number }
-  jira: { open: number; done: number }
+  /** Unassigned is on your board (not the Backlog); To Do and Done are your own. `boards` is false until you choose a board. */
+  jira: { unassigned: number; todo: number; done: number; boards: boolean }
 }
 
 export interface EndedSession {
@@ -267,6 +310,11 @@ export interface NotificationSettings {
   /** How often to say how many PRs wait for review, in minutes; 0 is off. */
   reminderMinutes: number
   reminderOptions: number[]
+  /** Whether Echo guesses when a PR you reviewed looks ready for another look. */
+  looksReady: boolean
+  /** On a Mac: a coloured Echo icon per source, through a helper app each, so macOS asks permission for each. */
+  colouredIcons: boolean
+  colouredIconsAvailable: boolean
   /** When notifications may be sent; days are 0 (Sunday) to 6, times HH:MM in timeZone. */
   workingHours: { enabled: boolean; days: number[]; start: string; end: string; timeZone: string }
   sound: string
@@ -314,6 +362,39 @@ export interface JiraPageProps extends PageData {
   syncedAt: string | null
   jiraTickets: JiraTicket[]
   jiraNotifications: JiraNotification[]
+  jiraBoards: JiraBoards
+}
+
+/** A ticket up for grabs on Find me work, with Claude's take once it has one. */
+export interface WorkTicket {
+  key: string
+  url: string
+  title: string
+  type: string
+  status: string
+  priority: string
+  due: string | null
+  summary: string | null
+  expected: string | null
+  size: 'S' | 'M' | 'L' | null
+  ready: boolean | null
+  question: string | null
+  tags: WorkTag[]
+  summarisedAt: string | null
+}
+
+export type WorkTag = 'data_correction' | 'frontend' | 'backend' | 'investigation' | 'customer_reported'
+
+export interface WorkList {
+  tickets: WorkTicket[]
+  top: number
+  running: boolean
+  summarised: number
+  error: string | null
+}
+
+export interface JiraWorkPageProps extends JiraPageProps {
+  work: WorkList
 }
 
 /** What every page gets: the shell plus whichever collections it shows. */
@@ -370,6 +451,8 @@ export interface ReviewComment {
   evidence: string | null
   notes: { role: 'you' | 'claude' | 'error'; text: string }[]
   asking: boolean
+  /** Set when this is a reply to an earlier thread on GitHub rather than a new comment on a line. */
+  threadId: string | null
 }
 
 export interface ReviewDraft {
@@ -389,6 +472,8 @@ export interface ReviewDraft {
 }
 
 export interface ReviewPageProps {
+  /** Your skill for Rewrite in your words, by name; the button only shows when there is one. */
+  rewriteSkill?: string | null
   shell: ShellProps
   agents: Agent[]
   error?: string
@@ -432,10 +517,12 @@ export interface SkillChoice {
 }
 
 export interface SkillAction {
-  action: 'ai_review' | 'review_question' | 'summary'
+  action: 'ai_review' | 'review_question' | 'summary' | 'ticket_session' | 'rewrite'
   label: string
   perRepo: boolean
-  current: SkillOption
+  /** No skill until you choose one (Rewrite in your words); its button only shows once you do. */
+  optional: boolean
+  current: SkillOption | null
   options: SkillOption[]
   repos: SkillChoice[]
 }
@@ -469,6 +556,7 @@ export interface ClaudeSettings {
 /** An earlier, still unresolved review thread on a PR, from any author. */
 export interface ReviewThread {
   id: string
+  resolved: boolean
   path: string
   side: 'LEFT' | 'RIGHT'
   line: number | null

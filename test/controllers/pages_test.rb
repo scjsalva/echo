@@ -2,7 +2,7 @@ require "test_helper"
 
 class PagesTest < ActionDispatch::IntegrationTest
   test "each page mounts its Vue component" do
-    { "/" => "OverviewPage", "/agents" => "AgentsPage", "/loops" => "LoopsPage", "/settings" => "SettingsPage", "/jira" => "JiraPage", "/inbox" => "InboxPage", "/github" => "GithubPage" }.each do |path, component|
+    { "/" => "OverviewPage", "/agents" => "AgentsPage", "/loops" => "LoopsPage", "/settings" => "SettingsPage", "/jira" => "JiraPage", "/jira/work" => "JiraWorkPage", "/inbox" => "InboxPage", "/github" => "GithubPage" }.each do |path, component|
       get path
 
       assert_response :success

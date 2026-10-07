@@ -73,7 +73,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="relative" @mouseenter="show" @mouseleave="hide" @focusin="show" @focusout="hide" @keydown.esc="open = false">
+  <div class="sm:relative" @mouseenter="show" @mouseleave="hide" @focusin="show" @focusout="hide" @keydown.esc="open = false">
     <a href="/settings#health" class="flex size-7 items-center justify-center rounded-md hover:bg-subtle" :aria-expanded="open" :aria-label="`Sync health: ${summary}`">
       <span class="relative flex size-2" aria-hidden="true">
         <span v-if="tone === 'ok'" class="absolute inset-0 rounded-full bg-ok opacity-60 motion-safe:animate-ping" />

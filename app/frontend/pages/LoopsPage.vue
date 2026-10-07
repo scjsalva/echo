@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import AgentName from '@/components/agents/AgentName.vue'
 import AppShell from '@/components/layout/AppShell.vue'
 import DrawerHost from '@/components/drawers/DrawerHost.vue'
@@ -10,6 +10,7 @@ import StatCount from '@/components/ui/StatCount.vue'
 import TableCard from '@/components/ui/TableCard.vue'
 import { provideDashboard } from '@/composables/useDashboard'
 import { provideDrawer } from '@/composables/useDrawer'
+import { useUrlParam } from '@/composables/useUrlState'
 import { useNow } from '@/composables/useNow'
 import { formatTokens, timeAgo } from '@/lib/format'
 import { describeLoop, eventsPerHour, loopKind } from '@/lib/loops'
@@ -22,7 +23,8 @@ const { open } = provideDrawer()
 const now = useNow(10_000)
 
 type Filter = 'all' | AgentLoop['kind']
-const filter = ref<Filter>('all')
+// Kept in the address bar (?filter=cron), so a reload or a link shows the same list.
+const filter = useUrlParam<Filter>('filter', 'all', ['all', 'monitor', 'wakeup', 'cron'])
 
 const loops = computed(() =>
   data.value.agents

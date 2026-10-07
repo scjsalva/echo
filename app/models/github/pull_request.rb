@@ -14,7 +14,7 @@ module Github::PullRequest
     {
       key: "#{full_name}##{node['number']}", repo: full_name.split("/").last, full_name:, number: node["number"], url: node["url"],
       jira_key: node["title"][JIRA_KEY, 1], title: node["title"], summary: summary(node["body"]), description: description(node["body"]),
-      author: node.dig("author", "login"), mine: node.dig("author", "login") == me, draft: node["isDraft"],
+      author: node.dig("author", "login"), author_bot: node.dig("author", "__typename") == "Bot", mine: node.dig("author", "login") == me, draft: node["isDraft"],
       ci: CI.fetch(last_commit.dig("statusCheckRollup", "state"), "running"),
       review_state: node["isDraft"] ? "draft" : REVIEW.fetch(node["reviewDecision"], "review_required"),
       approvals: reviews.count { it[:state] == "approved" }, approvals_required: nil,

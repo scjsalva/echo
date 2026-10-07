@@ -129,6 +129,44 @@ class NotifierTest < ActiveSupport::TestCase
     assert_empty @sent
   end
 
+  test "tells you when an AI review finishes or fails, once per run" do
+    Setting[Notifier::SEEDED] = "1"
+    GithubPullRequest.create!(key: "acme/app#7", data: { "title" => "Add b" })
+    review = Review.for("acme/app#7")
+    review.comments.create!(path: "app/x.rb", line: 2, side: "RIGHT", body: "nil.size raises", author: "ai")
+    review.update!(ai_status: "done", ai_finished_at: Time.current)
+
+    2.times { Notifier.deliver_new(dashboard) }
+    assert_equal [ [ "AI review done", "", "GitHub · app#7 · 1 comment staged · Add b", "Glass.aiff", "#{DesktopNotification.base_url}/reviews/acme/app/7" ] ], @sent
+
+    review.update!(ai_status: "failed", ai_error: "gh timed out", ai_finished_at: 1.minute.from_now)
+    Notifier.deliver_new(dashboard)
+    assert_equal [ "AI review failed", "", "GitHub · app#7 · Failed: gh timed out" ], @sent.last.first(3)
+  end
+
+  test "unticking finished AI reviews under Custom turns them off" do
+    Setting[Notifier::SEEDED] = "1"
+    Review.for("acme/app#7").update!(ai_status: "done", ai_finished_at: Time.current)
+    Notifier.update(scope: "custom", types: Notifier::TYPES.pluck(:id) - %w[agent.review_done])
+
+    Notifier.deliver_new(dashboard)
+
+    assert_empty @sent
+  end
+
+  test "a PR that looks ready is sent only while that's turned on, in Simple as well as Custom" do
+    Setting[Notifier::SEEDED] = "1"
+    looks = { id: "9", reason: "looks_ready", pr_key: "acme/app#7", title: "Add b", actor: "dana", unread: true, at: Time.current }
+    board = Dashboard.new(data: { github_notifications: [ looks ] }, dismissed_keys: [])
+
+    Notifier.deliver_new(board)
+    assert_empty @sent
+
+    Notifier.update(looks_ready: true)
+    2.times { Notifier.deliver_new(board) }
+    assert_equal [ [ "Add b", "", "GitHub · app#7 · dana's PR looks ready for another look" ] ], @sent.map { it.first(3) }
+  end
+
   test "rejects unknown reminder intervals" do
     assert_raises(ArgumentError) { Notifier.update(reminder_minutes: 7) }
   end

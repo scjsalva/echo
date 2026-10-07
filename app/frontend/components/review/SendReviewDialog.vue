@@ -1,7 +1,10 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { inject, onBeforeUnmount, onMounted, ref } from 'vue'
+import { PhArrowCounterClockwise, PhSparkle } from '@phosphor-icons/vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import MarkdownEditor from '@/components/ui/MarkdownEditor.vue'
+import { useToast } from '@/composables/useToast'
+import type { Rewrite } from '@/composables/useReview'
 
 defineProps<{ committed: number; staged: number; ownPr: boolean }>()
 const emit = defineEmits<{ send: [event: 'comment' | 'approve' | 'request_changes', body: string]; cancel: [] }>()
@@ -39,6 +42,28 @@ function send() {
 }
 
 defineExpose({ done: () => (sending.value = false) })
+
+// Your rewrite skill, once chosen in Settings: it rewrites the summary in place, with Undo.
+const rewrite = inject<Rewrite | null>('rewrite', null)
+const toast = useToast()
+const rewriting = ref(false)
+const before = ref<string | null>(null)
+async function rewriteSummary() {
+  rewriting.value = true
+  try {
+    const text = await rewrite!.text(body.value)
+    before.value = body.value
+    body.value = text
+  } catch (error) {
+    toast.show(error instanceof Error ? error.message : "Couldn't rewrite it")
+  } finally {
+    rewriting.value = false
+  }
+}
+function undo() {
+  body.value = before.value ?? body.value
+  before.value = null
+}
 </script>
 
 <template>
@@ -57,6 +82,18 @@ defineExpose({ done: () => (sending.value = false) })
     </header>
 
     <MarkdownEditor ref="box" v-model="body" :rows="10" aria-label="Review summary" placeholder="Leave a summary (optional, Markdown)" />
+    <div v-if="rewrite?.skill.value" class="flex flex-wrap items-center gap-2">
+      <BaseButton
+        size="sm"
+        class="ai-border"
+        :disabled="rewriting || !body.trim()"
+        :tooltip="`Rewrites the summary with your ${rewrite.skill.value} skill`"
+        @click="rewriteSummary"
+      >
+        <PhSparkle :size="13" weight="fill" :class="['ai-icon', rewriting && 'animate-pulse']" /> {{ rewriting ? 'Rewriting…' : 'Rewrite' }}
+      </BaseButton>
+      <BaseButton v-if="before !== null && !rewriting" size="sm" tooltip="Puts back what you had" @click="undo"><PhArrowCounterClockwise :size="13" /> Undo</BaseButton>
+    </div>
 
     <fieldset class="grid gap-2.5">
       <legend class="sr-only">Decision</legend>

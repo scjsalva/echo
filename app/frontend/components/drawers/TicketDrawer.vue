@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import WaitingDismiss from './WaitingDismiss.vue'
+import type { WaitingItem } from '@/types/dashboard'
 import { computed, onMounted, ref } from 'vue'
-import { PhArrowSquareOut, PhPaperclip } from '@phosphor-icons/vue'
+import { PhArrowSquareOut, PhPaperclip, PhUserMinus, PhUserPlus } from '@phosphor-icons/vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BasePill from '@/components/ui/BasePill.vue'
 import CommentThread from '@/components/ui/CommentThread.vue'
@@ -10,15 +12,34 @@ import InfoHint from '@/components/ui/InfoHint.vue'
 import QuoteBlock from '@/components/ui/QuoteBlock.vue'
 import SideDrawer from '@/components/ui/SideDrawer.vue'
 import NotificationContext from './NotificationContext.vue'
+import AskClaude from '@/components/jira/AskClaude.vue'
 import { useDashboard } from '@/composables/useDashboard'
 import { useDrawer } from '@/composables/useDrawer'
+import { useToast } from '@/composables/useToast'
 import { request } from '@/lib/api'
 import { jiraKind, type Tone } from '@/lib/labels'
 import type { JiraCategory, JiraRelatedTicket, JiraTicket, JiraTicketDetail } from '@/types/dashboard'
 
-const props = defineProps<{ ticket: JiraTicket; notificationId?: string }>()
+const props = defineProps<{ ticket: JiraTicket; notificationId?: string; waiting?: WaitingItem }>()
 
 const dashboard = useDashboard()
+const toast = useToast()
+
+// Who has it, as synced now rather than when the drawer opened, so it flips once you assign or unassign.
+const live = computed(() => dashboard.ticket(props.ticket.key) ?? props.ticket)
+const assigning = ref(false)
+async function assign(take: boolean) {
+  assigning.value = true
+  try {
+    await request(take ? 'POST' : 'DELETE', `/api/jira/tickets/${props.ticket.key}/assignment`)
+    await dashboard.refresh()
+    toast.show(take ? `${props.ticket.key} is assigned to you` : `You're off ${props.ticket.key}`)
+  } catch (error) {
+    toast.show(error instanceof Error ? error.message : "Couldn't change who it's assigned to")
+  } finally {
+    assigning.value = false
+  }
+}
 const { open } = useDrawer()
 
 const STATUS_TONE: Record<JiraCategory, Tone> = { todo: 'neutral', in_progress: 'warn', code_review: 'accent', post_development: 'ok', done: 'ok' }
@@ -51,8 +72,9 @@ const facts = computed(() => {
   const t = d?.timeTracking
   return [
     { label: 'Priority', value: props.ticket.priority },
-    { label: 'Assignee', value: props.ticket.assignee },
+    { label: 'Assignee', value: live.value.assignee },
     { label: 'Reporter', value: props.ticket.reporter },
+    { label: 'Created by', value: d?.creator },
     { label: 'Sprint', value: props.ticket.sprint },
     { label: 'Fix version', value: list(d?.fixVersions) },
     { label: 'Affects', value: list(d?.affectsVersions) },
@@ -99,6 +121,9 @@ const fileSize = (bytes: number) => (bytes >= 1_048_576 ? `${(bytes / 1_048_576)
     <template #actions>
       <BaseButton variant="primary" :href="ticket.url">Open in Jira <PhArrowSquareOut :size="14" /></BaseButton>
       <BaseButton v-if="pr" @click="open({ type: 'pullRequest', key: pr.key })">PR #{{ pr.number }}</BaseButton>
+      <BaseButton v-if="!live.assignee" :disabled="assigning" tooltip="Assigns it to you in Jira" @click="assign(true)"><PhUserPlus :size="14" /> Assign to me</BaseButton>
+      <BaseButton v-else-if="live.assignedToMe" :disabled="assigning" tooltip="Takes you off it in Jira, leaving it unassigned" @click="assign(false)"><PhUserMinus :size="14" /> Unassign</BaseButton>
+      <AskClaude :ticket-key="ticket.key" />
     </template>
 
     <NotificationContext
@@ -108,6 +133,7 @@ const fileSize = (bytes: number) => (bytes >= 1_048_576 ? `${(bytes / 1_048_576)
       :at="notification.at"
       :text="notificationText"
     />
+    <WaitingDismiss v-if="waiting" :item="waiting" />
 
     <p v-if="loadError" class="text-[13px] text-bad">{{ loadError }}</p>
     <p v-else-if="!detail" class="text-[13px] text-faint">Loading the full ticket…</p>
@@ -149,7 +175,7 @@ const fileSize = (bytes: number) => (bytes >= 1_048_576 ? `${(bytes / 1_048_576)
         <li v-for="file in detail.attachments" :key="`${file.name}-${file.created}`">
           <a :href="ticket.url" target="_blank" rel="noopener" class="flex items-center gap-2 px-3 py-2 text-[13px] hover:bg-subtle">
             <PhPaperclip :size="14" class="shrink-0 text-faint" />
-            <span class="min-w-0 flex-1 break-words">{{ file.name }}</span>
+            <span class="min-w-0 flex-1 wrap-anywhere">{{ file.name }}</span>
             <span class="shrink-0 text-xs text-faint">{{ fileSize(file.size) }}</span>
             <PhArrowSquareOut :size="12" class="shrink-0 text-faint" />
           </a>

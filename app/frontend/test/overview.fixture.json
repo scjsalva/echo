@@ -21,8 +21,10 @@
       "watching": 8
     },
     "jira": {
-      "open": 5,
-      "done": 3
+      "unassigned": 4,
+      "todo": 5,
+      "done": 3,
+      "boards": true
     }
   },
   "waiting": {
@@ -105,7 +107,7 @@
         "label": "Mention",
         "title": "Stream tool results into the side panel",
         "actor": "riyer",
-        "detail": "@johnsalva does this clash with your cursor fix?",
+        "detail": "@alexkim does this clash with your cursor fix?",
         "at": "2026-09-25T10:30:54.276Z",
         "clears": "Clears when you comment on or review the PR.",
         "ref": {
@@ -359,7 +361,7 @@
         "summary": "Adds a concurrent index on activity_records.completed_at to speed up the completions report.",
         "reviews": [
           {
-            "login": "johnsalva",
+            "login": "alexkim",
             "state": "approved"
           }
         ],
@@ -387,7 +389,7 @@
         "summary": "A resumed CSV export no longer triggers a download when the page loads. The download only starts from the notification link.",
         "reviews": [
           {
-            "login": "johnsalva",
+            "login": "alexkim",
             "state": "commented"
           },
           {
@@ -694,7 +696,7 @@
       "repo": "web",
       "number": 26984,
       "jiraKey": "APP-41029",
-      "author": "johnsalva",
+      "author": "alexkim",
       "ci": "passing",
       "reviewState": "review_required",
       "approvals": 1,
@@ -729,7 +731,7 @@
       "repo": "web",
       "number": 26979,
       "jiraKey": "APP-41207",
-      "author": "johnsalva",
+      "author": "alexkim",
       "ci": "failing",
       "reviewState": "approved",
       "approvals": 1,
@@ -759,7 +761,7 @@
       "repo": "editor",
       "number": 1418,
       "jiraKey": "APP-41246",
-      "author": "johnsalva",
+      "author": "alexkim",
       "draft": true,
       "ci": "running",
       "reviewState": "draft",
@@ -782,7 +784,7 @@
       "repo": "web",
       "number": 26982,
       "jiraKey": "APP-41238",
-      "author": "johnsalva",
+      "author": "alexkim",
       "ci": "passing",
       "reviewState": "changes_requested",
       "opened": "2026-09-24T09:22:54.276Z",
@@ -880,7 +882,7 @@
       "summary": "A resumed CSV export no longer triggers a download when the page loads. The download only starts from the notification link.",
       "reviews": [
         {
-          "login": "johnsalva",
+          "login": "alexkim",
           "state": "commented"
         },
         {
@@ -1006,7 +1008,7 @@
       "summary": "Adds a concurrent index on activity_records.completed_at to speed up the completions report.",
       "reviews": [
         {
-          "login": "johnsalva",
+          "login": "alexkim",
           "state": "approved"
         }
       ],
@@ -1043,7 +1045,7 @@
       "repo": "assistant",
       "number": 612,
       "actor": "riyer",
-      "body": "@johnsalva does this clash with your cursor fix?",
+      "body": "@alexkim does this clash with your cursor fix?",
       "at": "2026-09-25T10:30:54.276Z",
       "unread": true
     },
@@ -1128,7 +1130,7 @@
       "repo": "web",
       "number": 26941,
       "actor": "tsilva",
-      "body": "@johnsalva is per-request caching enough here or do we need Redis?",
+      "body": "@alexkim is per-request caching enough here or do we need Redis?",
       "at": "2026-09-24T15:22:54.276Z",
       "unread": false
     },
@@ -1153,7 +1155,7 @@
       "status": "Code Review",
       "category": "code_review",
       "priority": "Medium",
-      "assignee": "John Salva",
+      "assignee": "Alex Kim",
       "reporter": "Maya Chen",
       "sprint": "Squad Nova · Sprint 42",
       "pr": "web#26984",
@@ -1169,7 +1171,7 @@
       "status": "In Progress",
       "category": "in_progress",
       "priority": "High",
-      "assignee": "John Salva",
+      "assignee": "Alex Kim",
       "reporter": "Ellie Park",
       "sprint": "Squad Nova · Sprint 42",
       "pr": "editor#1418",
@@ -1185,7 +1187,7 @@
       "status": "Ready to Release",
       "category": "post_development",
       "priority": "High",
-      "assignee": "John Salva",
+      "assignee": "Alex Kim",
       "reporter": "Ravi Iyer",
       "sprint": "Squad Nova · Sprint 42",
       "pr": "web#26952",
@@ -1201,7 +1203,7 @@
       "status": "To Do",
       "category": "todo",
       "priority": "Low",
-      "assignee": "John Salva",
+      "assignee": "Alex Kim",
       "reporter": "Dana Novak",
       "sprint": "Backlog",
       "updated": "2026-09-25T07:22:54.276Z",
@@ -1217,7 +1219,7 @@
       "status": "Code Review",
       "category": "code_review",
       "priority": "Highest",
-      "assignee": "John Salva",
+      "assignee": "Alex Kim",
       "reporter": "Tomás Silva",
       "sprint": "Squad Nova · Sprint 42",
       "pr": "web#26979",
@@ -1248,7 +1250,7 @@
       "status": "Done",
       "category": "done",
       "priority": "Medium",
-      "assignee": "John Salva",
+      "assignee": "Alex Kim",
       "reporter": "Maya Chen",
       "sprint": "Squad Nova · Sprint 42",
       "updated": "2026-09-23T11:22:54.276Z",
@@ -1263,7 +1265,7 @@
       "status": "Done",
       "category": "done",
       "priority": "High",
-      "assignee": "John Salva",
+      "assignee": "Alex Kim",
       "reporter": "Ellie Park",
       "sprint": "Squad Nova · Sprint 42",
       "updated": "2026-09-22T11:22:54.276Z",
@@ -1278,7 +1280,7 @@
       "status": "Done",
       "category": "done",
       "priority": "Low",
-      "assignee": "John Salva",
+      "assignee": "Alex Kim",
       "reporter": "Dana Novak",
       "sprint": "Squad Nova · Sprint 42",
       "updated": "2026-09-21T11:22:54.276Z",

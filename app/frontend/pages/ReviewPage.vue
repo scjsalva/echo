@@ -15,7 +15,7 @@ import SideDrawer from '@/components/ui/SideDrawer.vue'
 import SkillPicker from '@/components/ui/SkillPicker.vue'
 import ToggleSwitch from '@/components/ui/ToggleSwitch.vue'
 import UserAvatar from '@/components/ui/UserAvatar.vue'
-import { useReview } from '@/composables/useReview'
+import { useReview, type Rewrite, type ThreadActions } from '@/composables/useReview'
 import { usePersistentFlag } from '@/composables/usePersistentFlag'
 import { useSplitWidth } from '@/composables/useSplitWidth'
 import { useToast } from '@/composables/useToast'
@@ -27,7 +27,7 @@ import type { ReviewComment, ReviewDraft, ReviewPageProps, ReviewThread } from '
 const props = defineProps<ReviewPageProps>()
 
 const toast = useToast()
-const { review, starting, startAi, addComment, addAndAsk, updateComment, ask, submit } = useReview(props.review ?? ({ comments: [] } as unknown as ReviewDraft))
+const { review, starting, startAi, addComment, addAndAsk, updateComment, ask, sendReply, rewriteComment, rewriteText, submit } = useReview(props.review ?? ({ comments: [] } as unknown as ReviewDraft))
 const pr = computed(() => props.pullRequest!)
 // Ask Claude on each comment shows which skill it uses for this repo.
 provide('reviewRepo', computed(() => pr.value && (pr.value.fullName ?? pr.value.key.split('#')[0])))
@@ -60,9 +60,10 @@ const split = ref<HTMLElement>()
 const { width, startDrag, nudge, reset } = useSplitWidth('review.split', split)
 
 const count = (state: ReviewComment['state']) => review.value.comments.filter((c) => c.state === state).length
-const commentsFor = (path: string) => review.value.comments.filter((c) => c.path === path)
+// Replies sit under their thread, not on the line.
+const commentsFor = (path: string) => review.value.comments.filter((c) => c.path === path && !c.threadId)
 
-// Earlier reviews' unresolved threads, by anyone; loaded after the page so it opens fast.
+// Earlier reviews' threads, by anyone, resolved or not; loaded after the page so it opens fast.
 const threads = ref<ReviewThread[]>([])
 // Hide them all on a busy PR; remembered in this browser.
 const showThreads = usePersistentFlag('review.threads', true)
@@ -76,6 +77,30 @@ onMounted(async () => {
   if (!props.pullRequest) return
   const repo = props.pullRequest.fullName ?? props.pullRequest.key.split('#')[0]
   threads.value = (await request<{ threads: ReviewThread[] }>('GET', `/api/github/pull_requests/${repo}/${props.pullRequest.number}/threads`).catch(() => ({ threads: [] }))).threads
+})
+
+// Your rewrite skill's button, on every comment and the summary, once you've chosen one in Settings.
+provide<Rewrite>('rewrite', {
+  skill: computed(() => props.rewriteSkill ?? null),
+  comment: (id) => run(() => rewriteComment(id), "Couldn't rewrite it"),
+  text: rewriteText,
+})
+
+// What a thread card can do: reply (now, or committed to go with the review), ask Claude, resolve.
+const anchorOf = (thread: ReviewThread) => ({ path: thread.path, line: thread.line ?? thread.originalLine ?? 1, side: thread.side ?? 'RIGHT', threadId: thread.id })
+provide<ThreadActions>('threadActions', {
+  locked,
+  replies: (thread) => review.value.comments.filter((c) => c.threadId === thread.id),
+  reply: (thread, body) => run(() => addComment({ ...anchorOf(thread), body }), "Couldn't add the reply"),
+  replyAndAsk: (thread, body, question) => run(() => addAndAsk({ ...anchorOf(thread), body }, question), "Couldn't ask Claude"),
+  update: (id, fields) => run(() => updateComment(id, fields), "Couldn't update the reply"),
+  ask: (id, question) => run(() => ask(id, question), "Couldn't ask Claude"),
+  sendNow: (id) => run(async () => (await sendReply(id), toast.show('Reply sent to GitHub')), "Couldn't send the reply"),
+  setResolved: (thread, resolved) =>
+    run(async () => {
+      threads.value = (await request<{ threads: ReviewThread[] }>('POST', `/api/reviews/${review.value.id}/thread_resolutions`, { thread_id: thread.id, resolved })).threads
+      toast.show(resolved ? 'Resolved on GitHub' : 'Unresolved on GitHub')
+    }, `Couldn't ${resolved ? 'resolve' : 'unresolve'} the thread`),
 })
 const headMoved = computed(() => Boolean(review.value.headSha && props.headSha && review.value.headSha !== props.headSha))
 const commentCounts = computed(() => Object.fromEntries((props.files ?? []).map((f) => [f.path, commentsFor(f.path).length])))
@@ -146,13 +171,14 @@ async function send(event: 'comment' | 'approve' | 'request_changes', body: stri
               <UserAvatar :name="pr.author" /> {{ pr.author }} · <span class="font-mono"><span class="text-ok">+{{ pr.additions }}</span> <span class="text-bad">−{{ pr.deletions }}</span></span> · {{ pr.changedFiles }} files
             </p>
           </div>
-          <div class="flex flex-wrap gap-2">
+          <!-- On phones the panels below anchor to this row, so they open on screen whichever button is wrapped where. -->
+          <div class="relative flex flex-wrap gap-2">
             <BaseButton :aria-pressed="showDescription" :class="showDescription && 'border-accent! bg-accent-soft! text-accent!'" @click="showDescription = !showDescription">
               <PhTextAlignLeft :size="14" /> Description
             </BaseButton>
             <BaseButton :href="pr.url">Open on GitHub <PhArrowSquareOut :size="14" /></BaseButton>
             <template v-if="!locked">
-              <div class="relative flex">
+              <div class="flex sm:relative">
                 <BaseButton
                   :disabled="starting || review.aiStatus === 'running' || review.aiStatus === 'queued'"
                   tooltip="Claude reviews the diff and stages comments. Uses tokens."
@@ -182,7 +208,7 @@ async function send(event: 'comment' | 'approve' | 'request_changes', body: stri
                   @cancel="aiPanel = false"
                 />
               </div>
-              <div class="relative">
+              <div class="sm:relative">
                 <BaseButton variant="primary" :aria-expanded="sending" @click="sending = !sending">
                   <PhPaperPlaneTilt :size="14" /> Send review <PhCaretDown :size="12" weight="bold" />
                 </BaseButton>

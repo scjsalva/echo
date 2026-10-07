@@ -34,7 +34,7 @@ function stage() {
     <select
       v-model="preference"
       aria-label="Time zone"
-      class="max-w-72 rounded-md border border-line bg-surface px-2.5 py-1.5 text-[13px]"
+      class="max-w-[min(18rem,100%)] rounded-md border border-line bg-surface px-2.5 py-1.5 text-[13px]"
       @change="stage"
     >
       <option :value="AUTOMATIC">{{ automaticLabel }}</option>

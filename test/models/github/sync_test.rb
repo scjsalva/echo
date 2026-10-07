@@ -63,21 +63,21 @@ class Github::SyncTest < ActiveSupport::TestCase
   test "a reply on a comment thread says what was replied, not that they reviewed" do
     sync
     @threads << thread(32, "author", 1.minute.ago, comment: nil)
-    @reviews = [ { "id" => 7, "user" => { "login" => "jhon50" }, "state" => "COMMENTED", "submitted_at" => 1.minute.ago.iso8601, "body" => "" } ]
+    @reviews = [ { "id" => 7, "user" => { "login" => "kwame" }, "state" => "COMMENTED", "submitted_at" => 1.minute.ago.iso8601, "body" => "" } ]
     @review_comments = [ { "id" => 4, "body" => "fixed in 696214f", "in_reply_to_id" => 3 } ]
-    @thread_comments = [ { "id" => 3, "user" => { "login" => ME } }, { "id" => 4, "user" => { "login" => "jhon50" }, "in_reply_to_id" => 3 } ]
+    @thread_comments = [ { "id" => 3, "user" => { "login" => ME } }, { "id" => 4, "user" => { "login" => "kwame" }, "in_reply_to_id" => 3 } ]
     sync
 
-    assert_equal [ "reply", "jhon50", "fixed in 696214f" ], GithubNotification.find_by(thread_id: "32").slice(:reason, :actor, :body).values
+    assert_equal [ "reply", "kwame", "fixed in 696214f" ], GithubNotification.find_by(thread_id: "32").slice(:reason, :actor, :body).values
   end
 
   test "a reply counts if you've commented in the thread, even if you didn't start it" do
     sync
     @threads << thread(34, "author", 1.minute.ago, comment: nil)
-    @reviews = [ { "id" => 7, "user" => { "login" => "jhon50" }, "state" => "COMMENTED", "submitted_at" => 1.minute.ago.iso8601, "body" => "" } ]
+    @reviews = [ { "id" => 7, "user" => { "login" => "kwame" }, "state" => "COMMENTED", "submitted_at" => 1.minute.ago.iso8601, "body" => "" } ]
     @review_comments = [ { "id" => 5, "body" => "sure", "in_reply_to_id" => 3 } ]
     @thread_comments = [ { "id" => 3, "user" => { "login" => "dana" } }, { "id" => 4, "user" => { "login" => ME }, "in_reply_to_id" => 3 },
-                         { "id" => 5, "user" => { "login" => "jhon50" }, "in_reply_to_id" => 3 } ]
+                         { "id" => 5, "user" => { "login" => "kwame" }, "in_reply_to_id" => 3 } ]
     sync
 
     assert_equal [ "reply", nil ], GithubNotification.find_by(thread_id: "34").slice(:reason, :read_at).values
@@ -86,22 +86,37 @@ class Github::SyncTest < ActiveSupport::TestCase
   test "a reply in someone else's thread isn't news, unless it mentions you" do
     sync
     @threads.push(thread(35, "author", 1.minute.ago, comment: nil), thread(36, "mention", 1.minute.ago, comment: nil))
-    @reviews = [ { "id" => 7, "user" => { "login" => "jhon50" }, "state" => "COMMENTED", "submitted_at" => 1.minute.ago.iso8601, "body" => "" } ]
+    @reviews = [ { "id" => 7, "user" => { "login" => "kwame" }, "state" => "COMMENTED", "submitted_at" => 1.minute.ago.iso8601, "body" => "" } ]
     @review_comments = [ { "id" => 5, "body" => "agreed", "in_reply_to_id" => 3 } ]
-    @thread_comments = [ { "id" => 3, "user" => { "login" => "dana" } }, { "id" => 5, "user" => { "login" => "jhon50" }, "in_reply_to_id" => 3 } ]
+    @thread_comments = [ { "id" => 3, "user" => { "login" => "dana" } }, { "id" => 5, "user" => { "login" => "kwame" }, "in_reply_to_id" => 3 } ]
     sync
 
     assert GithubNotification.find_by(thread_id: "35").read_at
     assert_equal [ "reply", nil ], GithubNotification.find_by(thread_id: "36").slice(:reason, :read_at).values
   end
 
+  test "a review request in GitHub's inbox that isn't otherwise news doesn't wait on you a second time" do
+    sync
+    @requested << pr(2, author: "dana")
+    @threads.push(thread(37, "review_requested", 1.minute.ago, comment: nil))
+    @reviews = [ { "id" => 7, "user" => { "login" => "ravi" }, "state" => "COMMENTED", "submitted_at" => 1.minute.ago.iso8601, "body" => "" } ]
+    @review_comments = [ { "id" => 5, "body" => "agreed", "in_reply_to_id" => 3 } ]
+    @thread_comments = [ { "id" => 3, "user" => { "login" => "dana" } }, { "id" => 5, "user" => { "login" => "ravi" }, "in_reply_to_id" => 3 } ]
+    sync
+
+    assert_equal "comment", GithubNotification.find_by(thread_id: "37").reason
+    waiting = Dashboard.new(data: { github_notifications: Github::DashboardData.notifications, pull_requests: Github::DashboardData.pull_requests }, dismissed_keys: [])
+      .waiting_items.select { it[:status] == "open" && it[:kind] == "review_requested" }
+    assert_equal [ "acme/app#2" ], waiting.map { it.dig(:ref, :pr_key) }
+  end
+
   test "says what happened when the activity wasn't a comment" do
     sync
     @threads << thread(30, "author", 1.minute.ago, comment: nil)
-    @reviews = [ { "user" => { "login" => "jhon50" }, "state" => "APPROVED", "submitted_at" => 1.minute.ago.iso8601, "body" => "" } ]
+    @reviews = [ { "user" => { "login" => "kwame" }, "state" => "APPROVED", "submitted_at" => 1.minute.ago.iso8601, "body" => "" } ]
     sync
 
-    assert_equal [ "approved", "jhon50" ], GithubNotification.find_by(thread_id: "30").slice(:reason, :actor).values
+    assert_equal [ "approved", "kwame" ], GithubNotification.find_by(thread_id: "30").slice(:reason, :actor).values
   end
 
   test "a mention clears once you comment on the PR" do
@@ -149,11 +164,66 @@ class Github::SyncTest < ActiveSupport::TestCase
     assert_equal 1, GithubNotification.where(reason: "ready_for_review").count
   end
 
+  test "a re-request after you've reviewed is a new review request, asking you to look again" do
+    @requested << pr(2, author: "dana")
+    sync
+    first = GithubNotification.find_by(reason: "review_requested")
+
+    @requested.clear
+    @queue << pr(2, author: "dana", reviews: [ review(ME, "COMMENTED", 2.hours.ago) ])
+    sync
+    assert_equal "You reviewed it", first.reload.resolution
+
+    @queue.clear
+    @requested << pr(2, author: "dana", reviews: [ review(ME, "COMMENTED", 2.hours.ago) ])
+    2.times { sync }
+    again = GithubNotification.where(reason: "re_review_requested")
+    assert_equal 1, again.count, "one per round"
+    assert_nil again.first.resolved_at
+    assert_equal "dana asked you to review again", Github::NotificationText.for(reason: "re_review_requested", actor: "dana", body: nil)
+  end
+
+  test "a PR you reviewed looks ready once the author pushed, answered your threads, CI passes and they've gone quiet" do
+    Notifier.update(looks_ready: true)
+    Rails.cache.clear
+    @review_threads = [ review_thread([ ME, 3.hours.ago ], [ "dana", 50.minutes.ago ]) ]
+    @queue << pr(2, author: "dana", reviews: [ review(ME, "COMMENTED", 3.hours.ago) ], last_commit: 1.hour.ago)
+    2.times do
+      Rails.cache.clear
+      sync
+    end
+
+    ready = GithubNotification.where(reason: "looks_ready")
+    assert_equal 1, ready.count, "once per round"
+    assert_equal "dana", ready.first.actor
+  end
+
+  test "doesn't guess it's ready for a bot, an unanswered thread, a fresh push, or while turned off" do
+    reviewed = { reviews: [ review(ME, "COMMENTED", 3.hours.ago) ] }
+    answered = [ review_thread([ ME, 3.hours.ago ], [ "dana", 50.minutes.ago ]) ]
+    {
+      "turned off" => [ false, pr(2, author: "dana", **reviewed), answered ],
+      "a bot" => [ true, pr(2, author: "renovate", bot: true, **reviewed), [] ],
+      "an unanswered thread" => [ true, pr(2, author: "dana", **reviewed), [ review_thread([ ME, 3.hours.ago ]) ] ],
+      "a fresh push" => [ true, pr(2, author: "dana", last_commit: 10.minutes.ago, **reviewed), answered ]
+    }.each do |what, (on, pull, threads)|
+      Notifier.update(looks_ready: on)
+      Rails.cache.clear
+      @queue = [ pull ]
+      @review_threads = threads
+      sync
+      assert_equal 0, GithubNotification.where(reason: "looks_ready").count, "not for #{what}"
+    end
+  end
+
   def sync
     cli = lambda do |*args, json: false, timeout: nil|
       path = Github::Cli.api_path(args)
       case path
       when "graphql"
+        if args.any? { it.include?("reviewThreads") }
+          next { "data" => { "repository" => { "pullRequest" => { "reviewThreads" => { "nodes" => @review_threads || [], "pageInfo" => { "hasNextPage" => false } } } } } }
+        end
         queue = args.any? { it == "withQueue=true" }
         { "data" => { "viewer" => { "login" => ME }, "mine" => { "nodes" => @mine }, "requested" => { "nodes" => @requested },
           "queue" => (queue ? { "nodes" => @queue } : nil) } }
@@ -172,13 +242,19 @@ class Github::SyncTest < ActiveSupport::TestCase
     Github::Connection.stub(:login, ME) { Github::Cli.stub(:run, cli) { Github::Sync.new.run } }
   end
 
-  def pr(number, author:, decision: nil, reviews: [], last_commit: 1.hour.ago, ready_at: nil)
+  def pr(number, author:, decision: nil, reviews: [], last_commit: 1.hour.ago, ready_at: nil, bot: false)
     { "number" => number, "title" => "PR #{number}", "url" => "https://github.com/acme/app/pull/#{number}", "isDraft" => false,
       "createdAt" => 1.day.ago.iso8601, "updatedAt" => 1.hour.ago.iso8601, "additions" => 1, "deletions" => 1, "changedFiles" => 1,
-      "body" => "", "author" => { "login" => author }, "repository" => { "nameWithOwner" => "acme/app" }, "reviewDecision" => decision,
+      "body" => "", "author" => { "login" => author, "__typename" => bot ? "Bot" : "User" }, "repository" => { "nameWithOwner" => "acme/app" }, "reviewDecision" => decision,
       "commits" => { "totalCount" => 1, "nodes" => [ { "commit" => { "committedDate" => last_commit.iso8601, "statusCheckRollup" => { "state" => "SUCCESS" } } } ] },
       "reviewRequests" => { "nodes" => [] }, "latestReviews" => { "nodes" => reviews },
       "readyEvents" => { "nodes" => ready_at ? [ { "createdAt" => ready_at.iso8601 } ] : [] } }
+  end
+
+  def review_thread(*comments, resolved: false)
+    { "id" => "T_#{comments.first.first}", "isResolved" => resolved, "isOutdated" => false, "path" => "app/x.rb", "line" => 1, "startLine" => nil,
+      "originalLine" => 1, "diffSide" => "RIGHT",
+      "comments" => { "nodes" => comments.map { |login, at| { "id" => "c-#{login}-#{at.to_i}", "author" => { "login" => login }, "body" => "…", "createdAt" => at.iso8601, "url" => nil } } } }
   end
 
   def review(login, state, at, body: "") = { "author" => { "login" => login }, "state" => state, "submittedAt" => at.iso8601, "body" => body }

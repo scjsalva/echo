@@ -13,7 +13,8 @@ import { timeAgo } from '@/lib/format'
 import { githubNotificationText } from '@/lib/githubNotifications'
 import { jiraNotificationText } from '@/lib/jiraNotifications'
 import { needsAction } from '@/lib/notificationState'
-import type { OverviewProps, ShellProps } from '@/types/dashboard'
+import { sourceBadge, waitingSummary } from '@/lib/waiting'
+import type { OverviewProps, ShellProps, WaitingItem } from '@/types/dashboard'
 
 const props = defineProps<{ shell: ShellProps; linkClass: string }>()
 
@@ -21,7 +22,7 @@ const LIMIT = 10
 const UNREAD_LIMIT = 20
 
 const open = ref(false)
-const data = ref<Pick<OverviewProps, 'githubNotifications' | 'jiraNotifications' | 'pullRequests' | 'jiraTickets'> | null>(null)
+const data = ref<Pick<OverviewProps, 'githubNotifications' | 'jiraNotifications' | 'pullRequests' | 'jiraTickets' | 'waiting'> | null>(null)
 const failed = ref(false)
 const root = ref<HTMLElement>()
 const now = useNow()
@@ -32,24 +33,42 @@ const refreshShell = inject<() => Promise<unknown>>('refreshShell', async () => 
 interface Row {
   id: string
   needsAction: boolean
-  source: 'github' | 'jira'
+  source: 'github' | 'jira' | 'agent'
   title: string
   text: string
   at: string
   unread: boolean
   link: string
+  /** Waiting on you: shown first, in bold, and never marked read by looking. */
+  waiting?: boolean
 }
+
+// What's waiting on you leads the bell, when there's any; its notifications don't show again below.
+const waitingLink = (item: WaitingItem) => {
+  const { agentId, prKey, ticketKey, notificationId } = item.ref
+  const notification: Record<string, string> = notificationId ? { notification: notificationId } : {}
+  if (agentId) return `/agents?${new URLSearchParams({ agent: agentId })}`
+  if (prKey) return `/github?${new URLSearchParams({ pr: prKey, ...notification })}`
+  if (ticketKey) return `/jira?${new URLSearchParams({ ticket: ticketKey, ...notification })}`
+  return '/inbox?tab=waiting'
+}
+const waiting = computed<Row[]>(() =>
+  (data.value?.waiting?.items ?? [])
+    .filter((item) => item.status === 'open')
+    .map((item) => ({ id: item.key, source: item.source, at: item.at, unread: false, needsAction: true, waiting: true, title: item.title, text: waitingSummary(item), link: waitingLink(item) })),
+)
 
 const rows = computed<Row[]>(() => {
   if (!data.value) return []
   const { githubNotifications = [], jiraNotifications = [], pullRequests = [], jiraTickets = [] } = data.value
-  const github = githubNotifications.map((n) => ({
+  const covered = new Set((data.value.waiting?.items ?? []).filter((w) => w.status === 'open').map((w) => w.ref.notificationId))
+  const github = githubNotifications.filter((n) => !covered.has(n.id)).map((n) => ({
     id: n.id, source: 'github' as const, at: n.at, unread: n.unread, needsAction: needsAction(n),
     title: pullRequests.find((pr) => pr.key === n.prKey)?.title ?? n.title ?? n.prKey,
     text: githubNotificationText(n),
     link: `/github?${new URLSearchParams({ pr: n.prKey, notification: n.id })}`,
   }))
-  const jira = jiraNotifications.map((n) => ({
+  const jira = jiraNotifications.filter((n) => !covered.has(n.id)).map((n) => ({
     id: n.id, source: 'jira' as const, at: n.at, unread: n.unread, needsAction: needsAction(n),
     title: [n.key, jiraTickets.find((t) => t.key === n.key)?.title].filter(Boolean).join(' · '),
     text: jiraNotificationText(n),
@@ -60,8 +79,17 @@ const rows = computed<Row[]>(() => {
   const all = [...github, ...jira].sort((a, b) => Date.parse(b.at) - Date.parse(a.at))
   const unread = all.filter((row) => row.unread).slice(0, UNREAD_LIMIT)
   const read = all.filter((row) => !row.unread).slice(0, Math.max(0, LIMIT - unread.length))
-  return [...unread, ...read].sort((a, b) => Date.parse(b.at) - Date.parse(a.at))
+  return [...unread, ...read]
 })
+
+// What's waiting on you first, then unread ones, so one that reached Echo late isn't buried among those you've read.
+const sections = computed(() =>
+  [
+    { label: 'Waiting on you', rows: waiting.value },
+    { label: 'Unread', rows: rows.value.filter((row) => row.unread) },
+    { label: 'Earlier', rows: rows.value.filter((row) => !row.unread) },
+  ].filter((section) => section.rows.length),
+)
 
 async function load() {
   try {
@@ -173,7 +201,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div ref="root" class="relative" @mouseenter="show" @mouseleave="hide" @focusin="show" @focusout="hide" @keydown.esc="open = false">
+  <div ref="root" class="sm:relative" @mouseenter="show" @mouseleave="hide" @focusin="show" @focusout="hide" @keydown.esc="open = false">
     <a
       href="/inbox"
       :class="linkClass"
@@ -194,24 +222,29 @@ onBeforeUnmount(() => {
       <p class="border-b border-line-soft px-4 py-2.5 text-[13px] font-semibold">Latest notifications</p>
       <p v-if="failed" class="px-4 py-4 text-[13px] text-bad">Couldn't load them.</p>
       <p v-else-if="!data" class="px-4 py-4 text-[13px] text-faint">Loading…</p>
-      <p v-else-if="!rows.length" class="px-4 py-4 text-[13px] text-faint">No notifications yet.</p>
-      <ul v-else class="max-h-[60vh] overflow-y-auto">
-        <li v-for="row in rows" :key="row.id" class="border-b border-line-soft last:border-b-0">
-          <button type="button" class="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-2.5 px-4 py-2.5 text-left hover:bg-subtle" @click="choose(row)">
-            <SourceBadge :tone="row.source === 'jira' ? 'jira' : 'default'">{{ row.source === 'jira' ? 'JIRA' : 'GH' }}</SourceBadge>
-            <span class="grid min-w-0 gap-0.5">
-              <span :class="['text-[13px] break-words transition-colors duration-700', row.unread ? 'font-semibold' : 'font-medium text-muted']">{{ row.title }}</span>
-              <span class="line-clamp-2 text-[12.5px] break-words text-muted">{{ row.text }}</span>
-            </span>
-            <span class="flex items-center gap-1.5 text-[11.5px] whitespace-nowrap text-faint">
-              {{ timeAgo(row.at, now) }}
-              <Transition leave-active-class="transition-opacity duration-700" leave-to-class="opacity-0">
-                <span v-if="row.unread" class="size-1.5 rounded-full bg-accent" aria-label="Unread" />
-              </Transition>
-            </span>
-          </button>
-        </li>
-      </ul>
+      <p v-else-if="!sections.length" class="px-4 py-4 text-[13px] text-faint">No notifications yet.</p>
+      <div v-else class="max-h-[60vh] overflow-y-auto">
+        <section v-for="section in sections" :key="section.label" :aria-label="section.label">
+          <h4 class="border-b border-line-soft bg-subtle px-4 py-1.5 text-[11px] font-medium tracking-[0.07em] text-faint uppercase">{{ section.label }}</h4>
+          <ul>
+            <li v-for="row in section.rows" :key="row.id" class="border-b border-line-soft">
+              <button type="button" class="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-2.5 px-4 py-2.5 text-left hover:bg-subtle" @click="choose(row)">
+                <SourceBadge :tone="row.source === 'jira' ? 'jira' : 'default'">{{ sourceBadge[row.source] }}</SourceBadge>
+                <span class="grid min-w-0 gap-0.5">
+                  <span :class="['text-[13px] wrap-anywhere transition-colors duration-700', row.unread || row.waiting ? 'font-semibold' : 'font-medium text-muted']">{{ row.title }}</span>
+                  <span class="line-clamp-2 text-[12.5px] wrap-anywhere text-muted">{{ row.text }}</span>
+                </span>
+                <span class="flex items-center gap-1.5 text-[11.5px] whitespace-nowrap text-faint">
+                  {{ timeAgo(row.at, now) }}
+                  <Transition leave-active-class="transition-opacity duration-700" leave-to-class="opacity-0">
+                    <span v-if="row.unread" class="size-1.5 rounded-full bg-accent" aria-label="Unread" />
+                  </Transition>
+                </span>
+              </button>
+            </li>
+          </ul>
+        </section>
+      </div>
       <p v-if="moreUnread" class="border-t border-line-soft px-4 py-2 text-center text-[12.5px] text-muted">…and {{ moreUnread }} more unread in the inbox</p>
       <a href="/inbox" class="border-t border-line-soft px-4 py-2.5 text-center text-[12.5px] font-medium text-accent hover:bg-subtle">See all notifications →</a>
     </div>

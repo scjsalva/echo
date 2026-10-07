@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
-import { PhBell, PhGithubLogo, PhPlugs, PhSlidersHorizontal, PhSparkle } from '@phosphor-icons/vue'
+import { PhBell, PhGithubLogo, PhKanban, PhPlugs, PhSlidersHorizontal, PhSparkle } from '@phosphor-icons/vue'
 import AppShell from '@/components/layout/AppShell.vue'
 import ConnectionRow from '@/components/settings/ConnectionRow.vue'
 import SettingsCard from '@/components/settings/SettingsCard.vue'
@@ -9,10 +9,11 @@ import SyncHealthCard from '@/components/settings/SyncHealthCard.vue'
 import ThemeSetting from '@/components/settings/ThemeSetting.vue'
 import ClaudeSettings from '@/components/settings/ClaudeSettings.vue'
 import GithubSettings from '@/components/settings/GithubSettings.vue'
+import JiraSettings from '@/components/settings/JiraSettings.vue'
 import NotificationSettings from '@/components/settings/NotificationSettings.vue'
 import TimeZoneSetting from '@/components/settings/TimeZoneSetting.vue'
 import KeepAwakeSetting from '@/components/settings/KeepAwakeSetting.vue'
-import type { ClaudeSettings as ClaudePreferences, Connection, GithubPreferences, NotificationSettings as NotificationPreferences, ShellProps, TimeZoneSettings, KeepAwakeSettings } from '@/types/dashboard'
+import type { ClaudeSettings as ClaudePreferences, Connection, GithubPreferences, JiraBoards, NotificationSettings as NotificationPreferences, ShellProps, TimeZoneSettings, KeepAwakeSettings } from '@/types/dashboard'
 
 const props = defineProps<{
   shell: ShellProps
@@ -21,6 +22,7 @@ const props = defineProps<{
   keepAwake: KeepAwakeSettings
   notifications: NotificationPreferences
   github: GithubPreferences
+  jira: JiraBoards
   claude: ClaudePreferences
 }>()
 
@@ -29,10 +31,11 @@ const workingHoursOn = ref(props.keepAwake.workingHoursOn)
 
 // One section at a time, picked from the list on the left. The address follows
 // it (/settings#claude), so links from elsewhere land on the right one.
-type Section = 'connections' | 'github' | 'claude' | 'notifications' | 'general'
+type Section = 'connections' | 'github' | 'jira' | 'claude' | 'notifications' | 'general'
 const sections = computed(() => [
   { id: 'connections' as const, label: 'Connections', icon: PhPlugs, attention: connections.value.some((c) => !c.connected) },
   { id: 'github' as const, label: 'GitHub', icon: PhGithubLogo, attention: false },
+  { id: 'jira' as const, label: 'Jira', icon: PhKanban, attention: false },
   { id: 'claude' as const, label: 'Claude', icon: PhSparkle, attention: false },
   { id: 'notifications' as const, label: 'Notifications', icon: PhBell, attention: false },
   { id: 'general' as const, label: 'General', icon: PhSlidersHorizontal, attention: false },
@@ -95,7 +98,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', warnBeforeLeavi
     :trail="[{ label: 'Settings', href: '/settings' }]"
     :show-first-run="false"
   >
-    <div class="grid items-start gap-6 md:grid-cols-[200px_minmax(0,48rem)] md:gap-8">
+    <div class="grid grid-cols-[minmax(0,1fr)] items-start gap-6 md:grid-cols-[200px_minmax(0,48rem)] md:gap-8">
       <nav aria-label="Settings sections" class="flex flex-wrap gap-1 md:sticky md:top-4 md:flex-col">
         <button
           v-for="item in sections"
@@ -129,6 +132,12 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', warnBeforeLeavi
         <SettingsSection v-show="section === 'github'" :ref="setSectionRef('github')" label="GitHub" @dirty="dirty.github = $event">
           <SettingsCard title="GitHub">
             <GithubSettings :preferences="github" />
+          </SettingsCard>
+        </SettingsSection>
+
+        <SettingsSection v-show="section === 'jira'" :ref="setSectionRef('jira')" label="Jira" @dirty="dirty.jira = $event">
+          <SettingsCard title="Boards">
+            <JiraSettings :preferences="jira" />
           </SettingsCard>
         </SettingsSection>
 

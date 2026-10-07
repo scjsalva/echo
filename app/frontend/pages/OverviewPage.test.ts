@@ -52,7 +52,7 @@ describe('OverviewPage', () => {
     const empty: OverviewProps = {
       ...props,
       shell: { ...props.shell, waitingCount: 0, unreadCount: 0, missingConnections: ['GitHub', 'Jira'] },
-      stats: { agents: { agents: 0, busy: 0, tokensUsed: 0 }, github: { team: 0, mine: 0, watching: 0 }, jira: { open: 0, done: 0 } },
+      stats: { agents: { agents: 0, busy: 0, tokensUsed: 0 }, github: { team: 0, mine: 0, watching: 0 }, jira: { unassigned: 0, todo: 0, done: 0, boards: false } },
       waiting: { items: [], total: 0 },
       reviewQueue: { items: [], total: 0 },
       agents: [],
@@ -65,7 +65,7 @@ describe('OverviewPage', () => {
 
     expect(page.text()).toContain("GitHub and Jira aren't connected yet.")
     expect(page.text()).not.toContain('Waiting on you')
-    expect(page.text()).toContain('Nothing is ready for review.')
+    expect(page.text()).toContain('Nothing from your team is ready for review.')
     expect(page.text()).toContain('No Claude Code sessions running.')
     expect(page.text()).toContain('000')
     page.unmount()

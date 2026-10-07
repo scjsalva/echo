@@ -4,6 +4,8 @@ export type Tone = 'neutral' | 'accent' | 'ok' | 'warn' | 'bad'
 
 export const githubReason: Record<GithubReason, { label: string; tone: Tone }> = {
   review_requested: { label: 'Review request', tone: 'accent' },
+  re_review_requested: { label: 'Review again', tone: 'accent' },
+  looks_ready: { label: 'Looks ready', tone: 'accent' },
   mention: { label: 'Mention', tone: 'warn' },
   comment: { label: 'Comment', tone: 'neutral' },
   follow_up: { label: 'New commits', tone: 'accent' },

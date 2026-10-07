@@ -83,7 +83,7 @@ function move(step: number) {
             @mouseenter="active = i"
           >
             <span class="font-medium">{{ s.value }}</span>
-            <span v-if="s.label" class="min-w-0 break-words text-muted">{{ s.label }}</span>
+            <span v-if="s.label" class="min-w-0 wrap-anywhere text-muted">{{ s.label }}</span>
           </li>
         </ul>
       </div>

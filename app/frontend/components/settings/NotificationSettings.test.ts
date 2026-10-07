@@ -7,7 +7,7 @@ import type { NotificationSettings as Settings } from '@/types/dashboard'
 
 const settings: Settings = {
   desktop: true, settingsHint: 'System Settings', available: true, scope: 'waiting', sound: 'Ping', sounds: ['Ping', 'Pop'],
-  types: [], enabledTypes: [], reminderMinutes: 30, reminderOptions: [0, 30],
+  types: [], enabledTypes: [], reminderMinutes: 30, reminderOptions: [0, 30], looksReady: false, colouredIcons: false, colouredIconsAvailable: false,
   workingHours: { enabled: false, days: [1, 2, 3, 4, 5], start: '09:00', end: '17:00', timeZone: 'UTC' },
 }
 

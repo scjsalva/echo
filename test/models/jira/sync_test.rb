@@ -22,23 +22,23 @@ class Jira::SyncTest < ActiveSupport::TestCase
     sync
 
     issue("APP-1", status: "In Progress", category: "indeterminate", assignee: ME, comments: [
-      comment("c2", "Ravi", "@John can you check?", 1.minute.ago, mention: true),
+      comment("c2", "Ravi", "@Alex can you check?", 1.minute.ago, mention: true),
       comment("c3", "CI and Release Process", "Released", 1.minute.ago, bot: true)
     ])
     sync
 
     kinds = JiraNotification.where(read_at: nil).order(:kind).pluck(:kind, :body)
-    assert_equal [ [ "assigned", nil ], [ "mention", "@John can you check?" ], [ "transition", "To Do → In Progress" ] ], kinds
+    assert_equal [ [ "assigned", nil ], [ "mention", "@Alex can you check?" ], [ "transition", "To Do → In Progress" ] ], kinds
   end
 
   test "a mention clears once you reply and an assignment once the ticket leaves To Do" do
     issue("APP-1", status: "To Do", category: "new", assignee: "someone")
     sync
-    issue("APP-1", status: "To Do", category: "new", assignee: ME, comments: [ comment("c2", "Ravi", "@John?", 5.minutes.ago, mention: true) ])
+    issue("APP-1", status: "To Do", category: "new", assignee: ME, comments: [ comment("c2", "Ravi", "@Alex?", 5.minutes.ago, mention: true) ])
     sync
 
     issue("APP-1", status: "In Progress", category: "indeterminate", assignee: ME, comments: [
-      comment("c2", "Ravi", "@John?", 5.minutes.ago, mention: true), comment("c4", "John", "On it", 1.minute.ago, author_id: ME)
+      comment("c2", "Ravi", "@Alex?", 5.minutes.ago, mention: true), comment("c4", "Alex", "On it", 1.minute.ago, author_id: ME)
     ])
     sync
 
@@ -90,8 +90,8 @@ class Jira::SyncTest < ActiveSupport::TestCase
   end
 
   def comment(id, author, text, at, mention: false, bot: false, author_id: "id-#{author}")
-    content = [ mention ? { "type" => "mention", "attrs" => { "id" => ME, "text" => "@John" } } : nil,
-      { "type" => "text", "text" => mention ? text.delete_prefix("@John") : text } ].compact
+    content = [ mention ? { "type" => "mention", "attrs" => { "id" => ME, "text" => "@Alex" } } : nil,
+      { "type" => "text", "text" => mention ? text.delete_prefix("@Alex") : text } ].compact
     { "id" => id, "created" => at.iso8601, "body" => { "type" => "doc", "content" => [ { "type" => "paragraph", "content" => content } ] },
       "author" => { "accountId" => author_id, "displayName" => author, "accountType" => bot ? "app" : "atlassian" } }
   end

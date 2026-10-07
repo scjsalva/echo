@@ -11,7 +11,10 @@ module Skills
   ACTIONS = {
     "ai_review" => { label: "AI review", default: "echo:echo-review", per_repo: true },
     "review_question" => { label: "Ask Claude about a comment", default: "echo:echo-review-question", per_repo: true },
-    "summary" => { label: "Session summary", default: "echo:echo-summary", per_repo: false }
+    "summary" => { label: "Session summary", default: "echo:echo-summary", per_repo: false },
+    "ticket_session" => { label: "Ask Claude about a ticket", default: "echo:echo-ticket", per_repo: false },
+    # Your own skill for rewriting a comment or summary in your voice. Off until you choose one.
+    "rewrite" => { label: "Rewrite in your words", default: nil, per_repo: false, optional: true }
   }.freeze
   SETTING = "echo_skills".freeze
   NAME = /\A[\w.-]+\z/
@@ -52,8 +55,8 @@ module Skills
   def self.props(repos)
     ACTIONS.map do |action, config|
       {
-        action:, label: config[:label], per_repo: config[:per_repo], current: to_props(self.for(action)),
-        options: available.map { to_props(it) },
+        action:, label: config[:label], per_repo: config[:per_repo], optional: config[:optional] || false, current: to_props(self.for(action)),
+        options: available.reject { config[:optional] && it.source == "echo" }.map { to_props(it) },
         repos: config[:per_repo] ? repos.map { repo_props(action, it) } : []
       }
     end

@@ -15,10 +15,11 @@ const props = {
   keepAwake: { mode: 'off', available: true, current: null, workingHoursOn: false },
   notifications: {
     desktop: true, settingsHint: 'System Settings', available: true, scope: 'waiting', sound: 'Ping', sounds: ['Ping', 'Pop'],
-    types: [], enabledTypes: [], reminderMinutes: 30, reminderOptions: [0, 30],
+    types: [], enabledTypes: [], reminderMinutes: 30, reminderOptions: [0, 30], looksReady: false, colouredIcons: false, colouredIconsAvailable: false,
     workingHours: { enabled: false, days: [1, 2, 3, 4, 5], start: '09:00', end: '17:00', timeZone: 'UTC' },
   },
   github: { repos: [], reposChosen: false, team: [], knownRepos: [], knownPeople: [], knownTeams: [], localRepos: [] },
+  jira: { boards: [] },
   claude: { reviewLimit: 3, reviewLimitOptions: [1, 2, 3], skills: [], context: { global: [], repos: [], extras: [] } },
 }
 

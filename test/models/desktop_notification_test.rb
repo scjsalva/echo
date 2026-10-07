@@ -42,6 +42,48 @@ class DesktopNotificationTest < ActiveSupport::TestCase
     assert_empty show_on(nil)
   end
 
+  test "on a Mac with colour-coded icons on, builds a coloured copy of the helper per source and sends each notification through its source's copy" do
+    home = DesktopNotification.home
+    DesktopNotification.home = Pathname(Dir.mktmpdir("echo-mac"))
+    Notifier.update(coloured_icons: true)
+    DesktopNotification::Mac.stub(:swift?, true) do
+      # Stands in for swiftc: the build leaves an Echo.app behind for the copies.
+      DesktopNotification.runner = lambda do |*args|
+        @calls << args
+        FileUtils.mkdir_p(DesktopNotification.home.join("Echo.app/Contents/Resources")) if args.include?("swiftc")
+        true
+      end
+      DesktopNotification.stub(:platform, :mac) do
+        DesktopNotification.show(title: "Jira · APP-1", message: "Sam mentioned you", source: "jira")
+        DesktopNotification.show(title: "Test notification", message: "This is how Echo will get your attention.")
+      end
+    end
+
+    jira = DesktopNotification.home.join("Echo Jira.app")
+    assert_includes jira.join("Contents/Info.plist").read, "<string>com.echo.notifier.jira</string>"
+    assert @calls.any? { it.include?("--icon") && it.include?("jira") }, "draws the Jira-blue icon"
+    assert @calls.any? { it.first == "iconutil" }
+    assert_equal [ [ "open", "-g", jira.to_s ], [ "open", "-g", DesktopNotification.home.join("Echo.app").to_s ] ], @calls.select { it.first == "open" }
+    assert_equal 1, DesktopNotification.home.join("outbox-jira").children.size
+    assert_equal 1, DesktopNotification.home.join("outbox").children.size, "no source: Echo's own copy"
+  ensure
+    DesktopNotification.home = home
+  end
+
+  test "on a Mac with colour-coded icons off, every notification comes from Echo's own helper" do
+    home = DesktopNotification.home
+    DesktopNotification.home = Pathname(Dir.mktmpdir("echo-mac"))
+    DesktopNotification::Mac.stub(:swift?, true) do
+      DesktopNotification.runner = ->(*args) { @calls << args; FileUtils.mkdir_p(DesktopNotification.home.join("Echo.app/Contents/Resources")) if args.include?("swiftc"); true }
+      DesktopNotification.stub(:platform, :mac) { DesktopNotification.show(title: "Jira · APP-1", message: "Sam mentioned you", source: "jira") }
+    end
+
+    assert_not DesktopNotification.home.join("Echo Jira.app").exist?
+    assert_equal [ [ "open", "-g", DesktopNotification.home.join("Echo.app").to_s ] ], @calls.select { it.first == "open" }
+  ensure
+    DesktopNotification.home = home
+  end
+
   test "offers each platform's sounds" do
     DesktopNotification.stub(:platform, :mac) { assert_includes DesktopNotification.sounds, "Glass" }
     DesktopNotification.stub(:platform, :linux) { assert_equal [ "Default" ], DesktopNotification.sounds }

@@ -1,5 +1,5 @@
 # Keeps what Echo stores small: the job queue's history, and notifications,
-# reviews and bookkeeping once they're old. Anything still waiting on you is
+# reviews, summaries and bookkeeping once they're old. Anything still waiting on you is
 # kept, however old. Runs every hour (config/recurring.yml).
 module Retention
   JOBS_FOR = 1.day
@@ -10,7 +10,8 @@ module Retention
 
   def self.run
     { finished_jobs: finished_jobs, schedule_records: schedule_records, failed_jobs: failed_jobs,
-      notifications: notifications, deliveries: deliveries, reviews: reviews, spawned_agents: spawned_agents, session_signals: session_signals }
+      notifications: notifications, deliveries: deliveries, reviews: reviews, spawned_agents: spawned_agents, session_signals: session_signals,
+      work_summaries: work_summaries }
   end
 
   def self.finished_jobs
@@ -64,5 +65,8 @@ module Retention
     SessionSignal.where(updated_at: ...ENDED_FOR.ago).where.not(session_id: live).delete_all
   end
 
-  private_class_method :queue, :finished_jobs, :schedule_records, :failed_jobs, :notifications, :deliveries, :reviews, :spawned_agents, :session_signals
+  # Find me work's summaries, once they're too old to trust.
+  def self.work_summaries = WorkSummary.where(generated_at: ...WorkSummary::KEEP_FOR.ago).delete_all
+
+  private_class_method :queue, :finished_jobs, :schedule_records, :failed_jobs, :notifications, :deliveries, :reviews, :spawned_agents, :session_signals, :work_summaries
 end

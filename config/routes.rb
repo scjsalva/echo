@@ -5,6 +5,7 @@ Rails.application.routes.draw do
   resources :agents, only: :index
   resources :loops, only: :index
   get "jira", to: "jira#index"
+  get "jira/work", to: "jira#work", as: :jira_work
   get "github", to: "github#index"
   get "reviews/:owner/:repo/:number", to: "reviews#show", as: :review_page, constraints: { owner: /[\w.-]+/, repo: /[\w.-]+/, number: /\d+/ }
   get "inbox", to: "inbox#index"
@@ -58,16 +59,28 @@ Rails.application.routes.draw do
     get "github/pull_requests/:owner/:repo/:number/threads", to: "github_review_threads#index", constraints: { owner: /[\w.-]+/, repo: /[\w.-]+/, number: /\d+/ }
     get "github/pull_requests/:owner/:repo/:number/comments", to: "github_pull_request_comments#index", constraints: { owner: /[\w.-]+/, repo: /[\w.-]+/, number: /\d+/ }
     resources :reviews, only: :show do
+      resources :thread_resolutions, only: :create
+      resource :rewrite, only: :create, controller: "review_rewrites"
       resource :ai_review, only: :create
       resource :submission, only: :create, controller: "review_submissions"
       resources :comments, only: :create, controller: "review_comments"
     end
     resources :review_comments, only: :update do
       resource :question, only: :create, controller: "review_questions"
+      resource :reply, only: :create, controller: "review_replies"
+      resource :rewrite, only: :create, controller: "review_rewrites"
     end
     namespace :jira do
-      resources :tickets, only: %i[index show], param: :key
-      resources :done_tickets, only: :index
+      resources :tickets, only: %i[index show], param: :key do
+        resource :session, only: %i[show create] do
+          post :resume
+        end
+        resource :assignment, only: %i[create destroy]
+      end
+      resource :work, only: %i[show create]
+      resources :boards, only: %i[index create update destroy] do
+        get :search, on: :collection
+      end
       resource :search, only: :show
     end
     resources :connections, only: %i[index destroy], param: :key do

@@ -53,7 +53,8 @@ module AiReviewer
   def self.run(review)
     pr = GithubPullRequest.find_by(key: review.pr_key)&.data || {}
     files = Github::PullRequestFiles.fetch(review.repo, review.number)
-    result = ask(prompt(pr, files, review.ai_guidance), Github::Checkout.for_pull_request(review.repo, review.number), repo: review.repo, ref: review.pr_key)
+    checkout = Github::Checkout.for_pull_request(review.repo, review.number)
+    result = ask(prompt(pr, files, review.ai_guidance), checkout, repo: review.repo, ref: review.pr_key)
     findings = Array(result["findings"])
     # A run always answers, so an empty one means something went wrong rather than "all good".
     raise Error, "Claude finished without saying anything, so this review can't be trusted. Try again." if result["summary"].blank?
@@ -68,7 +69,8 @@ module AiReviewer
     # What happened to every finding, so "no comments" is never ambiguous.
     left_out = unverified.map { it.slice("path", "line", "body").merge("reason" => "Claude couldn't confirm it in the code") } +
       off_diff.map { it.slice("path", "line", "body").merge("reason" => "Not on a line in this diff") }
-    review.update!(ai_report: { "summary" => result["summary"].to_s, "added" => on_diff.size, "left_out" => left_out })
+    # Its comments are on the lines of the commit it read, so the review is sent against that commit.
+    review.update!(head_sha: checkout.basename.to_s, ai_report: { "summary" => result["summary"].to_s, "added" => on_diff.size, "left_out" => left_out })
   end
 
   # The diff with every line numbered the way GitHub does, so the answer can point at real lines.
@@ -112,7 +114,8 @@ module AiReviewer
     nearby = file[:hunks].flat_map { it[:lines] }.select { (it[number].to_i - comment.line).abs <= 12 }
       .map { "#{it[number] || ' '} #{{ 'add' => '+', 'del' => '-', 'context' => ' ' }[it[:kind]]} #{it[:text]}" }
     history = comment.notes.map { "#{it['role']}: #{it['text']}" }.join("\n")
-    input = "File #{comment.path}, line #{comment.line}:\n#{nearby.join("\n")}\n\nDraft review comment:\n#{comment.body.presence || "(none yet: the reviewer is asking about the line first)"}\n\n" \
+    input = "File #{comment.path}, line #{comment.line}:\n#{nearby.join("\n")}\n\n#{thread_so_far(comment)}" \
+            "#{comment.reply? ? 'Draft reply' : 'Draft review comment'}:\n#{comment.body.presence || "(none yet: the reviewer is asking about the #{comment.reply? ? 'thread' : 'line'} first)"}\n\n" \
             "#{history.presence && "Earlier discussion:\n#{history}\n\n"}Question: #{question}"
 
     checkout = Github::Checkout.for_pull_request(comment.review.repo, comment.review.number)
@@ -126,6 +129,14 @@ module AiReviewer
     raise Error, "Claude took too long to answer"
   end
 
+  # A reply answers the thread on GitHub, so Claude reads the whole conversation first.
+  def self.thread_so_far(comment)
+    return "" unless comment.reply?
+
+    thread = Github::ReviewThreads.find(comment.review.repo, comment.review.number, comment.thread_id) or return ""
+    "The thread on GitHub this replies to, oldest first:\n#{thread[:comments].map { "#{it[:author] || 'someone'}: #{it[:body]}" }.join("\n\n")}\n\n"
+  end
+
   # The chosen skill's instructions, then Echo's rules for the action, then your own context.
   def self.system_prompt(action, rules, repo:)
     [ Skills.for(action, repo:).instructions, "## Echo's rules\n\n#{rules}", ClaudeCode::Context.prompt(repo:) ].compact_blank.join("\n\n")
@@ -134,5 +145,5 @@ module AiReviewer
   # "app#12" from "acme/app#12": the session list has little room.
   def self.short(pr_key) = pr_key.split("/").last
 
-  private_class_method :prompt, :ask, :short
+  private_class_method :prompt, :ask, :short, :thread_so_far
 end

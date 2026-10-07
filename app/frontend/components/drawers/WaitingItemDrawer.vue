@@ -1,26 +1,24 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { PhArrowSquareOut, PhBellSlash, PhTerminalWindow } from '@phosphor-icons/vue'
+import { computed } from 'vue'
+import { PhArrowSquareOut, PhTerminalWindow } from '@phosphor-icons/vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import DetailSection from '@/components/ui/DetailSection.vue'
 import QuoteBlock from '@/components/ui/QuoteBlock.vue'
 import SideDrawer from '@/components/ui/SideDrawer.vue'
 import SourceBadge from '@/components/ui/SourceBadge.vue'
 import NotificationContext from './NotificationContext.vue'
+import WaitingDismiss from './WaitingDismiss.vue'
 import { useDashboard } from '@/composables/useDashboard'
 import { useDrawer } from '@/composables/useDrawer'
 import { useFocusTerminal } from '@/composables/useFocusTerminal'
-import { useToast } from '@/composables/useToast'
 import { sourceBadge } from '@/lib/waiting'
 import type { WaitingItem } from '@/types/dashboard'
 
 const props = defineProps<{ item: WaitingItem }>()
 
 const dashboard = useDashboard()
-const { open, close } = useDrawer()
-const toast = useToast()
+const { open } = useDrawer()
 const focusTerminal = useFocusTerminal()
-const dismissing = ref(false)
 
 const agent = computed(() => (props.item.ref.agentId ? dashboard.agent(props.item.ref.agentId) : undefined))
 const pr = computed(() => (props.item.ref.prKey ? dashboard.pullRequest(props.item.ref.prKey) : undefined))
@@ -32,18 +30,6 @@ const contextText = computed(() => {
   return props.item.detail ? `“${props.item.detail}”` : ''
 })
 
-async function dismiss() {
-  dismissing.value = true
-  try {
-    await dashboard.dismiss(props.item.key)
-    close()
-    toast.show('Dismissed. Later activity on this thread only shows in notifications.')
-  } catch {
-    toast.show("Couldn't dismiss it. Try again.")
-  } finally {
-    dismissing.value = false
-  }
-}
 </script>
 
 <template>
@@ -79,6 +65,7 @@ async function dismiss() {
       <QuoteBlock>{{ agent.lastReply }}</QuoteBlock>
     </DetailSection>
     <NotificationContext v-else :label="item.label" :actor="item.actor" :at="item.at" :text="contextText" />
+    <WaitingDismiss :item="item" />
 
     <DetailSection v-if="pr" :title="`${pr.repo}#${pr.number}`">
       <QuoteBlock>{{ pr.summary }}</QuoteBlock>
@@ -87,11 +74,5 @@ async function dismiss() {
       <QuoteBlock>{{ ticket.description }}</QuoteBlock>
     </DetailSection>
 
-    <footer class="flex flex-wrap items-center gap-3 border-t border-line-soft pt-4">
-      <BaseButton :disabled="dismissing" @click="dismiss"><PhBellSlash :size="14" /> Dismiss</BaseButton>
-      <p class="basis-full max-w-prose text-[12.5px] text-faint">
-        {{ item.clears }} Dismiss mutes this thread: later activity still reaches your notifications, but it won't come back here.
-      </p>
-    </footer>
   </SideDrawer>
 </template>

@@ -19,7 +19,7 @@ provideDrawer()
 
 <template>
   <AppShell :shell="data.shell" :refresh-failed="refreshFailed">
-    <div class="grid items-start gap-7 lg:grid-cols-[minmax(0,1fr)_320px]">
+    <div class="grid grid-cols-[minmax(0,1fr)] items-start gap-7 lg:grid-cols-[minmax(0,1fr)_320px]">
       <main class="grid min-w-0 gap-7">
         <StatsStrip :stats="data.stats" />
         <WaitingList v-if="data.waiting.total" :items="data.waiting.items" :total="data.waiting.total" />

@@ -8,7 +8,7 @@ query($mine: String!, $requested: String!, $queue: String!, $withQueue: Boolean!
 fragment pr on PullRequest {
   number title url isDraft createdAt updatedAt additions deletions changedFiles
   body
-  author { login }
+  author { login __typename }
   repository { nameWithOwner }
   commits(last: 1) { totalCount nodes { commit { committedDate statusCheckRollup { state } } } }
   reviewDecision

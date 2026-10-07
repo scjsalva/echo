@@ -11,6 +11,14 @@ class Github::CliTest < ActiveSupport::TestCase
     refused.each { assert_not Github::Cli.allowed?(it), "should refuse #{it.join(' ')}" }
   end
 
+  test "lets through only the exact mutations for replying to, resolving and unresolving a review thread" do
+    Github::ReviewThreadActions::MUTATIONS.each do |mutation|
+      assert Github::Cli.allowed?([ "api", "graphql", "-f", "query=#{mutation}", "-f", "thread=T_1" ])
+    end
+    tweaked = Github::ReviewThreadActions::REPLY.sub("{ comment { url } }", "{ comment { url } } deletePullRequestReviewComment(input: {id: 1}) { clientMutationId }")
+    assert_not Github::Cli.allowed?([ "api", "graphql", "-f", "query=#{tweaked}" ])
+  end
+
   test "is connected when gh is logged in, with the account" do
     ENV["FAKE_GH_LOGGED_IN"] = "1"
     Github::Connection.refresh!

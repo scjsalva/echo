@@ -1,5 +1,6 @@
-# One comment on a line of a PR's diff: staged until you commit it, and only
-# committed ones are sent with the review.
+# One comment on a line of a PR's diff, or a reply to an earlier thread on GitHub
+# (one with a thread_id): staged until you commit it, and only committed ones are
+# sent with the review. A reply can also be sent on its own straight away.
 class ReviewComment < ApplicationRecord
   belongs_to :review
 
@@ -15,7 +16,12 @@ class ReviewComment < ApplicationRecord
   validates :body, presence: true, if: -> { author == "ai" || state.in?(%w[committed sent]) }
   validates :line, numericality: { only_integer: true, greater_than: 0 }
 
-  def to_props = slice(:id, :path, :line, :side, :start_line, :body, :state, :author, :severity, :evidence, :notes, :asking)
+  scope :replies, -> { where.not(thread_id: nil) }
+  scope :on_lines, -> { where(thread_id: nil) }
+
+  def reply? = thread_id.present?
+
+  def to_props = slice(:id, :path, :line, :side, :start_line, :body, :state, :author, :severity, :evidence, :notes, :asking, :thread_id)
 
   # What GitHub's create-review API expects for this comment.
   def to_github

@@ -83,6 +83,8 @@ function createDashboard<T extends PageData>(initial: T, endpoint: string) {
     githubNotification: (id?: string) => data.value.githubNotifications?.find((n) => n.id === id),
     jiraNotification: (id?: string) => data.value.jiraNotifications?.find((n) => n.id === id),
     waitingItem: (key: string) => data.value.waiting?.items.find((w) => w.key === key),
+    /** The open waiting item a notification is about, if it's waiting on you. */
+    waitingFor: (notificationId: string) => data.value.waiting?.items.find((w) => w.status === 'open' && w.ref.notificationId === notificationId),
   }
 }
 

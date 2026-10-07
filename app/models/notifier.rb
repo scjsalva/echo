@@ -3,11 +3,12 @@
 # notification you pick. Each item is only ever sent once.
 module Notifier
   SCOPES = %w[waiting custom].freeze
-  DEFAULTS = { "notify_desktop" => "on", "notify_scope" => "waiting" }.freeze
+  DEFAULTS = { "notify_desktop" => "on", "notify_scope" => "waiting", "notify_looks_ready" => "off" }.freeze
 
   # Every kind of notification Echo sends. The waiting ones are what "Waiting on you" covers.
   TYPES = [
     { id: "agent.blocked", group: "Agents", label: "An agent is waiting on you", waiting: true },
+    { id: "agent.review_done", group: "Agents", label: "An AI review of a PR finishes" },
     { id: "system.review_reminder", group: "System", label: "Review reminder" },
     { id: "github.ready_for_review", group: "System", label: "A teammate's PR is ready for review" },
     { id: "github.review_requested", group: "GitHub", label: "Review requested from you", waiting: true },
@@ -26,7 +27,7 @@ module Notifier
     { id: "jira.comment", group: "Jira", label: "Comments" },
     { id: "jira.transition", group: "Jira", label: "Status changes" }
   ].freeze
-  GITHUB_TYPES = { "reply" => "comment", "line_comment" => "comment", "team_mention" => "mention", "review_dismissed" => "reviewed", "changes_requested_other" => "reviewed", "ci_activity" => "ci",
+  GITHUB_TYPES = { "re_review_requested" => "review_requested", "reply" => "comment", "line_comment" => "comment", "team_mention" => "mention", "review_dismissed" => "reviewed", "changes_requested_other" => "reviewed", "ci_activity" => "ci",
     "author" => "other", "assign" => "other", "state_change" => "other", "subscribed" => "other", "manual" => "other" }.freeze
   BURST = 3
   # How often the review reminder says how many PRs are waiting for review, in minutes; 0 is off.
@@ -37,7 +38,8 @@ module Notifier
   def self.preferences
     {
       desktop: setting("notify_desktop") == "on", scope:, types: TYPES, enabled_types:,
-      reminder_minutes:, reminder_options: REMINDER_OPTIONS, working_hours: WorkingHours.props,
+      reminder_minutes:, reminder_options: REMINDER_OPTIONS, working_hours: WorkingHours.props, looks_ready: looks_ready?,
+      coloured_icons: DesktopNotification::Mac.coloured?, coloured_icons_available: DesktopNotification.platform == :mac,
       sound: Setting["notify_sound"] || DesktopNotification.default_sound,
       sounds: DesktopNotification.sounds, available: DesktopNotification.available?, settings_hint: DesktopNotification.settings_hint
     }
@@ -51,7 +53,10 @@ module Notifier
 
   def self.reminder_minutes = (Setting["review_reminder_minutes"] || REMINDER_DEFAULT).to_i
 
-  def self.update(desktop: nil, scope: nil, sound: nil, types: nil, reminder_minutes: nil)
+  # Whether Echo guesses when a PR you reviewed looks ready for another look. Off until you turn it on.
+  def self.looks_ready? = setting("notify_looks_ready") == "on"
+
+  def self.update(desktop: nil, scope: nil, sound: nil, types: nil, reminder_minutes: nil, looks_ready: nil, coloured_icons: nil)
     raise ArgumentError, "Unknown reminder interval" if reminder_minutes && !REMINDER_OPTIONS.include?(reminder_minutes.to_i)
     raise ArgumentError, "Unknown scope" if scope && !SCOPES.include?(scope)
     raise ArgumentError, "Unknown notification type" if types && (types - TYPES.pluck(:id)).any?
@@ -62,6 +67,8 @@ module Notifier
     Setting["notify_sound"] = sound if sound
     Setting["notify_types_off"] = (TYPES.pluck(:id) - types).to_json if types
     Setting["review_reminder_minutes"] = reminder_minutes.to_i.to_s if reminder_minutes
+    Setting["notify_looks_ready"] = ActiveModel::Type::Boolean.new.cast(looks_ready) ? "on" : "off" unless looks_ready.nil?
+    Setting[DesktopNotification::Mac::COLOURED] = ActiveModel::Type::Boolean.new.cast(coloured_icons) ? "on" : "off" unless coloured_icons.nil?
   end
 
   def self.type_of(source, kind)
@@ -88,7 +95,7 @@ module Notifier
     Delivery.insert_all(fresh.map { { item_key: it[:key], created_at: Time.current, updated_at: Time.current } })
     return if seeding || !preferences[:desktop]
 
-    fresh.first(BURST).each { DesktopNotification.show(**it[:notification], sound: preferences[:sound]) }
+    fresh.first(BURST).each { DesktopNotification.show(**it[:notification], sound: preferences[:sound], source: source_of(it[:key])) }
     if fresh.size > BURST
       DesktopNotification.show(**two_lines(title: "#{fresh.size - BURST} more", message: "Open Echo to see them all."), sound: nil)
     end
@@ -123,11 +130,13 @@ module Notifier
           url: link(item[:ref])) }
     end
     waiting += review_reminder(dashboard)
+    waiting += looks_ready(dashboard)
+    waiting += finished_ai_reviews
     return waiting unless custom
 
     waiting_keys = dashboard.waiting_items.map { it[:delivery_key] }.to_set
     github = dashboard.github_notifications.select do
-      it[:unread] && !waiting_keys.include?("github-#{it[:id]}") && wanted.include?(type_of("github", it[:reason]))
+      it[:unread] && it[:reason] != "looks_ready" && !waiting_keys.include?("github-#{it[:id]}") && wanted.include?(type_of("github", it[:reason]))
     end.map do |n|
       { key: "github-notification-#{n[:id]}-#{n[:at].to_i}",
         notification: two_lines(title: n[:title] || n[:pr_key], subtitle: "GitHub · #{n[:pr_key].split('/').last}",
@@ -159,6 +168,30 @@ module Notifier
         message: "#{count} PR#{'s' unless count == 1} waiting for review", url: "#{DesktopNotification.base_url}/github") } ]
   end
 
+  # An AI review you started has finished, or failed. Its key names that run, so a re-run notifies again.
+  def self.finished_ai_reviews
+    return [] if scope == "custom" && !enabled_types.include?("agent.review_done")
+
+    Review.where(ai_status: %w[done failed], ai_finished_at: 1.day.ago..).map do |review|
+      repo, number = review.pr_key.split("#")
+      title = GithubPullRequest.find_by(key: review.pr_key)&.data&.dig("title") || review.pr_key
+      message = review.ai_status == "failed" ? "Failed: #{review.ai_error}" : "#{review.comments.where(author: 'ai', state: 'staged').count.then { "#{it} comment#{'s' unless it == 1}" }} staged · #{title}"
+      { key: "agent-review-#{review.id}-#{review.ai_finished_at.to_i}",
+        notification: two_lines(title: review.ai_status == "failed" ? "AI review failed" : "AI review done", subtitle: "GitHub · #{review.pr_key.split('/').last}",
+          message:, url: "#{DesktopNotification.base_url}/reviews/#{repo}/#{number}") }
+    end
+  end
+
+  # A PR you reviewed that looks ready for another look, sent whatever the scope while it's turned on.
+  def self.looks_ready(dashboard)
+    return [] unless looks_ready?
+
+    dashboard.github_notifications.select { it[:unread] && it[:reason] == "looks_ready" }.map do |n|
+      { key: "github-notification-#{n[:id]}", notification: two_lines(title: n[:title] || n[:pr_key], subtitle: "GitHub · #{n[:pr_key].split('/').last}",
+        message: Github::NotificationText.for(reason: n[:reason], actor: n[:actor], body: nil), url: link(pr_key: n[:pr_key], notification_id: n[:id])) }
+    end
+  end
+
   # Every notification, OS or in-app, reads as two lines: the title, then the
   # message led by what would have been a third line (e.g. "GitHub · web").
   def self.two_lines(title:, message:, subtitle: nil, url: nil)
@@ -175,7 +208,10 @@ module Notifier
     end
   end
 
+  # Where a notification came from, by its key (e.g. "jira-notification-…"), for its logo's colour.
+  def self.source_of(key) = key.to_s.split("-").first.presence_in(%w[agent github jira])
+
   def self.setting(key) = Setting[key] || DEFAULTS.fetch(key)
 
-  private_class_method :candidates, :review_reminder, :two_lines, :link, :setting
+  private_class_method :source_of, :candidates, :review_reminder, :finished_ai_reviews, :looks_ready, :two_lines, :link, :setting
 end

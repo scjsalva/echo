@@ -43,12 +43,20 @@ const waiting = computed(() => (target.value?.type === 'waiting' ? dashboard.wai
 const notificationId = computed(() =>
   target.value && 'notificationId' in target.value ? target.value.notificationId : undefined,
 )
+// Opened from Waiting on you, or from a notification that's waiting on you (the bell,
+// the inbox, an OS notification): the drawer offers to dismiss it, under the message.
+const fromWaiting = computed(() => {
+  const key = target.value && 'waitingKey' in target.value ? target.value.waitingKey : undefined
+  if (key) return dashboard.waitingItem(key)
+  const id = notificationId.value
+  return id ? dashboard.waitingFor(id) : undefined
+})
 </script>
 
 <template>
-  <AgentDrawer v-if="agent" :key="agent.id" :agent="agent" />
-  <PullRequestDrawer v-else-if="pr" :key="pr.key" :pr="pr" :notification-id="notificationId" />
-  <TicketDrawer v-else-if="ticket" :key="ticket.key" :ticket="ticket" :notification-id="notificationId" />
+  <AgentDrawer v-if="agent" :key="agent.id" :agent="agent" :waiting="fromWaiting" />
+  <PullRequestDrawer v-else-if="pr" :key="pr.key" :pr="pr" :notification-id="notificationId" :waiting="fromWaiting" />
+  <TicketDrawer v-else-if="ticket" :key="ticket.key" :ticket="ticket" :notification-id="notificationId" :waiting="fromWaiting" />
   <WaitingItemDrawer v-else-if="waiting" :key="waiting.key" :item="waiting" />
   <TranscriptDrawer v-else-if="target?.type === 'transcript'" :id="target.id" :key="target.id" :title="target.title" />
 </template>

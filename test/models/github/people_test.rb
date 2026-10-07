@@ -11,7 +11,7 @@ class Github::PeopleTest < ActiveSupport::TestCase
     GithubPullRequest.create!(key: "acme/app#1", data: { "author" => "outside-contributor" })
     GithubPullRequest.create!(key: "acme/app#2", data: { "author" => "dependabot" })
     pages = [
-      { "nodes" => [ { "login" => "jhon50", "name" => "Jhonatan Teixeira" } ], "pageInfo" => { "hasNextPage" => true, "endCursor" => "c1" } },
+      { "nodes" => [ { "login" => "kwame", "name" => "Jhonatan Teixeira" } ], "pageInfo" => { "hasNextPage" => true, "endCursor" => "c1" } },
       { "nodes" => [ { "login" => "Dana", "name" => nil } ], "pageInfo" => { "hasNextPage" => false } }
     ]
     queries = []
@@ -19,7 +19,7 @@ class Github::PeopleTest < ActiveSupport::TestCase
 
     people = Github::Cli.stub(:run, cli) { Github::People.suggestions(repos: [ "acme/app" ]) }
 
-    assert_equal [ { login: "Dana", name: nil }, { login: "jhon50", name: "Jhonatan Teixeira" }, { login: "outside-contributor", name: nil } ], people
+    assert_equal [ { login: "Dana", name: nil }, { login: "kwame", name: "Jhonatan Teixeira" }, { login: "outside-contributor", name: nil } ], people
     assert_includes queries.last, "after=c1"
   end
 

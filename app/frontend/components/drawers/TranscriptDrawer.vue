@@ -35,7 +35,7 @@ onMounted(async () => {
     <ol v-else class="grid gap-3">
       <li v-for="(message, i) in messages" :key="i" class="grid max-w-prose gap-0.5">
         <span class="font-mono text-[11px] tracking-wide text-faint uppercase">{{ ROLE[message.role].label }}</span>
-        <p :class="['whitespace-pre-line break-words', ROLE[message.role].classes]">{{ message.text }}</p>
+        <p :class="['whitespace-pre-line wrap-anywhere', ROLE[message.role].classes]">{{ message.text }}</p>
       </li>
     </ol>
   </SideDrawer>

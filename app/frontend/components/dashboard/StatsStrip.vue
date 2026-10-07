@@ -35,15 +35,18 @@ const groups = computed<{ title: string; href: string; stats: Stat[] }[]>(() => 
       title: 'Jira',
       href: '/jira',
       stats: [
-        { label: 'Open', value: jira.open, href: '/jira', hint: 'Assigned to you and not done' },
-        { label: 'Done', value: jira.done, href: '/jira#done', hint: 'Assigned to you and finished in the last 14 days' },
+        jira.boards
+          ? { label: 'Unassigned', value: jira.unassigned, href: '/jira?assignee=unassigned', hint: 'Open on your board with nobody assigned, leaving out the Backlog' }
+          : { label: 'Unassigned', value: 0, href: '/settings#jira', hint: 'Choose your Jira board in Settings to count tickets nobody has picked up' },
+        { label: 'To Do', value: jira.todo, href: '/jira?assignee=me', hint: 'Yours and not started, your Backlog tickets included' },
+        { label: 'Done', value: jira.done, href: '/jira?assignee=me', hint: 'Yours and finished in the last 14 days' },
       ],
     },
     {
       title: 'GitHub',
       href: '/github',
       stats: [
-        { label: 'Team', value: github.team, tone: github.team ? 'accent' : 'default', href: '/github?filter=team', hint: 'PRs from your team that are ready for review' },
+        { label: 'Team', value: github.team, tone: github.team ? 'accent' : 'default', href: '/github?tab=team&status=ready', hint: 'PRs from your team that are ready for review' },
         { label: 'Mine', value: github.mine, href: '/github?tab=mine' },
         { label: 'Watching', value: github.watching, href: '/inbox?tab=github', hint: "Other people's PRs you get notifications for" },
       ],
@@ -68,7 +71,7 @@ const columns = computed(() => {
 <template>
   <section
     aria-label="Summary"
-    class="grid overflow-hidden rounded-xl border border-line bg-surface md:grid-cols-(--stat-columns)"
+    class="grid grid-cols-[minmax(0,1fr)] overflow-hidden rounded-xl border border-line bg-surface md:grid-cols-(--stat-columns)"
     :style="{ '--stat-columns': columns }"
   >
     <div

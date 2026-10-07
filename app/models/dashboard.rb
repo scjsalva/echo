@@ -4,7 +4,7 @@ class Dashboard
 
   # What the dashboard looks like before GitHub or Jira are connected.
   EMPTY = {
-    connected: {}, me: {}, tokens_today: nil, team: [], repos: [],
+    connected: {}, me: {}, tokens_today: nil, team: [], repos: [], jira_boards: { boards: [] },
     agents: [], pull_requests: [], github_notifications: [], jira_tickets: [], jira_notifications: []
   }.freeze
 
@@ -22,7 +22,8 @@ class Dashboard
       github_notifications: github[:connected] ? Github::DashboardData.notifications : [],
       agents: ClaudeCode::Session.live.map(&:to_agent) + ClaudeCode::Job.recent,
       tokens_today: ClaudeCode::Usage.tokens_today,
-      jira_tickets: jira[:connected] ? Jira::DashboardData.tickets(site: jira[:site]) : [],
+      jira_tickets: jira[:connected] ? with_board_tickets(Jira::DashboardData.tickets(site: jira[:site]), site: jira[:site]) : [],
+      jira_boards: Jira::Boards.props,
       jira_notifications: jira[:connected] ? Jira::DashboardData.notifications(site: jira[:site]) : []
     })
   end
@@ -39,6 +40,7 @@ class Dashboard
       missing_connections: connections.reject { it[:connected] || it[:optional] }.map { it[:name] },
       live: ClaudeCode::Hooks.installed?,
       keep_awake: KeepAwake.current,
+      lan_ip: LanAddress.ip,
       updated_at: Time.current
     }
   end
@@ -77,12 +79,20 @@ class Dashboard
 
   def jira_props
     { shell: shell_props, connected: @data.dig(:connected, :jira) || false, synced_at: Jira::Sync.synced_at,
-      agents: [], jira_tickets:, jira_notifications: }
+      agents: [], jira_tickets:, jira_notifications:, jira_boards: @data[:jira_boards] }
+  end
+
+  # Your own tickets, in full, plus every ticket on the boards you added, each
+  # saying which boards it's on and, from the board sync, its parent and whether it's a subtask.
+  def self.with_board_tickets(mine, site:)
+    on_boards = Jira::DashboardData.board_tickets(site:, me: Setting[Jira::Sync::ACCOUNT_ID]).index_by { it[:key] }
+    mine.map { |t| on_boards[t[:key]] ? t.merge(on_boards.delete(t[:key]).slice(:boards, :parent, :subtask)) : t } + on_boards.values
   end
 
   def settings_props
     repos = Github::Preferences.repos
     { shell: shell_props, connections:, time_zone: LocalTimeZone.props, keep_awake: KeepAwake.props, notifications: Notifier.preferences, github: Github::Preferences.props,
+      jira: @data[:jira_boards],
       claude: { skills: Skills.props(repos), context: ClaudeCode::Context.settings_props(repos),
         review_limit: Review.limit, review_limit_options: Review::LIMIT_OPTIONS } }
   end
@@ -120,9 +130,10 @@ class Dashboard
     end
   end
 
+  # Your team's open PRs that are ready for review, in the repos you watch.
   def review_queue
     @review_queue ||= pull_requests
-      .select { !it[:mine] && !it[:draft] && @data[:repos].include?(it[:full_name]) }
+      .select { !it[:mine] && !it[:draft] && @data[:repos].include?(it[:full_name]) && @data[:team].include?(it[:author]) }
       .sort_by { Time.zone.parse(it[:opened].to_s).to_i }.reverse
   end
 
@@ -163,6 +174,23 @@ class Dashboard
 
   def me = @data.dig(:me, :github_login)
 
+  # What nobody on your board has picked up (leaving out the Backlog and statuses
+  # you hid; on a scrum board with a sprint running, only that sprint), and your
+  # own tickets to do (your Backlog ones too) and done in the last 14 days.
+  def jira_stats(my_tickets)
+    boards = @data[:jira_boards][:boards].index_by { it[:id] }
+    open = jira_tickets.select { |t| t[:boards].present? && t[:category] != "done" && t[:boards].keys.any? { shown_on?(boards[it.to_s.to_i], t) } }
+    { unassigned: open.count { it[:assignee].blank? }, todo: my_tickets.count { it[:category] == "todo" }, done: my_tickets.count { it[:category] == "done" },
+      boards: boards.any? }
+  end
+
+  def shown_on?(board, ticket)
+    return false if board.blank? || ticket[:status].to_s.match?(/\Abacklog\z/i) || board[:statuses].any? { it[:name] == ticket[:status] && it[:hidden] }
+
+    active = board[:sprints].to_a.select { it[:state] == "active" }.map { it[:name] }
+    active.empty? || active.include?(ticket[:sprint])
+  end
+
   def stats
     my_tickets = jira_tickets.select { it[:assigned_to_me] }
 
@@ -173,14 +201,11 @@ class Dashboard
         tokens_used: @data[:tokens_today] || agents.sum { it[:tokens_today] }
       },
       github: {
-        team: review_queue.count { @data[:team].include?(it[:author]) },
+        team: review_queue.size,
         mine: pull_requests.count { it[:mine] },
         watching: pull_requests.count { |pr| !pr[:mine] && github_notifications.any? { it[:pr_key] == pr[:key] } }
       },
-      jira: {
-        open: my_tickets.count { it[:category] != "done" },
-        done: my_tickets.count { it[:category] == "done" }
-      }
+      jira: jira_stats(my_tickets)
     }
   end
 end

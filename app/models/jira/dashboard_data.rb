@@ -14,6 +14,20 @@ module Jira::DashboardData
     end
   end
 
+  # Tickets on the boards you added, once each however many boards it's on.
+  def self.board_tickets(site:, me:)
+    JiraBoardTicket.order(:board_id, :position).group_by(&:key).map do |key, rows|
+      t = rows.first.data.symbolize_keys
+      { key:, url: "https://#{site}/browse/#{key}", title: t[:title], type: t[:type], status: t[:status],
+        category: category_for(t[:status], t[:status_category]), status_category: t[:status_category], priority: t[:priority],
+        assignee: t[:assignee], reporter: nil, sprint: rows.filter_map { it.data["sprint"] }.first, description: nil, updated: nil,
+        sprint_state: rows.filter_map { it.data["sprint_state"] }.first,
+        subtask: t[:subtask] || false,
+        parent: t[:parent_key] && { key: t[:parent_key], title: t[:parent_title], type: t[:parent_type], status: t[:parent_status] },
+        assigned_to_me: me.present? && t[:assignee_id] == me, boards: rows.to_h { [ it.board_id, it.position ] } }
+    end
+  end
+
   # Recent notifications, plus anything still waiting on you however old it is.
   def self.notifications(site:)
     waiting = JiraNotification.where(resolved_at: nil, kind: WaitingItems::JIRA_KINDS.keys)
@@ -27,13 +41,15 @@ module Jira::DashboardData
   # Jira only has three status categories (to do, in progress, done), so the
   # workflow stages in between are told apart by status name. Anything else
   # Jira calls "in progress" comes after code review, e.g. Ready to Release.
-  def self.category(ticket)
-    case ticket.status
+  def self.category(ticket) = category_for(ticket.status, ticket.status_category)
+
+  def self.category_for(status, status_category)
+    case status
     when /reopen/i then "todo"
     when /under investigation|in development/i then "in_progress"
     when /code review/i then "code_review"
     else
-      { "new" => "todo", "done" => "done" }.fetch(ticket.status_category, "post_development")
+      { "new" => "todo", "done" => "done" }.fetch(status_category, "post_development")
     end
   end
 end

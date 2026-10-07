@@ -95,7 +95,7 @@ onBeforeUnmount(stopWaiting)
       <BasePill v-else tone="warn">Not connected</BasePill>
     </template>
     <template v-if="connection.detail || waiting" #description>
-      <span class="break-words">{{ waiting ? 'Finish logging in in the Terminal window and your browser. This updates by itself.' : connection.detail }}</span>
+      <span class="wrap-anywhere">{{ waiting ? 'Finish logging in in the Terminal window and your browser. This updates by itself.' : connection.detail }}</span>
     </template>
     <template v-if="connection.instant">
       <BaseButton v-if="connection.connected" :disabled="busy" tooltip="Takes Echo's hooks out of your Claude Code settings" @click="disconnect">

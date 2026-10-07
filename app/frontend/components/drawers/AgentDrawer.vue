@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import WaitingDismiss from './WaitingDismiss.vue'
+import type { WaitingItem } from '@/types/dashboard'
 import { computed, nextTick, ref } from 'vue'
 import { PhChatText, PhPencilSimple, PhPower, PhSparkle, PhTerminalWindow } from '@phosphor-icons/vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
@@ -20,7 +22,7 @@ import { formatTokens, timeAgo } from '@/lib/format'
 import { describeLoop, loopKind } from '@/lib/loops'
 import type { Agent, AgentSummary } from '@/types/dashboard'
 
-const props = defineProps<{ agent: Agent }>()
+const props = defineProps<{ agent: Agent; waiting?: WaitingItem }>()
 
 const { open, close } = useDrawer()
 const dashboard = useDashboard()
@@ -143,8 +145,8 @@ const tiles = computed(() => [
           <PhSparkle :size="14" weight="fill" class="ai-icon" /> {{ summarising ? 'Summarising…' : 'Summarise' }}
         </BaseButton>
         <BaseButton @click="open({ type: 'transcript', id: agent.id, title: agent.title ?? agent.name })"><PhChatText :size="14" /> Transcript</BaseButton>
-        <SkillPicker action="summary" class="basis-full" />
       </template>
+
       <BaseButton
         :disabled="Boolean(agent.terminalUnavailable)"
         :tooltip="agent.terminalUnavailable ?? 'Brings this session\'s Terminal tab to the front'"
@@ -162,6 +164,8 @@ const tiles = computed(() => [
           <PhPower :size="14" /> End session
         </BaseButton>
       </template>
+      <!-- Summarise's skill, on its own line under all the buttons rather than splitting them. -->
+      <SkillPicker v-if="hasTranscript" action="summary" class="basis-full" />
     </template>
 
     <p v-if="agent.task" class="rounded-lg bg-accent-soft px-3 py-2.5 text-[13px] text-accent">
@@ -169,6 +173,7 @@ const tiles = computed(() => [
     </p>
 
     <p v-if="agent.needs" class="rounded-lg bg-warn-soft px-3 py-2.5 font-medium text-warn">{{ agent.needs }}</p>
+    <WaitingDismiss v-if="waiting" :item="waiting" />
 
     <DetailSection v-if="summary" :title="`AI summary · ${summary.model} · ${timeAgo(summary.generatedAt, now)} ago`">
       <QuoteBlock accent>{{ summary.text }}</QuoteBlock>
@@ -200,7 +205,7 @@ const tiles = computed(() => [
       <ul class="divide-y divide-line-soft rounded-lg border border-line-soft">
         <li v-for="loop in agent.loops" :key="loop.id" class="grid gap-1 px-3 py-2.5">
           <div class="flex flex-wrap items-center gap-2">
-            <span class="text-[13px] font-medium break-words">{{ loop.description }}</span>
+            <span class="text-[13px] font-medium wrap-anywhere">{{ loop.description }}</span>
             <BasePill class="ml-auto">{{ loopKind[loop.kind] }}</BasePill>
           </div>
           <span class="text-[12.5px] text-muted">{{ describeLoop(loop, now) }}</span>
@@ -213,7 +218,7 @@ const tiles = computed(() => [
         <li v-for="sub in agent.subagents" :key="`${sub.type}-${sub.active}`" class="grid gap-1 px-3 py-2.5">
           <div class="flex items-center gap-2">
             <span class="font-mono text-[12.5px] font-medium">{{ sub.type }}</span>
-            <span v-if="sub.name" class="min-w-0 text-[12.5px] break-words text-muted">{{ sub.name }}</span>
+            <span v-if="sub.name" class="min-w-0 text-[12.5px] wrap-anywhere text-muted">{{ sub.name }}</span>
             <BasePill class="ml-auto" :tone="sub.status === 'running' ? 'ok' : 'neutral'">{{ sub.status }}</BasePill>
           </div>
           <span class="text-[12.5px] text-muted">{{ sub.result }}</span>

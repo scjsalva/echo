@@ -1,7 +1,7 @@
 # A headless Claude run Echo started, e.g. for an AI review. Recorded by pid so
 # the Agents page can say what it's for, and so leftovers can be ended.
 class SpawnedAgent < ApplicationRecord
-  PURPOSES = { "ai_review" => "AI review", "review_question" => "Review question", "summary" => "Summary" }.freeze
+  PURPOSES = { "ai_review" => "AI review", "review_question" => "Review question", "summary" => "Summary", "rewrite" => "Rewrite", "find_work" => "Find me work" }.freeze
 
   validates :purpose, inclusion: { in: PURPOSES.keys }
 

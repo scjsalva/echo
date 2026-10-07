@@ -14,7 +14,7 @@ afterEach(() => vi.unstubAllGlobals())
 describe('NotificationMenu', () => {
   it('shows the 10 latest notifications and links to the rest', async () => {
     const read = many.map((n) => ({ ...n, unread: false }))
-    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ ...overview, githubNotifications: read, jiraNotifications: [], pullRequests: [] }), { status: 200 })))
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ ...overview, githubNotifications: read, jiraNotifications: [], pullRequests: [], waiting: { items: [], total: 0 } }), { status: 200 })))
     const menu = mount(NotificationMenu, { props: { shell: overview.shell, linkClass: '' }, attachTo: document.body })
 
     await menu.trigger('mouseenter')
@@ -30,7 +30,7 @@ describe('NotificationMenu', () => {
   it('marks what it shows read once you move away, but leaves what still waits on you unread', async () => {
     const approval = { ...many[0], id: 'g-approved', reason: 'approved' as const, unread: true, resolution: null, title: 'Approved one' }
     const request = { ...many[0], id: 'g-request', reason: 'review_requested' as const, unread: true, resolution: null, title: 'Review me', at: new Date(Date.now() - 3_600_000).toISOString() }
-    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => new Response(JSON.stringify({ ...overview, githubNotifications: [approval, request], jiraNotifications: [], pullRequests: [] }), { status: 200 }))
+    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => new Response(JSON.stringify({ ...overview, githubNotifications: [approval, request], jiraNotifications: [], pullRequests: [], waiting: { items: [], total: 0 } }), { status: 200 }))
     vi.stubGlobal('fetch', fetchMock)
     vi.stubGlobal('location', { ...location, assign: vi.fn(), origin: 'http://localhost' })
     const menu = mount(NotificationMenu, { props: { shell: overview.shell, linkClass: '' }, attachTo: document.body })
@@ -52,7 +52,7 @@ describe('NotificationMenu', () => {
 
   it('marks them read when you move away after a look, but not after just passing over', async () => {
     const approval = { ...many[0], id: 'g-approved', reason: 'approved' as const, unread: true, resolution: null }
-    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => new Response(JSON.stringify({ ...overview, githubNotifications: [approval], jiraNotifications: [], pullRequests: [] }), { status: 200 }))
+    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => new Response(JSON.stringify({ ...overview, githubNotifications: [approval], jiraNotifications: [], pullRequests: [], waiting: { items: [], total: 0 } }), { status: 200 }))
     vi.stubGlobal('fetch', fetchMock)
     const menu = mount(NotificationMenu, { props: { shell: overview.shell, linkClass: '' }, attachTo: document.body })
     const reads = () => fetchMock.mock.calls.filter(([url]) => String(url).endsWith('/read_some')).length
@@ -80,10 +80,10 @@ describe('NotificationMenu', () => {
     menu.unmount()
   })
 
-  it('shows unread ones however old, so the count matches what you see', async () => {
+  it('shows unread ones however old, first and apart from the rest, so a late one is never buried', async () => {
     const old = { ...many[0], id: 'g-old', title: 'Old but unread', unread: true, at: new Date(Date.now() - 3 * 86_400_000).toISOString() }
     const recent = many.map((n) => ({ ...n, unread: false }))
-    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ ...overview, githubNotifications: [...recent, old], jiraNotifications: [], pullRequests: [] }), { status: 200 })))
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ ...overview, githubNotifications: [...recent, old], jiraNotifications: [], pullRequests: [], waiting: { items: [], total: 0 } }), { status: 200 })))
     const menu = mount(NotificationMenu, { props: { shell: overview.shell, linkClass: '' }, attachTo: document.body })
 
     await menu.trigger('mouseenter')
@@ -91,12 +91,36 @@ describe('NotificationMenu', () => {
 
     const rows = menu.findAll('[role="dialog"] li')
     expect(rows).toHaveLength(10)
-    expect(rows.at(-1)!.text()).toContain('Old but unread')
+    expect(rows.at(0)!.text()).toContain('Old but unread')
+    expect(menu.findAll('[role="dialog"] section h4').map((h) => h.text())).toEqual(['Unread', 'Earlier'])
+    expect(menu.find('section[aria-label="Unread"]').findAll('li')).toHaveLength(1)
     menu.unmount()
   })
 
+  it('leads with what is waiting on you, only when there is something, and does not repeat it below', async () => {
+    const waitingItem = { ...overview.waiting.items[0], key: 'w1', status: 'open' as const, title: 'Fix the export', ref: { prKey: 'acme/web#9', notificationId: 'g-req' } }
+    const request = { ...overview.githubNotifications[0], id: 'g-req', title: 'Fix the export', unread: true }
+    const other = { ...overview.githubNotifications[0], id: 'g-other', title: 'Something else', unread: true }
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ ...overview, githubNotifications: [request, other], jiraNotifications: [], pullRequests: [], waiting: { items: [waitingItem], total: 1 } }), { status: 200 })))
+    const menu = mount(NotificationMenu, { props: { shell: overview.shell, linkClass: '' }, attachTo: document.body })
+    await menu.trigger('mouseenter')
+    await flushPromises()
+
+    expect(menu.findAll('[role="dialog"] section h4').map((h) => h.text())).toEqual(['Waiting on you', 'Unread'])
+    expect(menu.find('section[aria-label="Waiting on you"]').text()).toContain('Fix the export')
+    expect(menu.find('section[aria-label="Unread"]').text()).not.toContain('Fix the export')
+    menu.unmount()
+
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ ...overview, githubNotifications: [other], jiraNotifications: [], pullRequests: [], waiting: { items: [], total: 0 } }), { status: 200 })))
+    const quiet = mount(NotificationMenu, { props: { shell: overview.shell, linkClass: '' }, attachTo: document.body })
+    await quiet.trigger('mouseenter')
+    await flushPromises()
+    expect(quiet.find('section[aria-label="Waiting on you"]').exists()).toBe(false)
+    quiet.unmount()
+  })
+
   it('puts the unread count on the tab title, and keeps it there when the page retitles itself', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ ...overview, githubNotifications: [], jiraNotifications: [], pullRequests: [] }), { status: 200 })))
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ ...overview, githubNotifications: [], jiraNotifications: [], pullRequests: [], waiting: { items: [], total: 0 } }), { status: 200 })))
     document.head.innerHTML = '<title>GitHub · Echo</title>'
     const menu = mount(NotificationMenu, { props: { shell: overview.shell, linkClass: '' }, attachTo: document.body })
     expect(document.title).toBe(`(${overview.shell.unreadCount}) GitHub · Echo`)

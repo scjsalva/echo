@@ -2,6 +2,7 @@ require "test_helper"
 
 class AiReviewerTest < ActiveSupport::TestCase
   Status = Struct.new(:success?)
+  SHA = "b" * 40
   PATCH = "@@ -1,2 +1,3 @@\n a = 1\n+b = nil.size\n c = 3".freeze
 
   setup do
@@ -11,7 +12,7 @@ class AiReviewerTest < ActiveSupport::TestCase
   end
 
   def with_diff(&block)
-    Github::Checkout.stub(:for_pull_request, Pathname("/tmp/checkout")) do
+    Github::Checkout.stub(:for_pull_request, Pathname("/tmp/acme/app@commits/#{SHA}")) do
       Github::Cli.stub(:run, ->(*, **) { [ { "filename" => "app/x.rb", "status" => "modified", "patch" => PATCH } ] }, &block)
     end
   end
@@ -26,7 +27,7 @@ class AiReviewerTest < ActiveSupport::TestCase
     command = folder = nil
     claude = ->(args, input:, chdir:, **) { input_seen, command, folder = input, args, chdir; [ answer, Status.new(true) ] }
 
-    @review.update!(ai_guidance: "Check the nil case")
+    @review.update!(ai_guidance: "Check the nil case", head_sha: "a" * 40)
     with_diff { ClaudeCode::Headless.stub(:run, claude) { AiReviewer.run(@review) } }
 
     assert_equal [ [ "app/x.rb", 2, "RIGHT", "nil.size raises", "staged", "ai", "high", "x.rb:2 calls size on nil" ] ],
@@ -38,7 +39,8 @@ class AiReviewerTest < ActiveSupport::TestCase
     report = @review.reload.ai_report
     assert_equal [ "One real bug.", 1 ], report.values_at("summary", "added")
     assert_equal [ "Claude couldn't confirm it in the code", "Not on a line in this diff" ], report["left_out"].pluck("reason")
-    assert_equal Pathname("/tmp/checkout"), folder
+    assert_equal Pathname("/tmp/acme/app@commits/#{SHA}"), folder
+    assert_equal SHA, @review.head_sha, "sent against the commit Claude read"
     assert_includes command, "--restricted"
     assert_equal "Echo review for app#7", command[command.index("-n") + 1]
     system_prompt = command[command.index("--system-prompt") + 1]

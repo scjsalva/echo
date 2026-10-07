@@ -40,14 +40,14 @@ const clamped = ref(true)
       @click="expanded = true"
     >
       <UserAvatar v-if="author" :name="author" />
-      <span class="min-w-0 break-words">{{ author ?? 'Someone' }}</span>
+      <span class="min-w-0 wrap-anywhere">{{ author ?? 'Someone' }}</span>
       <span>· {{ timeAgo(at) }} ago</span>
       <PhCaretRight :size="11" weight="bold" class="ml-auto shrink-0" />
     </button>
     <template v-else>
       <div class="flex flex-wrap items-center gap-2 border-b border-line-soft bg-subtle px-3 py-2 text-[12.5px]">
         <UserAvatar v-if="author" :name="author" />
-        <strong class="min-w-0 font-medium break-words">{{ author ?? 'Someone' }}</strong>
+        <strong class="min-w-0 font-medium wrap-anywhere">{{ author ?? 'Someone' }}</strong>
         <BasePill v-if="bot">Bot</BasePill>
         <BasePill v-if="pill" :tone="pill.tone">{{ pill.label }}</BasePill>
         <a v-if="url" :href="url" target="_blank" rel="noopener" class="text-faint hover:text-ink">{{ timeAgo(at) }} ago</a>
@@ -59,7 +59,7 @@ const clamped = ref(true)
       <div class="bg-surface px-3 py-2.5">
         <div :class="['text-[13px] leading-relaxed', isLong && clamped && 'line-clamp-[8]']">
           <MarkdownBlock v-if="markdown" :source="body" />
-          <p v-else class="whitespace-pre-line break-words">{{ body }}</p>
+          <p v-else class="whitespace-pre-line wrap-anywhere">{{ body }}</p>
         </div>
         <button v-if="isLong" type="button" class="mt-1.5 text-[12px] font-medium text-accent hover:opacity-80" @click="clamped = !clamped">
           {{ clamped ? 'Show more' : 'Show less' }}
