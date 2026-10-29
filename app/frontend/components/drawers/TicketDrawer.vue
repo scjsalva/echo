@@ -2,7 +2,8 @@
 import WaitingDismiss from './WaitingDismiss.vue'
 import type { WaitingItem } from '@/types/dashboard'
 import { computed, onMounted, ref } from 'vue'
-import { PhArrowSquareOut, PhPaperclip, PhUserMinus, PhUserPlus } from '@phosphor-icons/vue'
+import { PhArrowSquareOut, PhUserMinus, PhUserPlus } from '@phosphor-icons/vue'
+import JiraAttachments from '@/components/jira/JiraAttachments.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BasePill from '@/components/ui/BasePill.vue'
 import CommentThread from '@/components/ui/CommentThread.vue'
@@ -106,8 +107,6 @@ function openRelated(item: JiraRelatedTicket) {
   if (dashboard.ticket(item.key)) open({ type: 'ticket', key: item.key })
   else window.open(item.url, '_blank', 'noopener')
 }
-
-const fileSize = (bytes: number) => (bytes >= 1_048_576 ? `${(bytes / 1_048_576).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`)
 </script>
 
 <template>
@@ -171,16 +170,7 @@ const fileSize = (bytes: number) => (bytes >= 1_048_576 ? `${(bytes / 1_048_576)
     </DetailSection>
 
     <DetailSection v-if="detail?.attachments.length" :title="`Attachments · ${detail.attachments.length}`">
-      <ul class="divide-y divide-line-soft rounded-lg border border-line-soft">
-        <li v-for="file in detail.attachments" :key="`${file.name}-${file.created}`">
-          <a :href="ticket.url" target="_blank" rel="noopener" class="flex items-center gap-2 px-3 py-2 text-[13px] hover:bg-subtle">
-            <PhPaperclip :size="14" class="shrink-0 text-faint" />
-            <span class="min-w-0 flex-1 wrap-anywhere">{{ file.name }}</span>
-            <span class="shrink-0 text-xs text-faint">{{ fileSize(file.size) }}</span>
-            <PhArrowSquareOut :size="12" class="shrink-0 text-faint" />
-          </a>
-        </li>
-      </ul>
+      <JiraAttachments :files="detail.attachments" :fallback="ticket.url" />
     </DetailSection>
 
     <DetailSection v-if="detail" :title="`Comments · ${detail.comments.length}`">

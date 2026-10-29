@@ -1,5 +1,7 @@
 # Everything readable on one ticket, fetched on demand when its panel opens.
-# Only text comes back; attachments are listed by name and opened in Jira.
+# Only text comes back. acli can't download attachments, so they're linked
+# straight to Jira, and images shown from there: your browser loads them with
+# your Jira login.
 class Jira::TicketDetail
   CACHE_FOR = 1.minute
   # Custom fields Jira uses internally (rank, the development panel summary).
@@ -56,7 +58,10 @@ class Jira::TicketDetail
   end
 
   def attachment(file)
-    { name: file["filename"], size: file["size"], type: file["mimeType"], author: name(file["author"]), created: file["created"] }
+    id = file["id"]
+    { name: file["filename"], size: file["size"], type: file["mimeType"], author: name(file["author"]), created: file["created"],
+      url: "https://#{@site}/secure/attachment/#{id}/#{ERB::Util.url_encode(file['filename'].to_s)}",
+      thumbnail: ("https://#{@site}/rest/api/3/attachment/thumbnail/#{id}" if file["mimeType"].to_s.start_with?("image/")) }
   end
 
   def comment(c)

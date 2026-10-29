@@ -119,6 +119,9 @@
   .markdown pre code {
     @apply bg-transparent p-0 [overflow-wrap:normal];
   }
+  .markdown img {
+    @apply h-auto max-w-full rounded-md border border-line-soft;
+  }
   .markdown blockquote {
     @apply border-l-2 border-line pl-3 text-muted;
   }

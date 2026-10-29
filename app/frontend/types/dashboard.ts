@@ -204,7 +204,8 @@ export interface JiraTicketDetail {
   parent: JiraRelatedTicket | null
   subtasks: JiraRelatedTicket[]
   links: JiraRelatedTicket[]
-  attachments: { name: string; size: number; type: string; author: string | null; created: string }[]
+  /** url opens it in Jira; thumbnail, for images, loads from Jira with your login. */
+  attachments: { name: string; size: number; type: string; author: string | null; created: string; url?: string; thumbnail?: string | null }[]
   moreDetails: string[]
   comments: { id: string; author: string | null; bot: boolean; created: string; text: string | null }[]
 }

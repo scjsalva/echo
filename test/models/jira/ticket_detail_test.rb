@@ -11,7 +11,7 @@ class Jira::TicketDetailTest < ActiveSupport::TestCase
         "parent" => { "key" => "APP-0", "fields" => { "summary" => "Epic", "status" => { "name" => "Open" } } },
         "issuelinks" => [ { "type" => { "outward" => "blocks", "inward" => "is blocked by" },
           "inwardIssue" => { "key" => "APP-9", "fields" => { "summary" => "Other", "status" => { "name" => "Done" } } } } ],
-        "attachment" => [ { "filename" => "screen.png", "size" => 2048, "mimeType" => "image/png", "author" => { "displayName" => "Dana" }, "created" => "2026-09-01" } ],
+        "attachment" => [ { "id" => "101594", "filename" => "screen.png", "size" => 2048, "mimeType" => "image/png", "author" => { "displayName" => "Dana" }, "created" => "2026-09-01" } ],
         "comment" => { "comments" => [ { "id" => "1", "author" => { "displayName" => "CI", "accountType" => "app" }, "created" => "2026-09-02", "body" => doc("Released") } ] },
         "customfield_10152" => doc("Actual result"), "customfield_10080" => doc("Expected result"),
         "customfield_10034" => "https://jam.dev/c/abc", "customfield_10019" => "1|i03kh3:",
@@ -26,6 +26,9 @@ class Jira::TicketDetailTest < ActiveSupport::TestCase
     assert_equal({ key: "APP-0", url: "https://example.atlassian.net/browse/APP-0", title: "Epic", status: "Open" }, detail[:parent])
     assert_equal "is blocked by", detail[:links].sole[:relation]
     assert_equal "screen.png", detail[:attachments].sole[:name]
+    # acli can't download them, so the browser loads them from Jira with your login.
+    assert_equal [ "https://example.atlassian.net/secure/attachment/101594/screen.png", "https://example.atlassian.net/rest/api/3/attachment/thumbnail/101594" ],
+      detail[:attachments].sole.values_at(:url, :thumbnail)
     assert detail[:comments].sole[:bot]
     assert_equal [ "frontend" ], detail[:labels]
   end
