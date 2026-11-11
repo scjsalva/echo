@@ -11,6 +11,15 @@ class ClaudeCode::HeadlessTest < ActiveSupport::TestCase
     assert agent.ended_at
   end
 
+  test "leaves warnings out of a successful run's output, but keeps them when it fails" do
+    output, = ClaudeCode::Headless.run([ "sh", "-c", "echo 'Warning: sign-in ends soon' >&2; cat" ], input: "hello", chdir: Dir.tmpdir, timeout: 5, purpose: "rewrite")
+    assert_equal "hello", output
+
+    output, status = ClaudeCode::Headless.run([ "sh", "-c", "echo 'Not logged in' >&2; exit 1" ], input: "", chdir: Dir.tmpdir, timeout: 5, purpose: "rewrite")
+    assert_not status.success?
+    assert_equal "Not logged in\n", output
+  end
+
   test "ends the process and anything it started when it runs too long" do
     pid = nil
     assert_raises(ClaudeCode::Headless::Timeout) do

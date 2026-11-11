@@ -11,15 +11,18 @@ module ClaudeCode::Headless
   def self.run(command, input:, chdir:, timeout:, purpose:, ref: nil)
     reap
     group = Platform.windows? ? { new_pgroup: true } : { pgroup: true }
-    Open3.popen2e(*command, chdir: chdir.to_s, **group) do |stdin, out, wait|
+    Open3.popen3(*command, chdir: chdir.to_s, **group) do |stdin, out, err, wait|
       agent = SpawnedAgent.create!(pid: wait.pid, purpose:, ref:)
       reader = Thread.new { out.read }
+      errors = Thread.new { err.read }
       begin
         stdin.write(input.to_s)
         stdin.close
         raise Timeout, "Claude took longer than #{timeout.inspect}" unless wait.join(timeout)
 
-        [ reader.value, wait.value ]
+        # Warnings such as the sign-in expiring go to stderr; they only belong in the output when the run failed.
+        status = wait.value
+        [ status.success? ? reader.value : "#{errors.value}#{reader.value}", status ]
       ensure
         stop(wait.pid) if wait.alive?
         agent.update!(ended_at: Time.current)
