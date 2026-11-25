@@ -40,6 +40,7 @@ class Dashboard
       missing_connections: connections.reject { it[:connected] || it[:optional] }.map { it[:name] },
       live: ClaudeCode::Hooks.installed?,
       keep_awake: KeepAwake.current,
+      away: Away.props,
       lan_ip: LanAddress.ip,
       updated_at: Time.current
     }

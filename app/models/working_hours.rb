@@ -40,6 +40,17 @@ module WorkingHours
     day.present? && prefs["days"].include?(day)
   end
 
+  # When the first working day on or after `after` starts. Without working hours, `after` itself.
+  def self.next_start(after:)
+    prefs = preferences
+    return after unless prefs["enabled"]
+
+    local = after.in_time_zone(LocalTimeZone.current)
+    hour, minute = prefs["start"].split(":").map(&:to_i)
+    (0..7).lazy.map { (local + it.days).change(hour:, min: minute) }
+      .find { it >= after && prefs["days"].include?(it.wday) } || after
+  end
+
   def self.props = preferences.merge("time_zone" => LocalTimeZone.current.tzinfo.name)
 
   def self.minutes(hhmm) = hhmm.split(":").then { |h, m| h.to_i * 60 + m.to_i }

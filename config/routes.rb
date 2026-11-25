@@ -31,6 +31,7 @@ Rails.application.routes.draw do
     end
     resource :settings, only: :update
     resource :test_notification, only: :create
+    resource :away, only: %i[update destroy], controller: "away"
     resources :alerts, only: :index
     resources :hooks, only: :create
     resource :changes, only: :show

@@ -192,6 +192,22 @@ class NotifierTest < ActiveSupport::TestCase
     assert_equal [ "Allow Bash(ls) · app-a1" ], @sent.map { it.third.split(" · ", 2).last }
   end
 
+  test "while you're away only your agents notify, and what came in isn't sent when you're back" do
+    Setting[Notifier::SEEDED] = "1"
+    Notifier.update(scope: "custom")
+    comment = { id: "c1", kind: "comment", key: "APP-1", actor: "Dana", body: "Looks good", at: Time.current, unread: true }
+    board = dashboard(agents: [ blocked_agent(1.minute.ago) ], jira_notifications: [ comment ])
+    Away.start("today")
+
+    Notifier.deliver_new(board)
+    assert_equal [ "Waiting on you" ], @sent.map(&:first)
+    assert_equal [ "agent" ], Notifier.alerts(board).pluck(:source)
+
+    Away.stop
+    Notifier.deliver_new(board)
+    assert_equal 1, @sent.size
+  end
+
   test "rejects unknown notification types" do
     assert_raises(ArgumentError) { Notifier.update(types: %w[github.everything]) }
   end

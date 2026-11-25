@@ -82,7 +82,9 @@ module Notifier
 
   def self.deliver_new(dashboard = Dashboard.current)
     # Outside working hours nothing is recorded as sent, so it all arrives when they start.
-    return unless WorkingHours.within?
+    # While you're away it's all recorded but only your agents' are sent, so nothing stale arrives when you're back.
+    away = Away.active?
+    return unless away || WorkingHours.within?
 
     candidates = candidates(dashboard)
     sent = Delivery.where(item_key: candidates.map { it[:key] }).pluck(:item_key).to_set
@@ -95,6 +97,8 @@ module Notifier
     Delivery.insert_all(fresh.map { { item_key: it[:key], created_at: Time.current, updated_at: Time.current } })
     return if seeding || !preferences[:desktop]
 
+    fresh = fresh.select { from_agent?(it) } if away
+
     fresh.first(BURST).each { DesktopNotification.show(**it[:notification], sound: preferences[:sound], source: source_of(it[:key])) }
     if fresh.size > BURST
       DesktopNotification.show(**two_lines(title: "#{fresh.size - BURST} more", message: "Open Echo to see them all."), sound: nil)
@@ -103,9 +107,9 @@ module Notifier
 
   # The same new-item feed, for in-app alerts on whatever page is open.
   def self.alerts(dashboard = Dashboard.current)
-    return [] unless WorkingHours.within?
+    return [] unless Away.active? || WorkingHours.within?
 
-    candidates(dashboard).map { |c| { id: c[:key], source: c[:key].split("-").first, **c[:notification] } }
+    candidates(dashboard).select { !Away.active? || from_agent?(it) }.map { |c| { id: c[:key], source: c[:key].split("-").first, **c[:notification] } }
   end
 
   # In-app alerts only show when OS notifications won't, so you're not told twice.
@@ -120,6 +124,8 @@ module Notifier
     sound = preferences[:sound] unless sound == "none" || DesktopNotification.sounds.include?(sound)
     DesktopNotification.show(**two_lines(title: "Test notification", message: "This is how Echo will get your attention."), sound:)
   end
+
+  def self.from_agent?(candidate) = candidate[:key].start_with?("agent-")
 
   def self.candidates(dashboard)
     custom = scope == "custom"
@@ -213,5 +219,5 @@ module Notifier
 
   def self.setting(key) = Setting[key] || DEFAULTS.fetch(key)
 
-  private_class_method :source_of, :candidates, :review_reminder, :finished_ai_reviews, :looks_ready, :two_lines, :link, :setting
+  private_class_method :source_of, :from_agent?, :candidates, :review_reminder, :finished_ai_reviews, :looks_ready, :two_lines, :link, :setting
 end

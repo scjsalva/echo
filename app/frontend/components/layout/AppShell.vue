@@ -3,6 +3,8 @@ import { computed, onBeforeUnmount, onMounted, provide, ref } from 'vue'
 import { PhCoffee, PhGear } from '@phosphor-icons/vue'
 import BaseTooltip from '@/components/ui/BaseTooltip.vue'
 import AlertStack from './AlertStack.vue'
+import AwayBanner from './AwayBanner.vue'
+import AwayMenu from './AwayMenu.vue'
 import LinkedDrawer from './LinkedDrawer.vue'
 import NotificationMenu from './NotificationMenu.vue'
 import PhoneLink from './PhoneLink.vue'
@@ -106,6 +108,7 @@ const iconLink = 'inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[12
         </BaseTooltip>
         <span class="mx-0.5 h-4 w-px bg-line" aria-hidden="true" />
         <PhoneLink v-if="shell.lanIp && onThisMac" :lan-ip="shell.lanIp" :link-class="iconLink" />
+        <AwayMenu v-if="shell.away" :away="shell.away" :link-class="iconLink" />
         <NotificationMenu :shell="shell" :link-class="iconLink" />
         <a href="/settings" :class="iconLink" aria-label="Settings">
           <PhGear :size="15" />
@@ -114,6 +117,7 @@ const iconLink = 'inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[12
       </div>
     </header>
 
+    <AwayBanner v-if="shell.away?.until" :until="shell.away.until" />
     <FirstRunBanner v-if="showFirstRun && shell.missingConnections.length" :missing="shell.missingConnections" />
     <slot />
     <ToastHost />

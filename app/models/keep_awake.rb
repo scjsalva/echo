@@ -32,7 +32,7 @@ module KeepAwake
         "An agent was working a few minutes ago"
       end
     when "working_hours"
-      "During your working hours" if WorkingHours.within?
+      "During your working hours" if WorkingHours.within? && !Away.active?
     end
   end
 

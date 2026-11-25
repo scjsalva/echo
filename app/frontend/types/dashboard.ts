@@ -260,6 +260,8 @@ export interface ShellProps {
   live?: boolean
   /** Why Echo is keeping the computer awake right now, if it is. */
   keepAwake?: string | null
+  /** When you're back if you're away, and when "Rest of today" would end. */
+  away?: { until: string | null; restOfToday: string }
   /** The Mac's local network address, for opening Echo on a phone. */
   lanIp?: string | null
   updatedAt: string
